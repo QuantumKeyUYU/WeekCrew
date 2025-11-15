@@ -26,30 +26,52 @@ const resolveTitle = (interest: InterestTag) => {
   return match?.label ?? 'Кружок недели';
 };
 
-const toIsoString = (value: any, fallback: Date) => {
-  if (!value) {
-    return fallback.toISOString();
+const ensureTimestamp = (value: any, fallback: Timestamp): Timestamp => {
+  if (value instanceof Timestamp) {
+    return value;
   }
-  if (typeof value?.toDate === 'function') {
-    return value.toDate().toISOString();
+  if (value && typeof value.toDate === 'function') {
+    return Timestamp.fromDate(value.toDate());
+  }
+  if (
+    value &&
+    typeof value.seconds === 'number' &&
+    typeof value.nanoseconds === 'number'
+  ) {
+    return new Timestamp(value.seconds, value.nanoseconds);
   }
   if (value instanceof Date) {
-    return value.toISOString();
+    return Timestamp.fromDate(value);
   }
-  return new Date(value).toISOString();
+  if (typeof value === 'number') {
+    return Timestamp.fromMillis(value);
+  }
+  if (typeof value === 'string') {
+    const parsed = Date.parse(value);
+    if (!Number.isNaN(parsed)) {
+      return Timestamp.fromMillis(parsed);
+    }
+  }
+  return fallback;
 };
 
-const mapCircle = (id: string, data: any): Circle => ({
-  id,
-  interest: data.interest,
-  title: data.title ?? resolveTitle(data.interest),
-  status: data.status ?? 'active',
-  capacity: data.capacity ?? DEFAULT_CAPACITY,
-  memberIds: Array.isArray(data.memberIds) ? data.memberIds : [],
-  createdAt: toIsoString(data.createdAt, new Date()),
-  expiresAt: toIsoString(data.expiresAt, addDays(new Date(), 7)),
-  icebreakerSeed: data.icebreakerSeed ?? undefined
-});
+const mapCircle = (id: string, data: any): Circle => {
+  const now = Timestamp.now();
+  const defaultExpiry = Timestamp.fromDate(addDays(now.toDate(), 7));
+  return {
+    id,
+    interest: data.interest as InterestTag,
+    title: data.title ?? resolveTitle(data.interest as InterestTag),
+    status: (data.status ?? 'active') as Circle['status'],
+    capacity: data.capacity ?? DEFAULT_CAPACITY,
+    memberIds: Array.isArray(data.memberIds)
+      ? data.memberIds.filter((id: unknown): id is string => typeof id === 'string')
+      : [],
+    createdAt: ensureTimestamp(data.createdAt, now),
+    expiresAt: ensureTimestamp(data.expiresAt, defaultExpiry),
+    icebreakerSeed: data.icebreakerSeed ?? undefined
+  };
+};
 
 const createCircleDoc = async (interest: InterestTag, deviceId: string) => {
   const now = Timestamp.now();
@@ -143,8 +165,11 @@ export const getCircleById = async (circleId: string): Promise<Circle | null> =>
 };
 
 export const isCircleExpired = (circle: Circle) => {
-  const expiresAt = new Date(circle.expiresAt).getTime();
-  return Number.isNaN(expiresAt) ? false : Date.now() >= expiresAt || circle.status === 'archived';
+  const expiresAt = circle.expiresAt?.toMillis?.();
+  if (typeof expiresAt !== 'number') {
+    return circle.status === 'archived';
+  }
+  return Date.now() >= expiresAt || circle.status === 'archived';
 };
 
 export const CIRCLE_DEFAULT_CAPACITY = DEFAULT_CAPACITY;
