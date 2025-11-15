@@ -1,0 +1,17 @@
+{
+  "name": "WeekCrew",
+  "short_name": "WeekCrew",
+  "description": "Кружки недели: новые уютные компании каждую неделю",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#7F5AF0",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
