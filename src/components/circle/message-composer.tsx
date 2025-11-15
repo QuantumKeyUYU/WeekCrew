@@ -16,6 +16,7 @@ interface Props {
 export const MessageComposer = ({ circle, disabled, disabledReason, prefill, onPrefillConsumed }: Props) => {
   const [text, setText] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const user = useAppStore((state) => state.user);
   const device = useAppStore((state) => state.device);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -35,6 +36,7 @@ export const MessageComposer = ({ circle, disabled, disabledReason, prefill, onP
     }
     try {
       setIsSending(true);
+      setSendError(null);
       await sendMessage({
         circleId: circle.id,
         authorDeviceId: device.deviceId,
@@ -44,6 +46,8 @@ export const MessageComposer = ({ circle, disabled, disabledReason, prefill, onP
       setText('');
     } catch (error) {
       console.error('Message send failed', error);
+      const message = error instanceof Error ? error.message : 'Не удалось отправить сообщение.';
+      setSendError(message);
     } finally {
       setIsSending(false);
     }
@@ -74,6 +78,7 @@ export const MessageComposer = ({ circle, disabled, disabledReason, prefill, onP
       >
         {isSending ? 'Отправляем...' : 'Отправить'}
       </button>
+      {sendError && <p className="text-xs text-red-300">{sendError}</p>}
       {disabled && disabledReason && (
         <p className="text-xs text-slate-400">{disabledReason}</p>
       )}

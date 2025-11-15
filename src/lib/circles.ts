@@ -8,7 +8,8 @@ import {
   query,
   runTransaction,
   Timestamp,
-  where
+  where,
+  type Firestore
 } from 'firebase/firestore';
 import { addDays } from 'date-fns';
 import type { Circle, InterestTag } from '@/types';
@@ -19,7 +20,17 @@ const CIRCLES_COLLECTION = 'circles';
 const DEFAULT_CAPACITY = 8;
 const MS_IN_DAY = 1000 * 60 * 60 * 24;
 
-const circlesCollection = () => collection(getFirestoreClient(), CIRCLES_COLLECTION);
+const getDbOrThrow = (): Firestore => {
+  const db = getFirestoreClient();
+  if (!db) {
+    throw new Error(
+      'Firebase отключён. Приложение работает в демо-режиме и не может подключиться к Firestore. Заполни .env.local и перезапусти dev-сервер.'
+    );
+  }
+  return db;
+};
+
+const circlesCollection = (db: Firestore) => collection(db, CIRCLES_COLLECTION);
 
 const resolveTitle = (interest: InterestTag) => {
   const match = INTERESTS.find((item) => item.id === interest);
@@ -73,7 +84,7 @@ const mapCircle = (id: string, data: any): Circle => {
   };
 };
 
-const createCircleDoc = async (interest: InterestTag, deviceId: string) => {
+const createCircleDoc = async (db: Firestore, interest: InterestTag, deviceId: string) => {
   const now = Timestamp.now();
   const expiresAt = Timestamp.fromMillis(now.toMillis() + 7 * MS_IN_DAY);
   const payload = {
@@ -86,13 +97,12 @@ const createCircleDoc = async (interest: InterestTag, deviceId: string) => {
     expiresAt,
     icebreakerSeed: `${interest}-${Math.random().toString(36).slice(2, 8)}`
   };
-  const ref = await addDoc(circlesCollection(), payload);
+  const ref = await addDoc(circlesCollection(db), payload);
   const snapshot = await getDoc(ref);
   return mapCircle(snapshot.id, snapshot.data());
 };
 
-const tryJoinCircle = async (circleId: string, deviceId: string): Promise<Circle | null> => {
-  const db = getFirestoreClient();
+const tryJoinCircle = async (db: Firestore, circleId: string, deviceId: string): Promise<Circle | null> => {
   const ref = doc(db, CIRCLES_COLLECTION, circleId);
 
   return runTransaction(db, async (transaction) => {
@@ -117,9 +127,13 @@ const tryJoinCircle = async (circleId: string, deviceId: string): Promise<Circle
   }).catch(() => null);
 };
 
-const findJoinableCircle = async (interest: InterestTag, deviceId: string): Promise<Circle | null> => {
+const findJoinableCircle = async (
+  db: Firestore,
+  interest: InterestTag,
+  deviceId: string
+): Promise<Circle | null> => {
   const q = query(
-    circlesCollection(),
+    circlesCollection(db),
     where('interest', '==', interest),
     where('status', '==', 'active'),
     limit(10)
@@ -137,7 +151,7 @@ const findJoinableCircle = async (interest: InterestTag, deviceId: string): Prom
       return mapCircle(docSnap.id, data);
     }
     if (memberIds.length < capacity) {
-      const joined = await tryJoinCircle(docSnap.id, deviceId);
+      const joined = await tryJoinCircle(db, docSnap.id, deviceId);
       if (joined) {
         return joined;
       }
@@ -148,15 +162,21 @@ const findJoinableCircle = async (interest: InterestTag, deviceId: string): Prom
 };
 
 export const joinOrCreateCircle = async (interest: InterestTag, deviceId: string) => {
-  const existing = await findJoinableCircle(interest, deviceId);
+  const db = getDbOrThrow();
+  const existing = await findJoinableCircle(db, interest, deviceId);
   if (existing) {
     return existing;
   }
-  return createCircleDoc(interest, deviceId);
+  return createCircleDoc(db, interest, deviceId);
 };
 
 export const getCircleById = async (circleId: string): Promise<Circle | null> => {
-  const ref = doc(getFirestoreClient(), CIRCLES_COLLECTION, circleId);
+  const db = getFirestoreClient();
+  if (!db) {
+    console.info('[WeekCrew] Skipping circle fetch because Firebase is disabled.');
+    return null;
+  }
+  const ref = doc(db, CIRCLES_COLLECTION, circleId);
   const snapshot = await getDoc(ref);
   if (!snapshot.exists()) {
     return null;

@@ -3,8 +3,9 @@
 import { ReactNode, useEffect } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { getOrCreateDeviceId } from '@/lib/device';
-import { ensureAnonymousAuth } from '@/config/firebase';
+import { ensureAnonymousAuth, getFirebaseStatus } from '@/config/firebase';
 import { useHydrated } from '@/hooks/useHydrated';
+import { ErrorBoundary } from '@/components/shared/error-boundary';
 
 interface Props {
   children: ReactNode;
@@ -26,6 +27,7 @@ export const ClientProviders = ({ children }: Props) => {
   const settings = useAppStore((state) => state.settings);
   const setDevice = useAppStore((state) => state.setDevice);
   const updateUser = useAppStore((state) => state.updateUser);
+  const setFirebaseReady = useAppStore((state) => state.setFirebaseReady);
 
   useEffect(() => {
     const id = getOrCreateDeviceId();
@@ -53,11 +55,21 @@ export const ClientProviders = ({ children }: Props) => {
   }, [device, updateUser, settings.language, settings.theme]);
 
   useEffect(() => {
+    let cancelled = false;
+    setFirebaseReady(getFirebaseStatus().initialized);
+
     ensureAnonymousAuth()
       .then((uid) => {
+        if (cancelled) {
+          return;
+        }
+        setFirebaseReady(getFirebaseStatus().initialized);
+        if (!uid) {
+          return;
+        }
         updateUser((prev) => {
           if (prev && prev.id === uid) {
-            return prev;
+            return { ...prev, locale: settings.language, theme: settings.theme };
           }
           return {
             id: uid,
@@ -70,9 +82,16 @@ export const ClientProviders = ({ children }: Props) => {
         });
       })
       .catch((error) => {
-        console.warn('Anonymous auth skipped', error);
+        if (!cancelled) {
+          setFirebaseReady(getFirebaseStatus().initialized);
+          console.warn('Anonymous auth skipped', error);
+        }
       });
-  }, [updateUser, settings.language, settings.theme]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [updateUser, settings.language, settings.theme, setFirebaseReady]);
 
   useEffect(() => {
     const applyTheme = () => {
@@ -95,16 +114,32 @@ export const ClientProviders = ({ children }: Props) => {
   }, [settings.theme, settings.animationsEnabled]);
 
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker
-        .register('/service-worker.js')
-        .catch((error) => console.warn('Service worker registration failed', error));
+    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) {
+      return;
     }
+
+    if (process.env.NODE_ENV !== 'production') {
+      navigator.serviceWorker
+        .getRegistrations()
+        .then((registrations) =>
+          registrations.forEach((registration) => {
+            registration.unregister().catch((error) => {
+              console.info('Service worker unregister failed', error);
+            });
+          })
+        )
+        .catch((error) => console.info('Service worker cleanup skipped', error));
+      return;
+    }
+
+    navigator.serviceWorker
+      .register('/service-worker.js')
+      .catch((error) => console.warn('Service worker registration failed', error));
   }, []);
 
   if (!hydrated) {
     return <div className="min-h-screen bg-slate-950" />;
   }
 
-  return <>{children}</>;
+  return <ErrorBoundary>{children}</ErrorBoundary>;
 };
