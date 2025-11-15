@@ -22,6 +22,8 @@ export default function SettingsPage() {
   const updateUser = useAppStore((state) => state.updateUser);
   const reset = useAppStore((state) => state.reset);
   const setDevice = useAppStore((state) => state.setDevice);
+  const device = useAppStore((state) => state.device);
+  const user = useAppStore((state) => state.user);
   const [cleared, setCleared] = useState(false);
 
   const handleClear = () => {
@@ -96,6 +98,18 @@ export default function SettingsPage() {
             />
             Включить лёгкие анимации
           </label>
+        </div>
+      </section>
+
+      <section className="rounded-3xl border border-white/10 bg-slate-950/60 p-5 space-y-2 text-xs text-slate-400">
+        <h2 className="text-sm font-semibold text-slate-100">Отладка</h2>
+        <div className="flex flex-col gap-1">
+          <span>
+            <span className="text-slate-500">deviceId:</span> {device?.deviceId ?? '—'}
+          </span>
+          <span>
+            <span className="text-slate-500">currentCircleId:</span> {user?.currentCircleId ?? '—'}
+          </span>
         </div>
       </section>
 

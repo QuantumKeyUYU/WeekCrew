@@ -1,4 +1,5 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
+import { ReactNode } from 'react';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Header } from '@/components/layout/header';
@@ -12,7 +13,6 @@ export const metadata: Metadata = {
   description:
     'WeekCrew собирает уютные кружки недели: выбери интерес и пообщайся с небольшой компанией единомышленников за 7 дней.',
   manifest: '/manifest.json',
-  themeColor: '#7F5AF0',
   appleWebApp: {
     title: 'WeekCrew',
     statusBarStyle: 'default'
@@ -21,6 +21,10 @@ export const metadata: Metadata = {
     icon: '/icon.svg',
     apple: '/icon.svg'
   }
+};
+
+export const viewport: Viewport = {
+  themeColor: '#7F5AF0'
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import type { Circle } from '@/types';
 import { useCountdown } from '@/hooks/useCountdown';
+import { INTERESTS } from '@/constants/interests';
 
 interface Props {
   circle: Circle;
@@ -10,6 +11,7 @@ interface Props {
 
 export const CircleHeader = ({ circle }: Props) => {
   const countdown = useCountdown(circle.expiresAt);
+  const interestMeta = INTERESTS.find((item) => item.id === circle.interest);
   return (
     <motion.div
       className="rounded-3xl border border-white/10 bg-slate-900/60 p-5 backdrop-blur"
@@ -20,17 +22,17 @@ export const CircleHeader = ({ circle }: Props) => {
       <div className="flex flex-col gap-2">
         <div className="text-xs uppercase tracking-wide text-slate-400">Тема недели</div>
         <h1 className="text-2xl font-semibold text-brand-foreground">{circle.title}</h1>
-        <p className="text-sm text-slate-300">{circle.description || "Уютный круг по интересу"}</p>
+        <p className="text-sm text-slate-300">{interestMeta?.description ?? 'Уютный круг по интересу'}</p>
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-slate-300">
         <span className="rounded-full border border-white/10 px-3 py-1 text-slate-200/80">
-          Участников: {circle.participantCount}/{circle.participantLimit}
+          Участников: {circle.memberIds.length}/{circle.capacity}
         </span>
         <span className="rounded-full border border-white/10 px-3 py-1 text-slate-200/80">
-          До конца недели: {countdown}
+          До конца недели: {countdown.formatted}
         </span>
         <span className="rounded-full border border-white/10 px-3 py-1 text-slate-200/80">
-          Старт: {new Date(circle.weekStart).toLocaleDateString('ru-RU')}
+          Старт: {new Date(circle.createdAt).toLocaleDateString('ru-RU')}
         </span>
       </div>
     </motion.div>

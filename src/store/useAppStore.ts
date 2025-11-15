@@ -2,23 +2,25 @@
 
 import { create } from 'zustand';
 import { devtools, persist, createJSONStorage } from 'zustand/middleware';
-import type { AppSettings, Circle, DeviceInfo, Message, UserProfile } from '@/types';
+import type { AppSettings, Circle, CircleMessage, DeviceInfo, UserProfile } from '@/types';
 
+/* eslint-disable no-unused-vars */
 interface AppStore {
   device: DeviceInfo | null;
   user: UserProfile | null;
   circle: Circle | null;
-  messages: Message[];
+  messages: CircleMessage[];
   settings: AppSettings;
-  setDevice: (device: DeviceInfo) => void;
-  setUser: (profile: UserProfile | null) => void;
-  updateUser: (updater: (prev: UserProfile | null) => UserProfile | null) => void;
-  setCircle: (circle: Circle | null) => void;
-  setMessages: (messages: Message[]) => void;
-  addMessage: (message: Message) => void;
-  updateSettings: (settings: Partial<AppSettings>) => void;
-  reset: () => void;
+  setDevice(device: DeviceInfo): void;
+  setUser(profile: UserProfile | null): void;
+  updateUser(updater: (prev: UserProfile | null) => UserProfile | null): void;
+  setCircle(circle: Circle | null): void;
+  setMessages(messages: CircleMessage[]): void;
+  addMessage(message: CircleMessage): void;
+  updateSettings(settings: Partial<AppSettings>): void;
+  reset(): void;
 }
+/* eslint-enable no-unused-vars */
 
 const defaultSettings: AppSettings = {
   language: 'ru',

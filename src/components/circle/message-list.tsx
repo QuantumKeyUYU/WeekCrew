@@ -1,20 +1,41 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import type { Message } from '@/types';
+import type { CircleMessage } from '@/types';
 import clsx from 'clsx';
 
 interface Props {
-  messages: Message[];
-  currentUserId?: string;
+  messages: CircleMessage[];
+  currentDeviceId?: string;
 }
 
-export const MessageList = ({ messages, currentUserId }: Props) => {
+export const MessageList = ({ messages, currentDeviceId }: Props) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) {
+      return;
+    }
+    const last = containerRef.current.lastElementChild as HTMLElement | null;
+    if (last) {
+      last.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+  }, [messages]);
+
+  if (messages.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-white/10 bg-slate-900/40 p-6 text-center text-sm text-slate-400">
+        Пока никто не писал — можешь быть первым ✨
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col gap-3">
+    <div ref={containerRef} className="flex flex-col gap-3">
       <AnimatePresence initial={false}>
         {messages.map((message) => {
-          const isOwn = message.authorId === currentUserId;
+          const isOwn = message.authorDeviceId === currentDeviceId;
           return (
             <motion.div
               key={message.id}
@@ -34,9 +55,9 @@ export const MessageList = ({ messages, currentUserId }: Props) => {
                 )}
               >
                 <div className="text-xs uppercase tracking-wide text-slate-200/70">
-                  {message.authorAlias}
+                  {message.authorAlias ?? 'Участник кружка'}
                 </div>
-                <p className="mt-1 whitespace-pre-wrap leading-snug">{message.content}</p>
+                <p className="mt-1 whitespace-pre-wrap leading-snug">{message.text}</p>
                 <p className="mt-2 text-[11px] uppercase tracking-wide text-slate-200/60">
                   {(() => {
                     const timestamp = message.createdAt ? new Date(message.createdAt) : new Date();

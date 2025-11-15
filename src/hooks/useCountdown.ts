@@ -2,12 +2,17 @@
 
 import { useEffect, useState } from 'react';
 
+interface CountdownState {
+  formatted: string;
+  isExpired: boolean;
+}
+
 export const useCountdown = (targetIso?: string | null) => {
-  const [timeLeft, setTimeLeft] = useState<string>('');
+  const [state, setState] = useState<CountdownState>({ formatted: '7 дней', isExpired: false });
 
   useEffect(() => {
     if (!targetIso) {
-      setTimeLeft('7 дней');
+      setState({ formatted: '7 дней', isExpired: false });
       return;
     }
 
@@ -17,14 +22,14 @@ export const useCountdown = (targetIso?: string | null) => {
       const diff = target - now;
 
       if (diff <= 0) {
-        setTimeLeft('Неделя завершена');
+        setState({ formatted: 'Неделя завершена', isExpired: true });
         return;
       }
 
       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
       const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
       const minutes = Math.floor((diff / (1000 * 60)) % 60);
-      setTimeLeft(`${days}д ${hours}ч ${minutes}м`);
+      setState({ formatted: `${days}д ${hours}ч ${minutes}м`, isExpired: false });
     };
 
     update();
@@ -32,5 +37,5 @@ export const useCountdown = (targetIso?: string | null) => {
     return () => window.clearInterval(interval);
   }, [targetIso]);
 
-  return timeLeft;
+  return state;
 };

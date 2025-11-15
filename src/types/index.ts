@@ -10,6 +10,8 @@ export type InterestTag =
   | 'movies'
   | 'custom';
 
+export type CircleStatus = 'active' | 'archived';
+
 export interface UserProfile {
   id: string;
   nickname?: string;
@@ -24,24 +26,21 @@ export interface Circle {
   id: string;
   interest: InterestTag;
   title: string;
-  description?: string;
-  weekStart: string; // ISO date string
-  participantLimit: number;
-  participantCount: number;
-  isActive: boolean;
-  icebreakers: string[];
-  currentIcebreakerIndex: number;
+  status: CircleStatus;
+  capacity: number;
+  memberIds: string[];
+  createdAt: string; // ISO timestamp
   expiresAt: string; // ISO timestamp
+  icebreakerSeed?: string;
 }
 
-export interface Message {
+export interface CircleMessage {
   id: string;
   circleId: string;
-  authorId: string;
-  authorAlias: string;
-  content: string;
-  type: 'text' | 'link' | 'icebreaker';
+  authorDeviceId: string;
+  text: string;
   createdAt: string; // ISO timestamp
+  authorAlias?: string;
 }
 
 export interface AppSettings {
