@@ -11,6 +11,7 @@ interface AppStore {
   circle: Circle | null;
   messages: CircleMessage[];
   settings: AppSettings;
+  firebaseReady: boolean;
   setDevice(device: DeviceInfo): void;
   setUser(profile: UserProfile | null): void;
   updateUser(updater: (prev: UserProfile | null) => UserProfile | null): void;
@@ -18,6 +19,7 @@ interface AppStore {
   setMessages(messages: CircleMessage[]): void;
   addMessage(message: CircleMessage): void;
   updateSettings(settings: Partial<AppSettings>): void;
+  setFirebaseReady(ready: boolean): void;
   reset(): void;
 }
 /* eslint-enable no-unused-vars */
@@ -57,6 +59,7 @@ export const useAppStore = create<AppStore>()(
         circle: null,
         messages: [],
         settings: defaultSettings,
+        firebaseReady: false,
         setDevice: (device) => set({ device }),
         setUser: (profile) => set({ user: profile }),
         updateUser: (updater) => set({ user: updater(get().user) }),
@@ -64,6 +67,7 @@ export const useAppStore = create<AppStore>()(
         setMessages: (messages) => set({ messages }),
         addMessage: (message) => set({ messages: [...get().messages, message] }),
         updateSettings: (settings) => set({ settings: { ...get().settings, ...settings } }),
+        setFirebaseReady: (ready) => set({ firebaseReady: ready }),
         reset: () => set({
           device: null,
           user: null,

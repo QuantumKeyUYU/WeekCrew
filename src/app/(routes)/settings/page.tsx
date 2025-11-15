@@ -24,6 +24,7 @@ export default function SettingsPage() {
   const setDevice = useAppStore((state) => state.setDevice);
   const device = useAppStore((state) => state.device);
   const user = useAppStore((state) => state.user);
+  const firebaseReady = useAppStore((state) => state.firebaseReady);
   const [cleared, setCleared] = useState(false);
 
   const handleClear = () => {
@@ -101,17 +102,22 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      <section className="rounded-3xl border border-white/10 bg-slate-950/60 p-5 space-y-2 text-xs text-slate-400">
-        <h2 className="text-sm font-semibold text-slate-100">Отладка</h2>
-        <div className="flex flex-col gap-1">
-          <span>
-            <span className="text-slate-500">deviceId:</span> {device?.deviceId ?? '—'}
-          </span>
-          <span>
-            <span className="text-slate-500">currentCircleId:</span> {user?.currentCircleId ?? '—'}
-          </span>
-        </div>
-      </section>
+      {process.env.NODE_ENV !== 'production' && (
+        <section className="rounded-3xl border border-white/10 bg-slate-950/60 p-5 space-y-2 text-xs text-slate-400">
+          <h2 className="text-sm font-semibold text-slate-100">Отладка</h2>
+          <div className="flex flex-col gap-1">
+            <span>
+              <span className="text-slate-500">deviceId:</span> {device?.deviceId ?? '—'}
+            </span>
+            <span>
+              <span className="text-slate-500">currentCircleId:</span> {user?.currentCircleId ?? '—'}
+            </span>
+            <span>
+              <span className="text-slate-500">Firebase:</span> {firebaseReady ? 'on' : 'off'}
+            </span>
+          </div>
+        </section>
+      )}
 
       <section className="rounded-3xl border border-red-500/20 bg-red-500/10 p-5 text-sm">
         <h2 className="text-sm font-semibold text-red-200">Сброс</h2>
