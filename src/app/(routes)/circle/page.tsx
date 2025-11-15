@@ -83,8 +83,8 @@ export default function CirclePage() {
       if (message.authorDeviceId !== device.deviceId) {
         return false;
       }
-      const createdAt = new Date(message.createdAt).getTime();
-      return !Number.isNaN(createdAt) && createdAt >= since;
+      const createdAt = message.createdAt?.toMillis?.();
+      return typeof createdAt === 'number' && createdAt >= since;
     }).length;
     setDailyCount(count);
   }, [messages, device]);

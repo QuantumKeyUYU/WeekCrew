@@ -1,3 +1,5 @@
+import type { Timestamp } from 'firebase/firestore';
+
 export type InterestTag =
   | 'kpop'
   | 'anime'
@@ -29,8 +31,8 @@ export interface Circle {
   status: CircleStatus;
   capacity: number;
   memberIds: string[];
-  createdAt: string; // ISO timestamp
-  expiresAt: string; // ISO timestamp
+  createdAt: Timestamp;
+  expiresAt: Timestamp;
   icebreakerSeed?: string;
 }
 
@@ -39,7 +41,7 @@ export interface CircleMessage {
   circleId: string;
   authorDeviceId: string;
   text: string;
-  createdAt: string; // ISO timestamp
+  createdAt: Timestamp;
   authorAlias?: string;
 }
 

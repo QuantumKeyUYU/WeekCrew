@@ -2,24 +2,52 @@
 
 import { useEffect, useState } from 'react';
 
+import type { Timestamp } from 'firebase/firestore';
+
 interface CountdownState {
   formatted: string;
   isExpired: boolean;
 }
 
-export const useCountdown = (targetIso?: string | null) => {
+type CountdownTarget = Timestamp | string | Date | null | undefined;
+
+const resolveTargetDate = (target: CountdownTarget): Date | null => {
+  if (!target) {
+    return null;
+  }
+  if (target instanceof Date) {
+    return target;
+  }
+  if (typeof (target as Timestamp)?.toDate === 'function') {
+    return (target as Timestamp).toDate();
+  }
+  if (typeof target === 'string') {
+    const parsed = Date.parse(target);
+    if (!Number.isNaN(parsed)) {
+      return new Date(parsed);
+    }
+  }
+  return null;
+};
+
+export const useCountdown = (target?: CountdownTarget) => {
   const [state, setState] = useState<CountdownState>({ formatted: '7 дней', isExpired: false });
 
   useEffect(() => {
-    if (!targetIso) {
+    const targetDate = resolveTargetDate(target);
+    if (!targetDate) {
       setState({ formatted: '7 дней', isExpired: false });
       return;
     }
 
     const update = () => {
-      const target = new Date(targetIso).getTime();
+      const targetTime = targetDate.getTime();
+      if (Number.isNaN(targetTime)) {
+        setState({ formatted: '—', isExpired: false });
+        return;
+      }
       const now = Date.now();
-      const diff = target - now;
+      const diff = targetTime - now;
 
       if (diff <= 0) {
         setState({ formatted: 'Неделя завершена', isExpired: true });
@@ -35,7 +63,7 @@ export const useCountdown = (targetIso?: string | null) => {
     update();
     const interval = window.setInterval(update, 60 * 1000);
     return () => window.clearInterval(interval);
-  }, [targetIso]);
+  }, [target]);
 
   return state;
 };

@@ -60,11 +60,11 @@ export const MessageList = ({ messages, currentDeviceId }: Props) => {
                 <p className="mt-1 whitespace-pre-wrap leading-snug">{message.text}</p>
                 <p className="mt-2 text-[11px] uppercase tracking-wide text-slate-200/60">
                   {(() => {
-                    const timestamp = message.createdAt ? new Date(message.createdAt) : new Date();
-                    if (Number.isNaN(timestamp.getTime())) {
+                    const date = message.createdAt?.toDate?.();
+                    if (!date) {
                       return '—';
                     }
-                    return timestamp.toLocaleString('ru-RU', {
+                    return date.toLocaleString('ru-RU', {
                       hour: '2-digit',
                       minute: '2-digit',
                       day: '2-digit',

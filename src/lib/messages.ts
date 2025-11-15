@@ -18,17 +18,33 @@ const MS_IN_DAY = 1000 * 60 * 60 * 24;
 
 const messagesCollection = () => collection(getFirestoreClient(), MESSAGES_COLLECTION);
 
-const toIso = (value: any) => {
-  if (!value) {
-    return new Date().toISOString();
+const ensureTimestamp = (value: any, fallback: Timestamp): Timestamp => {
+  if (value instanceof Timestamp) {
+    return value;
   }
-  if (typeof value?.toDate === 'function') {
-    return value.toDate().toISOString();
+  if (value && typeof value.toDate === 'function') {
+    return Timestamp.fromDate(value.toDate());
+  }
+  if (
+    value &&
+    typeof value.seconds === 'number' &&
+    typeof value.nanoseconds === 'number'
+  ) {
+    return new Timestamp(value.seconds, value.nanoseconds);
   }
   if (value instanceof Date) {
-    return value.toISOString();
+    return Timestamp.fromDate(value);
   }
-  return new Date(value).toISOString();
+  if (typeof value === 'number') {
+    return Timestamp.fromMillis(value);
+  }
+  if (typeof value === 'string') {
+    const parsed = Date.parse(value);
+    if (!Number.isNaN(parsed)) {
+      return Timestamp.fromMillis(parsed);
+    }
+  }
+  return fallback;
 };
 
 const mapMessage = (snapshot: any): CircleMessage => {
@@ -38,7 +54,7 @@ const mapMessage = (snapshot: any): CircleMessage => {
     circleId: data.circleId,
     authorDeviceId: data.authorDeviceId,
     text: data.text,
-    createdAt: toIso(data.createdAt),
+    createdAt: ensureTimestamp(data.createdAt, Timestamp.now()),
     authorAlias: data.authorAlias
   };
 };

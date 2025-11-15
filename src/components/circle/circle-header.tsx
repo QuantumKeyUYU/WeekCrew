@@ -12,6 +12,7 @@ interface Props {
 export const CircleHeader = ({ circle }: Props) => {
   const countdown = useCountdown(circle.expiresAt);
   const interestMeta = INTERESTS.find((item) => item.id === circle.interest);
+  const createdAtDate = circle.createdAt?.toDate?.();
   return (
     <motion.div
       className="rounded-3xl border border-white/10 bg-slate-900/60 p-5 backdrop-blur"
@@ -31,9 +32,11 @@ export const CircleHeader = ({ circle }: Props) => {
         <span className="rounded-full border border-white/10 px-3 py-1 text-slate-200/80">
           До конца недели: {countdown.formatted}
         </span>
-        <span className="rounded-full border border-white/10 px-3 py-1 text-slate-200/80">
-          Старт: {new Date(circle.createdAt).toLocaleDateString('ru-RU')}
-        </span>
+        {createdAtDate && (
+          <span className="rounded-full border border-white/10 px-3 py-1 text-slate-200/80">
+            Старт: {createdAtDate.toLocaleDateString('ru-RU')}
+          </span>
+        )}
       </div>
     </motion.div>
   );
