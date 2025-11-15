@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
 import { INTERESTS } from '@/constants/interests';
 import type { InterestTag } from '@/types';
-import { fetchActiveCircleByInterest, createCircle, joinCircle } from '@/lib/circles';
+import { joinOrCreateCircle } from '@/lib/circles';
 import { useAppStore } from '@/store/useAppStore';
 
 export default function ExplorePage() {
   const router = useRouter();
-  const user = useAppStore((state) => state.user);
+  const device = useAppStore((state) => state.device);
   const updateUser = useAppStore((state) => state.updateUser);
   const setCircle = useAppStore((state) => state.setCircle);
   const [selected, setSelected] = useState<InterestTag | null>(null);
@@ -18,20 +18,18 @@ export default function ExplorePage() {
   const [error, setError] = useState('');
 
   const handleSelect = async (interest: InterestTag) => {
+    if (status === 'loading') {
+      return;
+    }
     setSelected(interest);
     setStatus('loading');
     setError('');
 
     try {
-      let circle = await fetchActiveCircleByInterest(interest);
-      if (!circle) {
-        circle = await createCircle(interest);
+      if (!device) {
+        throw new Error('Не удалось определить устройство. Попробуй обновить страницу.');
       }
-      if (!user) {
-        throw new Error('Нужен анонимный профиль');
-      }
-      await joinCircle(circle, user.id);
-      const joinedCircle = { ...circle, participantCount: circle.participantCount + 1 };
+      const joinedCircle = await joinOrCreateCircle(interest, device.deviceId);
       setCircle(joinedCircle);
       updateUser((prev) => {
         if (!prev) {
@@ -69,9 +67,13 @@ export default function ExplorePage() {
             key={interest.id}
             onClick={() => handleSelect(interest.id)}
             className={clsx(
-              'rounded-3xl border px-5 py-4 text-left transition-transform hover:-translate-y-1',
-              selected === interest.id ? 'border-brand bg-brand/10' : 'border-white/10 bg-slate-950/50'
+              'rounded-3xl border px-5 py-4 text-left transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
+              selected === interest.id && status === 'loading'
+                ? 'border-brand bg-brand/10'
+                : 'border-white/10 bg-slate-950/50 hover:-translate-y-1',
+              status === 'loading' && selected !== interest.id ? 'opacity-50' : ''
             )}
+            disabled={status === 'loading'}
           >
             <div className="text-sm font-semibold text-brand-foreground">{interest.label}</div>
             <p className="mt-1 text-xs text-slate-300">{interest.description}</p>
@@ -92,7 +94,17 @@ export default function ExplorePage() {
             перейди на вкладку «Мой кружок».
           </p>
         )}
-        {status === 'error' && <p className="text-red-300">{error}</p>}
+        {status === 'error' && (
+          <div className="flex flex-col gap-3">
+            <p className="text-red-300">{error}</p>
+            <button
+              onClick={() => selected && handleSelect(selected)}
+              className="w-fit rounded-full border border-white/20 px-4 py-1.5 text-xs font-medium text-slate-200 transition hover:-translate-y-0.5"
+            >
+              Попробовать ещё раз
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -2,101 +2,149 @@ import {
   addDoc,
   collection,
   doc,
-  increment,
   getDoc,
   getDocs,
   limit,
-  orderBy,
   query,
-  serverTimestamp,
-  updateDoc,
+  runTransaction,
+  Timestamp,
   where
 } from 'firebase/firestore';
-import { formatISO, addDays } from 'date-fns';
+import { addDays } from 'date-fns';
 import type { Circle, InterestTag } from '@/types';
-import { DEFAULT_ICEBREAKERS } from '@/constants/interests';
+import { INTERESTS } from '@/constants/interests';
 import { getFirestoreClient } from '@/config/firebase';
 
-const circlesCollection = () => collection(getFirestoreClient(), 'circles');
+const CIRCLES_COLLECTION = 'circles';
+const DEFAULT_CAPACITY = 8;
+const MS_IN_DAY = 1000 * 60 * 60 * 24;
+
+const circlesCollection = () => collection(getFirestoreClient(), CIRCLES_COLLECTION);
+
+const resolveTitle = (interest: InterestTag) => {
+  const match = INTERESTS.find((item) => item.id === interest);
+  return match?.label ?? 'Кружок недели';
+};
+
+const toIsoString = (value: any, fallback: Date) => {
+  if (!value) {
+    return fallback.toISOString();
+  }
+  if (typeof value?.toDate === 'function') {
+    return value.toDate().toISOString();
+  }
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  return new Date(value).toISOString();
+};
 
 const mapCircle = (id: string, data: any): Circle => ({
   id,
   interest: data.interest,
-  title: data.title,
-  description: data.description ?? '',
-  weekStart: data.weekStart,
-  participantLimit: data.participantLimit,
-  participantCount: data.participantCount ?? 0,
-  isActive: data.isActive ?? true,
-  icebreakers: data.icebreakers ?? DEFAULT_ICEBREAKERS,
-  currentIcebreakerIndex: data.currentIcebreakerIndex ?? 0,
-  expiresAt: data.expiresAt ?? formatISO(addDays(new Date(data.weekStart), 7))
+  title: data.title ?? resolveTitle(data.interest),
+  status: data.status ?? 'active',
+  capacity: data.capacity ?? DEFAULT_CAPACITY,
+  memberIds: Array.isArray(data.memberIds) ? data.memberIds : [],
+  createdAt: toIsoString(data.createdAt, new Date()),
+  expiresAt: toIsoString(data.expiresAt, addDays(new Date(), 7)),
+  icebreakerSeed: data.icebreakerSeed ?? undefined
 });
 
-export const fetchActiveCircleByInterest = async (interest: InterestTag): Promise<Circle | null> => {
+const createCircleDoc = async (interest: InterestTag, deviceId: string) => {
+  const now = Timestamp.now();
+  const expiresAt = Timestamp.fromMillis(now.toMillis() + 7 * MS_IN_DAY);
+  const payload = {
+    interest,
+    title: resolveTitle(interest),
+    status: 'active' as const,
+    capacity: DEFAULT_CAPACITY,
+    memberIds: [deviceId],
+    createdAt: now,
+    expiresAt,
+    icebreakerSeed: `${interest}-${Math.random().toString(36).slice(2, 8)}`
+  };
+  const ref = await addDoc(circlesCollection(), payload);
+  const snapshot = await getDoc(ref);
+  return mapCircle(snapshot.id, snapshot.data());
+};
+
+const tryJoinCircle = async (circleId: string, deviceId: string): Promise<Circle | null> => {
+  const db = getFirestoreClient();
+  const ref = doc(db, CIRCLES_COLLECTION, circleId);
+
+  return runTransaction(db, async (transaction) => {
+    const snapshot = await transaction.get(ref);
+    if (!snapshot.exists()) {
+      return null;
+    }
+    const data = snapshot.data();
+    const memberIds: string[] = Array.isArray(data.memberIds) ? data.memberIds : [];
+    const capacity: number = data.capacity ?? DEFAULT_CAPACITY;
+
+    if (memberIds.includes(deviceId)) {
+      return mapCircle(snapshot.id, data);
+    }
+    if (memberIds.length >= capacity || data.status === 'archived') {
+      return null;
+    }
+
+    const updatedMemberIds = [...memberIds, deviceId];
+    transaction.update(ref, { memberIds: updatedMemberIds });
+    return mapCircle(snapshot.id, { ...data, memberIds: updatedMemberIds });
+  }).catch(() => null);
+};
+
+const findJoinableCircle = async (interest: InterestTag, deviceId: string): Promise<Circle | null> => {
   const q = query(
     circlesCollection(),
     where('interest', '==', interest),
-    where('isActive', '==', true),
-    orderBy('participantCount', 'asc'),
-    limit(1)
+    where('status', '==', 'active'),
+    limit(10)
   );
   const snapshot = await getDocs(q);
   if (snapshot.empty) {
     return null;
   }
-  const docSnap = snapshot.docs[0];
-  const circle = mapCircle(docSnap.id, docSnap.data());
-  if (circle.participantCount >= circle.participantLimit) {
-    return null;
+
+  for (const docSnap of snapshot.docs) {
+    const data = docSnap.data();
+    const memberIds: string[] = Array.isArray(data.memberIds) ? data.memberIds : [];
+    const capacity: number = data.capacity ?? DEFAULT_CAPACITY;
+    if (memberIds.includes(deviceId)) {
+      return mapCircle(docSnap.id, data);
+    }
+    if (memberIds.length < capacity) {
+      const joined = await tryJoinCircle(docSnap.id, deviceId);
+      if (joined) {
+        return joined;
+      }
+    }
   }
-  return circle;
+
+  return null;
 };
 
-export const createCircle = async (interest: InterestTag): Promise<Circle> => {
-  const now = new Date();
-  const payload = {
-    interest,
-    title: `Неделя ${interest.toUpperCase()}`,
-    description: 'Новый кружок недели от WeekCrew',
-    weekStart: formatISO(now, { representation: 'date' }),
-    participantLimit: 8,
-    participantCount: 0,
-    isActive: true,
-    icebreakers: DEFAULT_ICEBREAKERS,
-    currentIcebreakerIndex: 0,
-    expiresAt: formatISO(addDays(now, 7)),
-    createdAt: serverTimestamp()
-  };
-  const ref = await addDoc(circlesCollection(), payload);
-  const docSnap = await getDoc(ref);
-  return mapCircle(ref.id, docSnap.data());
-};
-
-export const incrementParticipantCount = async (circleId: string) => {
-  const ref = doc(getFirestoreClient(), 'circles', circleId);
-  await updateDoc(ref, {
-    participantCount: increment(1)
-  });
-};
-
-export const archiveCircle = async (circleId: string) => {
-  const ref = doc(getFirestoreClient(), 'circles', circleId);
-  await updateDoc(ref, {
-    isActive: false
-  });
-};
-
-export const joinCircle = async (circle: Circle, _userId: string) => {
-  await incrementParticipantCount(circle.id);
-  return circle;
+export const joinOrCreateCircle = async (interest: InterestTag, deviceId: string) => {
+  const existing = await findJoinableCircle(interest, deviceId);
+  if (existing) {
+    return existing;
+  }
+  return createCircleDoc(interest, deviceId);
 };
 
 export const getCircleById = async (circleId: string): Promise<Circle | null> => {
-  const ref = doc(getFirestoreClient(), 'circles', circleId);
+  const ref = doc(getFirestoreClient(), CIRCLES_COLLECTION, circleId);
   const snapshot = await getDoc(ref);
   if (!snapshot.exists()) {
     return null;
   }
   return mapCircle(snapshot.id, snapshot.data());
 };
+
+export const isCircleExpired = (circle: Circle) => {
+  const expiresAt = new Date(circle.expiresAt).getTime();
+  return Number.isNaN(expiresAt) ? false : Date.now() >= expiresAt || circle.status === 'archived';
+};
+
+export const CIRCLE_DEFAULT_CAPACITY = DEFAULT_CAPACITY;

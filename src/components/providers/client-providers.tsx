@@ -72,7 +72,7 @@ export const ClientProviders = ({ children }: Props) => {
       .catch((error) => {
         console.warn('Anonymous auth skipped', error);
       });
-  }, [updateUser]);
+  }, [updateUser, settings.language, settings.theme]);
 
   useEffect(() => {
     const applyTheme = () => {
