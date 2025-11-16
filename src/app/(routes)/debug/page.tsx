@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import { useMemo } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { getFirebaseStatus } from '@/config/firebase';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const ENV_KEYS = [
   'NEXT_PUBLIC_FIREBASE_API_KEY',
@@ -32,6 +33,7 @@ export default function DebugPage() {
   const deviceId = useAppStore((state) => state.device?.deviceId ?? '—');
   const circleId = useAppStore((state) => state.user?.currentCircleId ?? '—');
   const firebaseStatus = getFirebaseStatus();
+  const t = useTranslation();
   const envList = useMemo(
     () =>
       ENV_KEYS.map((key) => ({
@@ -44,41 +46,39 @@ export default function DebugPage() {
   return (
     <div className="space-y-6">
       <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6">
-        <h1 className="text-2xl font-semibold text-brand-foreground">Debug / Health Check</h1>
-        <p className="mt-2 text-sm text-slate-300">
-          Вспомогательная страница для разработки. Проверка окружения, конфигурации Firebase и состояния стора.
-        </p>
+        <h1 className="text-2xl font-semibold text-brand-foreground">{t('debug_title')}</h1>
+        <p className="mt-2 text-sm text-slate-300">{t('debug_description')}</p>
       </div>
 
       <section className="rounded-3xl border border-white/10 bg-slate-950/60 p-5 space-y-3 text-sm">
-        <h2 className="text-sm font-semibold text-slate-100">Окружение</h2>
+        <h2 className="text-sm font-semibold text-slate-100">{t('debug_environment_heading')}</h2>
         <div className="grid gap-2 text-slate-300">
           <div className="flex items-center justify-between rounded-2xl border border-white/5 bg-slate-900/60 px-3 py-2">
-            <span className="text-slate-500">NODE_ENV</span>
+            <span className="text-slate-500">{t('debug_env_node_label')}</span>
             <span className="font-mono text-slate-100">{process.env.NODE_ENV}</span>
           </div>
           <div className="flex items-center justify-between rounded-2xl border border-white/5 bg-slate-900/60 px-3 py-2">
-            <span className="text-slate-500">Firebase config</span>
+            <span className="text-slate-500">{t('debug_env_config_label')}</span>
             <span className={clsx('font-medium', firebaseStatus.configured ? 'text-emerald-300' : 'text-red-300')}>
-              {firebaseStatus.configured ? 'настроен' : 'отключён'}
+              {firebaseStatus.configured ? t('debug_env_configured') : t('debug_env_disabled')}
             </span>
           </div>
           <div className="flex items-center justify-between rounded-2xl border border-white/5 bg-slate-900/60 px-3 py-2">
-            <span className="text-slate-500">Firebase initialized</span>
+            <span className="text-slate-500">{t('debug_env_initialized_label')}</span>
             <span className={clsx('font-medium', firebaseReady ? 'text-emerald-300' : 'text-yellow-300')}>
-              {firebaseReady ? 'да' : 'нет'}
+              {firebaseReady ? t('debug_yes') : t('debug_no')}
             </span>
           </div>
           {firebaseStatus.error && (
             <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
-              {firebaseStatus.error}
+              {t('debug_env_error_label')}: {firebaseStatus.error}
             </div>
           )}
         </div>
       </section>
 
       <section className="rounded-3xl border border-white/10 bg-slate-950/60 p-5 space-y-3 text-sm">
-        <h2 className="text-sm font-semibold text-slate-100">Переменные окружения</h2>
+        <h2 className="text-sm font-semibold text-slate-100">{t('debug_env_vars_heading')}</h2>
         <ul className="space-y-2">
           {envList.map((item) => (
             <li
@@ -93,14 +93,14 @@ export default function DebugPage() {
       </section>
 
       <section className="rounded-3xl border border-white/10 bg-slate-950/60 p-5 space-y-3 text-sm">
-        <h2 className="text-sm font-semibold text-slate-100">Состояние устройства</h2>
+        <h2 className="text-sm font-semibold text-slate-100">{t('debug_device_heading')}</h2>
         <div className="grid gap-2 text-xs text-slate-300">
           <div className="flex items-center justify-between rounded-2xl border border-white/5 bg-slate-900/60 px-3 py-2">
-            <span className="text-slate-500">deviceId</span>
+            <span className="text-slate-500">{t('debug_device_id_label')}</span>
             <span className="font-mono text-[11px] text-slate-200">{deviceId}</span>
           </div>
           <div className="flex items-center justify-between rounded-2xl border border-white/5 bg-slate-900/60 px-3 py-2">
-            <span className="text-slate-500">currentCircleId</span>
+            <span className="text-slate-500">{t('debug_circle_id_label')}</span>
             <span className="font-mono text-[11px] text-slate-200">{circleId}</span>
           </div>
         </div>

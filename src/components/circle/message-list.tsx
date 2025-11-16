@@ -4,6 +4,8 @@ import { useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { CircleMessage } from '@/types';
 import clsx from 'clsx';
+import { useTranslation } from '@/i18n/useTranslation';
+import { useAppStore } from '@/store/useAppStore';
 
 interface Props {
   messages: CircleMessage[];
@@ -12,6 +14,9 @@ interface Props {
 
 export const MessageList = ({ messages, currentDeviceId }: Props) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const t = useTranslation();
+  const language = useAppStore((state) => state.settings.language ?? 'ru');
+  const locale = language === 'ru' ? 'ru-RU' : 'en-US';
 
   useEffect(() => {
     if (!containerRef.current) {
@@ -26,7 +31,7 @@ export const MessageList = ({ messages, currentDeviceId }: Props) => {
   if (messages.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-white/10 bg-slate-900/40 p-6 text-center text-sm text-slate-400">
-        Пока никто не писал — можешь быть первым ✨
+        {t('messages_empty_state')}
       </div>
     );
   }
@@ -55,7 +60,7 @@ export const MessageList = ({ messages, currentDeviceId }: Props) => {
                 )}
               >
                 <div className="text-xs uppercase tracking-wide text-slate-200/70">
-                  {message.authorAlias ?? 'Участник кружка'}
+                  {message.authorAlias ?? t('messages_author_unknown')}
                 </div>
                 <p className="mt-1 whitespace-pre-wrap leading-snug">{message.text}</p>
                 <p className="mt-2 text-[11px] uppercase tracking-wide text-slate-200/60">
@@ -64,7 +69,7 @@ export const MessageList = ({ messages, currentDeviceId }: Props) => {
                     if (!date) {
                       return '—';
                     }
-                    return date.toLocaleString('ru-RU', {
+                    return date.toLocaleString(locale, {
                       hour: '2-digit',
                       minute: '2-digit',
                       day: '2-digit',

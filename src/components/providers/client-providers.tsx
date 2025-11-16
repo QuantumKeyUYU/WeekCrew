@@ -35,6 +35,13 @@ export const ClientProviders = ({ children }: Props) => {
       setDevice({ deviceId: id, createdAt: new Date().toISOString() });
     }
   }, [device, setDevice]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+    document.documentElement.lang = settings.language;
+  }, [settings.language]);
   useEffect(() => {
     if (!device) {
       return;

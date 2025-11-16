@@ -12,6 +12,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { getCircleById, isCircleExpired } from '@/lib/circles';
 import { getAuthorMessageCountInLast24h, listenToCircleMessages } from '@/lib/messages';
 import { MAX_MESSAGES_PER_DAY } from '@/constants/limits';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export default function CirclePage() {
   const user = useAppStore((state) => state.user);
@@ -25,6 +26,8 @@ export default function CirclePage() {
   const [prefill, setPrefill] = useState<string | undefined>();
   const [dailyCount, setDailyCount] = useState(0);
   const [limitLoading, setLimitLoading] = useState(false);
+  const language = useAppStore((state) => state.settings.language ?? 'ru');
+  const t = useTranslation();
 
   useEffect(() => {
     const circleId = user?.currentCircleId;
@@ -98,7 +101,7 @@ export default function CirclePage() {
     }
   }, [circle, prefill]);
 
-  const countdown = useCountdown(circle?.expiresAt);
+  const countdown = useCountdown(circle?.expiresAt, language);
   const hasCircle = circle && device && circle.memberIds.includes(device.deviceId);
   const readOnly = !!circle && (countdown.isExpired || circle.status === 'archived');
   const limitReached = hasCircle && !readOnly && dailyCount >= MAX_MESSAGES_PER_DAY;
@@ -108,7 +111,7 @@ export default function CirclePage() {
       return (
         <div className="flex flex-col items-center gap-4">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-white/20 border-t-brand" />
-          <p className="text-sm text-slate-300">Загружаем твой кружок недели...</p>
+          <p className="text-sm text-slate-300">{t('circle_loading_message')}</p>
         </div>
       );
     }
@@ -120,18 +123,18 @@ export default function CirclePage() {
       <CircleHeader circle={circle} />
       <IcebreakerCard circle={circle} onAnswerClick={(text) => setPrefill(text)} />
       <section className="rounded-3xl border border-white/10 bg-slate-950/60 p-4">
-        <h2 className="text-sm font-semibold text-slate-100">Лента недели</h2>
+        <h2 className="text-sm font-semibold text-slate-100">{t('circle_feed_title')}</h2>
         <div className="mt-4 max-h-[50vh] space-y-4 overflow-y-auto pr-2">
           <MessageList messages={messages} currentDeviceId={device.deviceId} />
         </div>
         {readOnly ? (
           <div className="mt-4 flex flex-col gap-3 rounded-3xl border border-white/10 bg-slate-900/50 p-4 text-sm text-slate-300">
-            <p>Неделя этого кружка закончилась. Можно перечитать, но писать уже нельзя.</p>
+            <p>{t('circle_readonly_notice')}</p>
             <Link
               href="/explore"
               className="inline-flex w-fit items-center justify-center rounded-full border border-white/20 px-4 py-2 text-xs font-medium text-slate-100 transition hover:-translate-y-0.5"
             >
-              Найти новый кружок
+              {t('circle_readonly_cta')}
             </Link>
           </div>
         ) : (
@@ -140,9 +143,9 @@ export default function CirclePage() {
             disabled={limitReached || limitLoading}
             disabledReason={
               limitReached
-                ? 'Ты написал сегодня много. Дай слово другим — завтра лимит обновится ✨'
+                ? t('circle_limit_reached')
                 : limitLoading
-                ? 'Проверяем твой лимит сообщений...'
+                ? t('circle_limit_checking')
                 : undefined
             }
             prefill={prefill}

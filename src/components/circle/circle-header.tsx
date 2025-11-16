@@ -1,18 +1,25 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useAppStore } from '@/store/useAppStore';
 import type { Circle } from '@/types';
 import { useCountdown } from '@/hooks/useCountdown';
 import { INTERESTS } from '@/constants/interests';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface Props {
   circle: Circle;
 }
 
 export const CircleHeader = ({ circle }: Props) => {
-  const countdown = useCountdown(circle.expiresAt);
+  const t = useTranslation();
+  const language = useAppStore((state) => state.settings.language ?? 'ru');
+  const countdown = useCountdown(circle.expiresAt, language);
   const interestMeta = INTERESTS.find((item) => item.id === circle.interest);
   const createdAtDate = circle.createdAt?.toDate?.();
+  const fallbackTitle = interestMeta ? t(interestMeta.labelKey) : t('circle_header_default_title');
+  const locale = language === 'ru' ? 'ru-RU' : 'en-US';
+
   return (
     <motion.div
       className="rounded-3xl border border-white/10 bg-slate-900/60 p-5 backdrop-blur"
@@ -21,20 +28,22 @@ export const CircleHeader = ({ circle }: Props) => {
       transition={{ duration: 0.5, ease: 'easeOut' }}
     >
       <div className="flex flex-col gap-2">
-        <div className="text-xs uppercase tracking-wide text-slate-400">Тема недели</div>
-        <h1 className="text-2xl font-semibold text-brand-foreground">{circle.title}</h1>
-        <p className="text-sm text-slate-300">{interestMeta?.description ?? 'Уютный круг по интересу'}</p>
+        <div className="text-xs uppercase tracking-wide text-slate-400">{t('circle_header_topic_label')}</div>
+        <h1 className="text-2xl font-semibold text-brand-foreground">{circle.title || fallbackTitle}</h1>
+        <p className="text-sm text-slate-300">
+          {interestMeta ? t(interestMeta.descriptionKey) : t('circle_header_default_description')}
+        </p>
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-slate-300">
         <span className="rounded-full border border-white/10 px-3 py-1 text-slate-200/80">
-          Участников: {circle.memberIds.length}/{circle.capacity}
+          {t('circle_header_members_label')}: {circle.memberIds.length}/{circle.capacity}
         </span>
         <span className="rounded-full border border-white/10 px-3 py-1 text-slate-200/80">
-          До конца недели: {countdown.formatted}
+          {t('circle_header_time_left_label')}: {countdown.formatted}
         </span>
         {createdAtDate && (
           <span className="rounded-full border border-white/10 px-3 py-1 text-slate-200/80">
-            Старт: {createdAtDate.toLocaleDateString('ru-RU')}
+            {t('circle_header_start_label')}: {createdAtDate.toLocaleDateString(locale)}
           </span>
         )}
       </div>
