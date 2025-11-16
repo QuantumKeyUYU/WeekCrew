@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useAppStore } from '@/store/useAppStore';
 import type { Circle } from '@/types';
 import { useCountdown } from '@/hooks/useCountdown';
-import { INTERESTS } from '@/constants/interests';
+import { INTERESTS } from '@/config/interests';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface Props {
