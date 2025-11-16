@@ -6,7 +6,7 @@ import clsx from 'clsx';
 import type { InterestTag } from '@/types';
 import { INTERESTS } from '@/config/interests';
 import { useAppStore } from '@/store/useAppStore';
-import { useDemoCircleStore } from '@/store/demoCircle';
+import { useWeekcrewStorage } from '@/lib/weekcrewStorage';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Notice } from '@/components/shared/notice';
 
@@ -15,17 +15,22 @@ export default function ExplorePage() {
   const firebaseReady = useAppStore((state) => state.firebaseReady);
   const t = useTranslation();
   const [pendingKey, setPendingKey] = useState<InterestTag | null>(null);
-  const joinInterest = useDemoCircleStore((state) => state.joinInterest);
+  const storage = useWeekcrewStorage();
   const panelClass =
     'rounded-3xl border border-slate-200/80 bg-[#fefcff] p-4 shadow-[0_12px_34px_rgba(15,23,42,0.05)] transition-colors dark:border-white/10 dark:bg-slate-900/70 sm:p-6';
 
-  const handleSelect = (interest: InterestTag) => {
+  const handleSelect = async (interest: InterestTag) => {
     if (pendingKey) {
       return;
     }
     setPendingKey(interest);
-    joinInterest(interest);
-    router.push('/circle');
+    try {
+      await storage.joinDemoCircleFromInterest(interest);
+      router.push('/circle');
+    } catch (error) {
+      console.error(error);
+      setPendingKey(null);
+    }
   };
 
   return (
