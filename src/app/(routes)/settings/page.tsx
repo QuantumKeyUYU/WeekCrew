@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import clsx from 'clsx';
 import { useAppStore } from '@/store/useAppStore';
+import { useWeekcrewStore } from '@/store/weekcrew';
 import { resetDeviceId, getOrCreateDeviceId } from '@/lib/device';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -26,6 +27,8 @@ export default function SettingsPage() {
   const device = useAppStore((state) => state.device);
   const user = useAppStore((state) => state.user);
   const firebaseReady = useAppStore((state) => state.firebaseReady);
+  const weekcrewMode = useWeekcrewStore((state) => state.mode);
+  const resetCircle = useWeekcrewStore((state) => state.resetCircle);
   const [cleared, setCleared] = useState(false);
   const t = useTranslation();
   const sectionClass =
@@ -34,6 +37,7 @@ export default function SettingsPage() {
   const handleClear = () => {
     resetDeviceId();
     reset();
+    resetCircle();
     const newId = getOrCreateDeviceId();
     setDevice({ deviceId: newId, createdAt: new Date().toISOString() });
     setCleared(true);
@@ -113,6 +117,9 @@ export default function SettingsPage() {
             </span>
             <span>
               <span className="text-slate-500 dark:text-slate-400">{t('settings_debug_circle')}:</span> {user?.currentCircleId ?? '—'}
+            </span>
+            <span>
+              <span className="text-slate-500 dark:text-slate-400">Demo circle:</span> {weekcrewMode}
             </span>
             <span>
               <span className="text-slate-500 dark:text-slate-400">{t('settings_debug_firebase')}:</span> {firebaseReady ? t('settings_debug_firebase_on') : t('settings_debug_firebase_off')}
