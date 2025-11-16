@@ -7,11 +7,11 @@
 }
 
 body {
-  @apply bg-[#f9f7ff] text-slate-900 antialiased selection:bg-brand selection:text-brand-foreground;
+  @apply bg-[#f8f5ff] text-slate-900 antialiased selection:bg-brand selection:text-brand-foreground;
 }
 
 body[data-theme='light'] {
-  @apply bg-[#f9f7ff] text-slate-900;
+  @apply bg-[#f8f5ff] text-slate-900;
 }
 
 body[data-theme='dark'] {
@@ -33,7 +33,7 @@ textarea:focus-visible {
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-400/60 rounded-full;
+  @apply rounded-full bg-slate-400/60;
 }
 
 body[data-animations='off'] * {

@@ -2,30 +2,19 @@
 
 import { create } from 'zustand';
 import { devtools, persist, createJSONStorage } from 'zustand/middleware';
-import type { AppSettings, Circle, CircleMessage, DeviceInfo, UserProfile } from '@/types';
+import type { AppSettings, DeviceInfo } from '@/types';
 
 /* eslint-disable no-unused-vars */
 interface AppStore {
   device: DeviceInfo | null;
-  user: UserProfile | null;
-  circle: Circle | null;
-  messages: CircleMessage[];
   settings: AppSettings;
-  firebaseReady: boolean;
-  setDevice(device: DeviceInfo): void;
-  setUser(profile: UserProfile | null): void;
-  updateUser(updater: (prev: UserProfile | null) => UserProfile | null): void;
-  setCircle(circle: Circle | null): void;
-  setMessages(messages: CircleMessage[]): void;
-  addMessage(message: CircleMessage): void;
-  updateSettings(settings: Partial<AppSettings>): void;
-  setFirebaseReady(ready: boolean): void;
-  reset(): void;
+  setDevice: (value: DeviceInfo) => void;
+  updateSettings: (settings: Partial<AppSettings>) => void;
+  reset: () => void;
 }
 /* eslint-enable no-unused-vars */
 
 const defaultSettings: AppSettings = {
-  language: 'ru',
   theme: 'system',
   animationsEnabled: true
 };
@@ -53,35 +42,22 @@ const storage = createJSONStorage<AppStore>(() => {
 export const useAppStore = create<AppStore>()(
   devtools(
     persist(
-      (set, get) => ({
+      (set) => ({
         device: null,
-        user: null,
-        circle: null,
-        messages: [],
         settings: defaultSettings,
-        firebaseReady: false,
         setDevice: (device) => set({ device }),
-        setUser: (profile) => set({ user: profile }),
-        updateUser: (updater) => set({ user: updater(get().user) }),
-        setCircle: (circle) => set({ circle }),
-        setMessages: (messages) => set({ messages }),
-        addMessage: (message) => set({ messages: [...get().messages, message] }),
-        updateSettings: (settings) => set({ settings: { ...get().settings, ...settings } }),
-        setFirebaseReady: (ready) => set({ firebaseReady: ready }),
-        reset: () => set({
-          device: null,
-          user: null,
-          circle: null,
-          messages: [],
-          settings: defaultSettings
-        })
+        updateSettings: (settings) => set((state) => ({ settings: { ...state.settings, ...settings } })),
+        reset: () =>
+          set({
+            device: null,
+            settings: defaultSettings
+          })
       }),
       {
-        name: 'weekcrew-store',
+        name: 'uyan-chat-store',
         storage,
         partialize: (state) => ({
           device: state.device,
-          user: state.user,
           settings: state.settings
         })
       }

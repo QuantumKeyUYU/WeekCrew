@@ -1,0 +1,39 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Message {
+  id         String        @id @default(cuid())
+  body       String
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  deviceHash String
+  status     MessageStatus @default(PENDING)
+  replies    Response[]
+
+  @@index([status])
+  @@index([deviceHash])
+}
+
+model Response {
+  id         String   @id @default(cuid())
+  messageId  String
+  message    Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  body       String
+  createdAt  DateTime @default(now())
+  deviceHash String
+
+  @@index([deviceHash])
+  @@index([messageId])
+}
+
+enum MessageStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}

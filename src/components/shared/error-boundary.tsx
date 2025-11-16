@@ -1,7 +1,6 @@
 'use client';
 
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { useTranslation } from '@/i18n/useTranslation';
 
 interface State {
   hasError: boolean;
@@ -18,6 +17,7 @@ interface BoundaryProps {
   children: ReactNode;
   copy: BoundaryCopy;
 }
+
 class BaseErrorBoundary extends Component<BoundaryProps, State> {
   state: State = { hasError: false };
 
@@ -26,7 +26,7 @@ class BaseErrorBoundary extends Component<BoundaryProps, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('[WeekCrew] Uncaught error boundary exception', error, errorInfo);
+    console.error('[UYAN.chat] Uncaught error boundary exception', error, errorInfo);
   }
 
   handleReload = () => {
@@ -68,11 +68,10 @@ interface WrapperProps {
 }
 
 export const ErrorBoundary = ({ children }: WrapperProps) => {
-  const t = useTranslation();
   const copy = {
-    title: t('error_boundary_title'),
-    description: t('error_boundary_description'),
-    action: t('error_boundary_action')
+    title: 'Интернет иногда даёт сбой',
+    description: 'Мы записали ошибку и уже чиним. Попробуй обновить страницу — чаще всего этого хватает.',
+    action: 'Перезагрузить'
   };
   return <BaseErrorBoundary copy={copy}>{children}</BaseErrorBoundary>;
 };
