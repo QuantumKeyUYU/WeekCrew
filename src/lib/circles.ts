@@ -13,7 +13,7 @@ import {
 } from 'firebase/firestore';
 import { addDays } from 'date-fns';
 import type { Circle, InterestTag } from '@/types';
-import { INTERESTS } from '@/constants/interests';
+import { INTERESTS } from '@/config/interests';
 import { getFirestoreClient } from '@/config/firebase';
 import { copy, type Locale } from '@/i18n/copy';
 
