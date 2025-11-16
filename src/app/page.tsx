@@ -4,6 +4,7 @@ import { LandingHero } from '@/components/shared/hero';
 import { FEATURES } from '@/data/features';
 import { useTranslation } from '@/i18n/useTranslation';
 import { primaryCtaClass } from '@/styles/tokens';
+import { useOnboardingModal } from '@/components/shared/onboarding-modal';
 
 const steps = [
   { titleKey: 'home_step_select_interest_title', descriptionKey: 'home_step_select_interest_description' },
@@ -13,13 +14,15 @@ const steps = [
 
 export default function HomePage() {
   const t = useTranslation();
+  const { OnboardingModal, openOnboarding } = useOnboardingModal();
   const panelClass =
     'rounded-3xl border border-slate-200/80 bg-[#fdfcff] p-4 shadow-[0_10px_30px_rgba(15,23,42,0.05)] transition-colors dark:border-white/10 dark:bg-slate-900/70 sm:p-6';
   const cardClass =
     'rounded-2xl border border-slate-200/70 bg-white/95 p-4 text-slate-700 shadow-[0_8px_22px_rgba(15,23,42,0.05)] transition-all duration-200 hover:-translate-y-0.5 hover:border-brand/30 hover:shadow-[0_16px_36px_rgba(127,90,240,0.12)] dark:border-white/10 dark:bg-slate-950/40 dark:text-slate-200 sm:p-5';
   return (
     <div className="space-y-6 sm:space-y-12">
-      <LandingHero />
+      <LandingHero onHowItWorks={openOnboarding} />
+      <OnboardingModal />
 
       <section id="how-it-works" className={`grid gap-3 sm:gap-5 ${panelClass}`}>
         <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 sm:text-xl">{t('home_how_it_works_title')}</h2>
