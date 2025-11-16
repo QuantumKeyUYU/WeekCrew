@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import clsx from 'clsx';
 import { useAppStore } from '@/store/useAppStore';
-import { useDemoCircleStore } from '@/store/demoCircle';
-import { resetDeviceId, getOrCreateDeviceId } from '@/lib/device';
+import { getAppMode } from '@/config/mode';
+import { useWeekcrewSnapshot, useWeekcrewStorage } from '@/lib/weekcrewStorage';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const themes = [
@@ -22,23 +22,18 @@ export default function SettingsPage() {
   const settings = useAppStore((state) => state.settings);
   const updateSettings = useAppStore((state) => state.updateSettings);
   const updateUser = useAppStore((state) => state.updateUser);
-  const reset = useAppStore((state) => state.reset);
-  const setDevice = useAppStore((state) => state.setDevice);
   const device = useAppStore((state) => state.device);
   const firebaseReady = useAppStore((state) => state.firebaseReady);
-  const currentInterestKey = useDemoCircleStore((state) => state.currentInterestKey);
-  const resetDemoCircle = useDemoCircleStore((state) => state.reset);
+  const storage = useWeekcrewStorage();
+  const currentCircle = useWeekcrewSnapshot((snapshot) => snapshot.currentCircle);
+  const appMode = getAppMode();
   const [cleared, setCleared] = useState(false);
   const t = useTranslation();
   const sectionClass =
     'rounded-3xl border border-slate-200/70 bg-[#fefcff] p-4 space-y-4 shadow-[0_10px_28px_rgba(15,23,42,0.05)] dark:border-white/10 dark:bg-slate-950/60 sm:p-5';
 
-  const handleClear = () => {
-    resetDeviceId();
-    reset();
-    resetDemoCircle();
-    const newId = getOrCreateDeviceId();
-    setDevice({ deviceId: newId, createdAt: new Date().toISOString() });
+  const handleClear = async () => {
+    await storage.clearAllLocalData();
     setCleared(true);
   };
 
@@ -115,16 +110,18 @@ export default function SettingsPage() {
               <span className="text-slate-500 dark:text-slate-400">{t('settings_debug_device')}:</span> {device?.deviceId ?? '—'}
             </span>
             <span>
-              <span className="text-slate-500 dark:text-slate-400">{t('settings_debug_circle')}:</span> {currentInterestKey ?? '—'}
+              <span className="text-slate-500 dark:text-slate-400">{t('settings_debug_circle')}:</span> {currentCircle?.id ?? '—'}
             </span>
             <span>
-              <span className="text-slate-500 dark:text-slate-400">Demo circle:</span> {currentInterestKey ? 'active' : 'empty'}
+              <span className="text-slate-500 dark:text-slate-400">{t('settings_debug_mode')}:</span> {appMode}
             </span>
             <span>
               <span className="text-slate-500 dark:text-slate-400">{t('settings_debug_firebase')}:</span> {firebaseReady ? t('settings_debug_firebase_on') : t('settings_debug_firebase_off')}
             </span>
           </div>
-          {!firebaseReady && <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">{t('settings_debug_firebase_notice')}</p>}
+          {!firebaseReady && (
+            <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">{t('settings_debug_firebase_notice')}</p>
+          )}
         </section>
       )}
 

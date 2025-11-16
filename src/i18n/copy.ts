@@ -61,7 +61,7 @@ export const copy = {
     explore_status_error: 'Не получилось подключиться к кружку. Попробуй ещё раз.',
     explore_retry: 'Попробовать снова',
     firebase_demo_notice:
-      'Firebase отключён — приложение в демо-режиме. Добавь ключи в .env.local и перезапусти dev-сервер, чтобы включить живые данные.',
+      'Сейчас всё работает в демо-режиме: сообщения живут только на этом устройстве. Позже добавим live-режим с базой данных.',
     error_device_unavailable: 'Не удалось определить устройство. Обнови страницу и попробуй снова.',
     circle_loading_message: 'Загружаем твой кружок недели...',
     circle_feed_title: 'Лента недели',
@@ -124,9 +124,11 @@ export const copy = {
     settings_debug_device: 'deviceId',
     settings_debug_circle: 'currentCircleId',
     settings_debug_firebase: 'Firebase',
+    settings_debug_mode: 'Режим приложения',
     settings_debug_firebase_on: 'on',
     settings_debug_firebase_off: 'off',
-    settings_debug_firebase_notice: 'Firebase отключён — приложение в демо-режиме.',
+    settings_debug_firebase_notice:
+      'Демо-режим: данные сохраняются в localStorage, переключатель live появится позже.',
     settings_reset_title: 'Сброс',
     settings_reset_description:
       'Удалим локальные данные: новый deviceId, выход из текущих кружков и сброс настроек.',
@@ -212,7 +214,7 @@ export const copy = {
     explore_status_error: 'Couldn’t join a circle. Please try again.',
     explore_retry: 'Try again',
     firebase_demo_notice:
-      'Firebase is disabled — the app runs in demo mode. Add keys to .env.local and restart the dev server to enable live data.',
+      'WeekCrew is currently in demo mode: everything is stored locally on this device. A live mode with a database will arrive later.',
     error_device_unavailable: 'We could not identify your device. Refresh the page and try again.',
     circle_loading_message: 'Loading your weekly circle...',
     circle_feed_title: 'Weekly feed',
@@ -275,9 +277,11 @@ export const copy = {
     settings_debug_device: 'deviceId',
     settings_debug_circle: 'currentCircleId',
     settings_debug_firebase: 'Firebase',
+    settings_debug_mode: 'App mode',
     settings_debug_firebase_on: 'on',
     settings_debug_firebase_off: 'off',
-    settings_debug_firebase_notice: 'Firebase is disabled — the app runs in demo mode.',
+    settings_debug_firebase_notice:
+      'Demo mode only: messages stay in localStorage and a live database switch will land later.',
     settings_reset_title: 'Reset',
     settings_reset_description:
       'Clear local data: get a new deviceId, leave current circles, and reset settings.',
