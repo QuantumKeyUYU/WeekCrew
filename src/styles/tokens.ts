@@ -1,0 +1,2 @@
+export const primaryCtaClass =
+  'inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#6f5be9] via-[#7864ef] to-[#8b78ff] px-6 py-3 text-base font-semibold text-white shadow-[0_12px_30px_rgba(111,91,233,0.28)] ring-1 ring-inset ring-white/40 transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent active:translate-y-0';

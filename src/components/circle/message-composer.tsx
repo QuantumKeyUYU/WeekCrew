@@ -5,6 +5,7 @@ import { sendMessage } from '@/lib/messages';
 import type { Circle } from '@/types';
 import { useAppStore } from '@/store/useAppStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import { primaryCtaClass } from '@/styles/tokens';
 
 interface Props {
   circle: Circle;
@@ -62,8 +63,8 @@ export const MessageComposer = ({ circle, disabled, disabledReason, prefill, onP
   const isSubmitDisabled = disabled || isSending || !text.trim();
 
   return (
-    <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3 rounded-3xl border border-white/10 bg-slate-950/60 p-4">
-      <label className="text-sm font-medium text-slate-200" htmlFor="message">
+    <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3 rounded-3xl border border-slate-200/70 bg-[#fefcff] p-4 shadow-[0_8px_24px_rgba(15,23,42,0.05)] dark:border-white/10 dark:bg-slate-950/60">
+      <label className="text-sm font-medium text-slate-800 dark:text-slate-200" htmlFor="message">
         {t('composer_label')}
       </label>
       <textarea
@@ -75,17 +76,17 @@ export const MessageComposer = ({ circle, disabled, disabledReason, prefill, onP
         rows={3}
         placeholder={disabled ? disabledReason : t('composer_placeholder')}
         disabled={disabled}
-        className="w-full rounded-2xl border border-white/10 bg-slate-900/70 p-3 text-sm text-slate-100 placeholder:text-slate-500 focus:border-brand disabled:cursor-not-allowed disabled:border-white/5 disabled:bg-slate-900/30"
+        className="w-full rounded-2xl border border-slate-200/70 bg-white p-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-brand focus:ring-1 focus:ring-brand disabled:cursor-not-allowed disabled:border-slate-200/40 disabled:bg-slate-100 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
       />
       <button
         type="submit"
         disabled={isSubmitDisabled}
-        className="inline-flex items-center justify-center rounded-full bg-brand px-5 py-2 text-sm font-medium text-slate-950 transition-transform hover:-translate-y-0.5 disabled:translate-y-0 disabled:opacity-50"
+        className={`${primaryCtaClass} px-5 py-2 text-sm disabled:translate-y-0 disabled:opacity-50`}
       >
         {isSending ? t('composer_submitting') : t('composer_submit')}
       </button>
-      {sendError && <p className="text-xs text-red-300">{sendError}</p>}
-      {disabled && disabledReason && <p className="text-xs text-slate-400">{disabledReason}</p>}
+      {sendError && <p className="text-xs text-red-500 dark:text-red-300">{sendError}</p>}
+      {disabled && disabledReason && <p className="text-xs text-slate-500 dark:text-slate-400">{disabledReason}</p>}
     </form>
   );
 };
