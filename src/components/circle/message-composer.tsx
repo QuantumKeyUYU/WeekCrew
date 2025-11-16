@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useRef, useState } from 'react';
 import { sendMessage } from '@/lib/messages';
 import type { Circle } from '@/types';
 import { useAppStore } from '@/store/useAppStore';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface Props {
   circle: Circle;
@@ -19,6 +20,8 @@ export const MessageComposer = ({ circle, disabled, disabledReason, prefill, onP
   const [sendError, setSendError] = useState<string | null>(null);
   const user = useAppStore((state) => state.user);
   const device = useAppStore((state) => state.device);
+  const language = useAppStore((state) => state.settings.language ?? 'ru');
+  const t = useTranslation();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
@@ -37,16 +40,19 @@ export const MessageComposer = ({ circle, disabled, disabledReason, prefill, onP
     try {
       setIsSending(true);
       setSendError(null);
-      await sendMessage({
-        circleId: circle.id,
-        authorDeviceId: device.deviceId,
-        text: text.trim(),
-        authorAlias: user?.nickname ?? 'Участник'
-      });
+      await sendMessage(
+        {
+          circleId: circle.id,
+          authorDeviceId: device.deviceId,
+          text: text.trim(),
+          authorAlias: user?.nickname ?? t('composer_alias_default')
+        },
+        language
+      );
       setText('');
     } catch (error) {
       console.error('Message send failed', error);
-      const message = error instanceof Error ? error.message : 'Не удалось отправить сообщение.';
+      const message = error instanceof Error ? error.message : t('composer_send_error');
       setSendError(message);
     } finally {
       setIsSending(false);
@@ -58,7 +64,7 @@ export const MessageComposer = ({ circle, disabled, disabledReason, prefill, onP
   return (
     <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3 rounded-3xl border border-white/10 bg-slate-950/60 p-4">
       <label className="text-sm font-medium text-slate-200" htmlFor="message">
-        Поделиться в кружке
+        {t('composer_label')}
       </label>
       <textarea
         id="message"
@@ -67,7 +73,7 @@ export const MessageComposer = ({ circle, disabled, disabledReason, prefill, onP
         value={text}
         onChange={(event) => setText(event.target.value)}
         rows={3}
-        placeholder={disabled ? disabledReason : 'Расскажи, что радует сегодня...'}
+        placeholder={disabled ? disabledReason : t('composer_placeholder')}
         disabled={disabled}
         className="w-full rounded-2xl border border-white/10 bg-slate-900/70 p-3 text-sm text-slate-100 placeholder:text-slate-500 focus:border-brand disabled:cursor-not-allowed disabled:border-white/5 disabled:bg-slate-900/30"
       />
@@ -76,12 +82,10 @@ export const MessageComposer = ({ circle, disabled, disabledReason, prefill, onP
         disabled={isSubmitDisabled}
         className="inline-flex items-center justify-center rounded-full bg-brand px-5 py-2 text-sm font-medium text-slate-950 transition-transform hover:-translate-y-0.5 disabled:translate-y-0 disabled:opacity-50"
       >
-        {isSending ? 'Отправляем...' : 'Отправить'}
+        {isSending ? t('composer_submitting') : t('composer_submit')}
       </button>
       {sendError && <p className="text-xs text-red-300">{sendError}</p>}
-      {disabled && disabledReason && (
-        <p className="text-xs text-slate-400">{disabledReason}</p>
-      )}
+      {disabled && disabledReason && <p className="text-xs text-slate-400">{disabledReason}</p>}
     </form>
   );
 };

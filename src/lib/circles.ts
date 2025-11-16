@@ -15,17 +15,16 @@ import { addDays } from 'date-fns';
 import type { Circle, InterestTag } from '@/types';
 import { INTERESTS } from '@/constants/interests';
 import { getFirestoreClient } from '@/config/firebase';
+import { copy, type Locale } from '@/i18n/copy';
 
 const CIRCLES_COLLECTION = 'circles';
 const DEFAULT_CAPACITY = 8;
 const MS_IN_DAY = 1000 * 60 * 60 * 24;
 
-const getDbOrThrow = (): Firestore => {
+const getDbOrThrow = (locale: Locale = 'ru'): Firestore => {
   const db = getFirestoreClient();
   if (!db) {
-    throw new Error(
-      'Firebase отключён. Приложение работает в демо-режиме и не может подключиться к Firestore. Заполни .env.local и перезапусти dev-сервер.'
-    );
+    throw new Error(copy[locale]?.error_firebase_disabled_circles ?? copy.ru.error_firebase_disabled_circles);
   }
   return db;
 };
@@ -34,7 +33,10 @@ const circlesCollection = (db: Firestore) => collection(db, CIRCLES_COLLECTION);
 
 const resolveTitle = (interest: InterestTag) => {
   const match = INTERESTS.find((item) => item.id === interest);
-  return match?.label ?? 'Кружок недели';
+  if (!match) {
+    return copy.ru.circle_header_default_title;
+  }
+  return copy.ru[match.labelKey] ?? copy.ru.circle_header_default_title;
 };
 
 const ensureTimestamp = (value: any, fallback: Timestamp): Timestamp => {
@@ -161,8 +163,9 @@ const findJoinableCircle = async (
   return null;
 };
 
-export const joinOrCreateCircle = async (interest: InterestTag, deviceId: string) => {
-  const db = getDbOrThrow();
+export const joinOrCreateCircle = async (interest: InterestTag, deviceId: string, options?: { locale?: Locale }) => {
+  const locale = options?.locale ?? 'ru';
+  const db = getDbOrThrow(locale);
   const existing = await findJoinableCircle(db, interest, deviceId);
   if (existing) {
     return existing;

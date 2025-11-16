@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import type { Timestamp } from 'firebase/firestore';
+import type { Locale } from '@/i18n/copy';
 
 interface CountdownState {
   formatted: string;
@@ -30,13 +31,22 @@ const resolveTargetDate = (target: CountdownTarget): Date | null => {
   return null;
 };
 
-export const useCountdown = (target?: CountdownTarget) => {
-  const [state, setState] = useState<CountdownState>({ formatted: '7 дней', isExpired: false });
+const countdownCopy: Record<Locale, { fallback: string; expired: string; day: string; hour: string; minute: string }> = {
+  ru: { fallback: '7 дней', expired: 'Неделя завершена', day: 'д', hour: 'ч', minute: 'м' },
+  en: { fallback: '7 days', expired: 'Week finished', day: 'd', hour: 'h', minute: 'm' }
+};
+
+export const useCountdown = (target?: CountdownTarget, locale: Locale = 'ru') => {
+  const [state, setState] = useState<CountdownState>(() => ({
+    formatted: countdownCopy[locale]?.fallback ?? countdownCopy.ru.fallback,
+    isExpired: false
+  }));
 
   useEffect(() => {
     const targetDate = resolveTargetDate(target);
+    const labels = countdownCopy[locale] ?? countdownCopy.ru;
     if (!targetDate) {
-      setState({ formatted: '7 дней', isExpired: false });
+      setState({ formatted: labels.fallback, isExpired: false });
       return;
     }
 
@@ -50,20 +60,20 @@ export const useCountdown = (target?: CountdownTarget) => {
       const diff = targetTime - now;
 
       if (diff <= 0) {
-        setState({ formatted: 'Неделя завершена', isExpired: true });
+        setState({ formatted: labels.expired, isExpired: true });
         return;
       }
 
       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
       const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
       const minutes = Math.floor((diff / (1000 * 60)) % 60);
-      setState({ formatted: `${days}д ${hours}ч ${minutes}м`, isExpired: false });
+      setState({ formatted: `${days}${labels.day} ${hours}${labels.hour} ${minutes}${labels.minute}`, isExpired: false });
     };
 
     update();
     const interval = window.setInterval(update, 60 * 1000);
     return () => window.clearInterval(interval);
-  }, [target]);
+  }, [target, locale]);
 
   return state;
 };

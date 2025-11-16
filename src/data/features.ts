@@ -1,22 +1,13 @@
-export const FEATURES = [
-  {
-    title: '7 дней общения',
-    description:
-      'Каждый кружок живёт одну неделю. Этого хватает, чтобы познакомиться и не устать друг от друга.'
-  },
-  {
-    title: 'Мини-группа 3–8 людей',
-    description:
-      'Достаточно, чтобы было интересно, и достаточно мало, чтобы все чувствовали себя услышанными.'
-  },
-  {
-    title: 'Айсбрейкер каждый день',
-    description:
-      'Система задаёт маленький вопрос или челлендж, чтобы поддерживать тёплый темп.'
-  },
-  {
-    title: 'Никаких лайков',
-    description:
-      'Только сообщения и реакции словами. Никакой гонки за вниманием, только забота.'
-  }
+import type { CopyKey } from '@/i18n/copy';
+
+export interface FeatureDefinition {
+  titleKey: CopyKey;
+  descriptionKey: CopyKey;
+}
+
+export const FEATURES: FeatureDefinition[] = [
+  { titleKey: 'feature_week_length_title', descriptionKey: 'feature_week_length_description' },
+  { titleKey: 'feature_small_group_title', descriptionKey: 'feature_small_group_description' },
+  { titleKey: 'feature_daily_icebreaker_title', descriptionKey: 'feature_daily_icebreaker_description' },
+  { titleKey: 'feature_no_likes_title', descriptionKey: 'feature_no_likes_description' }
 ];

@@ -13,16 +13,15 @@ import {
 } from 'firebase/firestore';
 import type { CircleMessage } from '@/types';
 import { getFirestoreClient } from '@/config/firebase';
+import { copy, type Locale } from '@/i18n/copy';
 
 const MESSAGES_COLLECTION = 'messages';
 const MS_IN_DAY = 1000 * 60 * 60 * 24;
 
-const getDbOrThrow = (): Firestore => {
+const getDbOrThrow = (locale: Locale = 'ru'): Firestore => {
   const db = getFirestoreClient();
   if (!db) {
-    throw new Error(
-      'Firebase отключён. Отправка и получение сообщений недоступны в демо-режиме. Заполни .env.local, чтобы включить Firestore.'
-    );
+    throw new Error(copy[locale]?.error_firebase_disabled_messages ?? copy.ru.error_firebase_disabled_messages);
   }
   return db;
 };
@@ -98,13 +97,16 @@ export const listenToCircleMessages = (
   );
 };
 
-export const sendMessage = async (message: {
-  circleId: string;
-  authorDeviceId: string;
-  text: string;
-  authorAlias?: string;
-}) => {
-  const db = getDbOrThrow();
+export const sendMessage = async (
+  message: {
+    circleId: string;
+    authorDeviceId: string;
+    text: string;
+    authorAlias?: string;
+  },
+  locale: Locale = 'ru'
+) => {
+  const db = getDbOrThrow(locale);
   await addDoc(collection(db, MESSAGES_COLLECTION), {
     ...message,
     createdAt: serverTimestamp()

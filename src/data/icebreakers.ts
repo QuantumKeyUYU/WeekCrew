@@ -1,17 +1,23 @@
 import { format } from 'date-fns';
+import type { CopyKey } from '@/i18n/copy';
 
-export const ICEBREAKERS = [
-  { id: 'music-1', text: 'Какой трек у тебя сегодня саундтрек дня?' },
-  { id: 'life-1', text: 'Что маленькое порадовало тебя за последние 24 часа?' },
-  { id: 'food-1', text: 'Что бы ты сейчас с удовольствием поел или приготовил?' },
-  { id: 'dream-1', text: 'Какая маленькая мечта ждёт своей очереди?' },
-  { id: 'learn-1', text: 'Чему новому ты научился(ась) на этой неделе?' },
-  { id: 'calm-1', text: 'Что помогает тебе расслабляться вечером?' },
-  { id: 'story-1', text: 'Расскажи историю, которая всё ещё вызывает улыбку.' },
-  { id: 'gratitude-1', text: 'За что ты благодарен(на) сегодняшнему дню?' },
-  { id: 'mood-1', text: 'В каком настроении ты сегодня и почему?' },
-  { id: 'idea-1', text: 'Какая идея не выходит у тебя из головы прямо сейчас?' }
-];
+export interface IcebreakerDefinition {
+  id: string;
+  textKey: CopyKey;
+}
+
+export const ICEBREAKERS: IcebreakerDefinition[] = [
+  { id: 'music-1', textKey: 'icebreaker_question_music' },
+  { id: 'life-1', textKey: 'icebreaker_question_life' },
+  { id: 'food-1', textKey: 'icebreaker_question_food' },
+  { id: 'dream-1', textKey: 'icebreaker_question_dream' },
+  { id: 'learn-1', textKey: 'icebreaker_question_learn' },
+  { id: 'calm-1', textKey: 'icebreaker_question_calm' },
+  { id: 'story-1', textKey: 'icebreaker_question_story' },
+  { id: 'gratitude-1', textKey: 'icebreaker_question_gratitude' },
+  { id: 'mood-1', textKey: 'icebreaker_question_mood' },
+  { id: 'idea-1', textKey: 'icebreaker_question_idea' }
+] as const;
 
 const hashString = (value: string) => {
   let hash = 0;
