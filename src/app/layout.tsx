@@ -11,7 +11,7 @@ const inter = Inter({ subsets: ['latin', 'cyrillic'], variable: '--font-inter' }
 export const metadata: Metadata = {
   title: 'WeekCrew — кружки недели',
   description:
-    'WeekCrew собирает уютные кружки недели: выбери интерес и пообщайся с небольшой компанией единомышленников за 7 дней.',
+    'WeekCrew — новый кружок каждую неделю. Выбирай интерес и попадай в уютную команду на семь дней без шума и бесконечных лент.',
   manifest: '/manifest.json',
   appleWebApp: {
     title: 'WeekCrew',
@@ -30,12 +30,12 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ru" className={`${inter.variable} font-sans`}>
-      <body className="min-h-screen bg-slate-950 text-slate-50">
+      <body className="min-h-screen bg-[#f9f7ff] text-slate-900 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-50">
         <ClientProviders>
           <div className="flex min-h-screen flex-col">
             <Header />
-            <main className="flex-1 bg-gradient-to-b from-slate-950 via-slate-900/70 to-slate-950">
-              <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-10">
+            <main className="flex-1 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.98),_rgba(235,234,255,0.7))] transition-colors duration-300 dark:bg-gradient-to-b dark:from-slate-950 dark:via-slate-900/70 dark:to-slate-950">
+              <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 sm:py-12">
                 {children}
               </div>
             </main>

@@ -17,7 +17,7 @@ export const IcebreakerCard = ({ circle, onAnswerClick }: Props) => {
   const question = t(icebreaker.textKey);
   return (
     <motion.div
-      className="rounded-3xl border border-brand/30 bg-brand/10 p-5 text-left"
+      className="rounded-3xl border border-brand/30 bg-brand/10 p-4 text-left shadow-[0_12px_32px_rgba(127,90,240,0.2)] sm:p-5"
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
@@ -29,7 +29,7 @@ export const IcebreakerCard = ({ circle, onAnswerClick }: Props) => {
         <button
           type="button"
           onClick={() => onAnswerClick(t('icebreaker_prefill_template', { question }))}
-          className="mt-3 inline-flex items-center justify-center rounded-full border border-brand/40 px-4 py-2 text-xs font-semibold text-brand-foreground transition hover:-translate-y-0.5"
+          className="mt-3 inline-flex items-center justify-center rounded-full border border-brand/40 bg-white/90 px-4 py-2 text-xs font-semibold text-brand-foreground shadow-[0_10px_24px_rgba(127,90,240,0.2)] transition hover:-translate-y-0.5"
         >
           {t('icebreaker_button')}
         </button>

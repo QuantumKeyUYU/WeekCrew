@@ -7,11 +7,11 @@
 }
 
 body {
-  @apply bg-slate-950 text-slate-50 antialiased selection:bg-brand selection:text-brand-foreground;
+  @apply bg-[#f9f7ff] text-slate-900 antialiased selection:bg-brand selection:text-brand-foreground;
 }
 
 body[data-theme='light'] {
-  @apply bg-slate-50 text-slate-900;
+  @apply bg-[#f9f7ff] text-slate-900;
 }
 
 body[data-theme='dark'] {
