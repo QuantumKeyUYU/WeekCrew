@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useWeekcrewStorage } from '@/lib/weekcrewStorage';
-import { isDemoMode } from '@/config/mode';
 import { getOrCreateDeviceId, DEVICE_ID_KEY } from '@/lib/device';
 
 const SAFETY_KEY = 'weekcrew:safety-accepted-v2';
+
+// Режим работы берём из публичной env-переменной, по умолчанию — demo
+const PUBLIC_MODE = process.env.NEXT_PUBLIC_WEEKCREW_MODE ?? 'demo';
+const isDemoMode = PUBLIC_MODE !== 'live';
 
 export default function SettingsPage() {
   const storage = useWeekcrewStorage();
@@ -14,7 +17,6 @@ export default function SettingsPage() {
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    // deviceId есть только на клиенте
     const id = getOrCreateDeviceId();
     setDeviceId(id);
   }, []);
@@ -26,7 +28,6 @@ export default function SettingsPage() {
     try {
       await storage.clearAllLocalData();
 
-      // Сбрасываем и флаг про правила безопасности
       if (typeof window !== 'undefined') {
         try {
           window.localStorage.removeItem(SAFETY_KEY);
