@@ -1,120 +1,266 @@
-import { INTERESTS_MAP } from '@/config/interests';
-import { getOrCreateDeviceId, resetDeviceId } from '@/lib/device';
-import { useAppStore } from '@/store/useAppStore';
-import { useDemoCircleStore } from '@/store/demoCircle';
 import type {
-  CircleMessage,
   CircleMeta,
-  InterestId,
+  CircleMessage,
   WeekcrewStorage,
-  WeekcrewStorageSnapshot
+  WeekcrewStorageSnapshot,
+  InterestId,
 } from '@/lib/weekcrewStorage';
 
-const DEFAULT_MEMBERS = 6;
-const DAYS_FALLBACK = 7;
+const DEMO_STATE_KEY = 'weekcrew:demo-snapshot-v1';
+const DEMO_CIRCLE_ID = 'demo-circle';
+const isBrowser = typeof window !== 'undefined';
 
-const mapStateToCircle = (): CircleMeta | null => {
-  const state = useDemoCircleStore.getState();
-  const { currentInterestKey, joinedAt } = state;
-  if (!currentInterestKey) {
-    return null;
-  }
-  const interest = INTERESTS_MAP[currentInterestKey];
-  if (!interest) {
-    return null;
-  }
-  return {
-    id: currentInterestKey,
-    interestId: currentInterestKey,
-    title: interest.title,
-    description: interest.description,
-    joinedAt,
-    membersCount: DEFAULT_MEMBERS,
-    daysLeft: joinedAt ? calculateDaysLeft(joinedAt) : DAYS_FALLBACK
-  };
-};
+/* ---------- helper'ы ---------- */
 
-const calculateDaysLeft = (joinedAt: string): number => {
-  const joinedDate = new Date(joinedAt).getTime();
-  const weekLater = joinedDate + 7 * 24 * 60 * 60 * 1000;
-  const diff = weekLater - Date.now();
-  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-  return Math.max(days, 0);
-};
-
-const mapStateToMessages = (): CircleMessage[] => {
-  const { currentInterestKey, messages } = useDemoCircleStore.getState();
-  if (!currentInterestKey) {
-    return [];
-  }
-  return messages.map((message) => ({
-    id: message.id,
-    circleId: currentInterestKey,
-    role: message.from === 'me' ? 'me' : 'member',
-    text: message.text,
-    createdAt: message.time
-  }));
-};
-
-const createSnapshot = (): WeekcrewStorageSnapshot => ({
-  currentCircle: mapStateToCircle(),
-  messages: mapStateToMessages()
+const createEmptySnapshot = (): WeekcrewStorageSnapshot => ({
+  currentCircle: null,
+  messages: [],
 });
 
+const createDemoCircle = (interestId: InterestId): CircleMeta => ({
+  id: DEMO_CIRCLE_ID,
+  interestId,
+  title: 'Демо-круг поддержки',
+  description: 'Это демо-комната WeekCrew. Здесь можно безопасно потыкать интерфейс.',
+  joinedAt: new Date().toISOString(),
+  membersCount: 5,
+  daysLeft: 3,
+});
+
+const createInitialMessages = (): CircleMessage[] => [
+  {
+    id: 'm1',
+    circleId: DEMO_CIRCLE_ID,
+    role: 'member',
+    text: 'Иногда бывает тяжело, но чужие слова поддержки правда помогают.',
+    createdAt: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
+  },
+  {
+    id: 'm2',
+    circleId: DEMO_CIRCLE_ID,
+    role: 'member',
+    text: 'В этом кружке можно просто побыть собой. Никто не обязан быть «сильным».',
+    createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+  },
+  {
+    id: 'm3',
+    circleId: DEMO_CIRCLE_ID,
+    role: 'host',
+    text: 'Добро пожаловать в демо WeekCrew ✨ Напиши любое сообщение, чтобы увидеть, как всё работает.',
+    createdAt: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
+  },
+];
+
+type SnapshotUpdater = (prev: WeekcrewStorageSnapshot) => WeekcrewStorageSnapshot;
+
+/* ---------- bot-сообщения ---------- */
+
+const BOT_REPLIES: string[] = [
+  'Звучит очень по-человечески. Спасибо, что поделился 💜',
+  'Ты вообще не обязан чувствовать себя «нормально» 24/7. Мы тут как раз для этого.',
+  'Иногда лучший прогресс — это просто дожить до вечера и дать себе отдохнуть.',
+  'Классно, что ты это сформулировал словами. Это уже маленький шаг вперёд.',
+  'Всем нам иногда нужен кто-то, кто скажет: «с тобой всё в порядке». Считай, я сказал 😊',
+  'Можно просто написать «я устал(а)», и этого достаточно. Не обязательно быть продуктивным.',
+  'То, что ты сейчас здесь и читаешь это — уже забота о себе.',
+];
+
+const pickRandomReply = (): string => {
+  if (!BOT_REPLIES.length) return 'Спасибо, что поделился. Я рядом 👀';
+  const index = Math.floor(Math.random() * BOT_REPLIES.length);
+  return BOT_REPLIES[index];
+};
+
+/* ---------- работа с localStorage ---------- */
+
+const persistSnapshot = (snapshot: WeekcrewStorageSnapshot) => {
+  if (!isBrowser) return;
+
+  try {
+    window.localStorage.setItem(DEMO_STATE_KEY, JSON.stringify(snapshot));
+  } catch (error) {
+    console.warn('[demo] Failed to persist snapshot', error);
+  }
+};
+
+const restoreSnapshot = (): WeekcrewStorageSnapshot | null => {
+  if (!isBrowser) return null;
+
+  try {
+    const raw = window.localStorage.getItem(DEMO_STATE_KEY);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as WeekcrewStorageSnapshot;
+
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      'currentCircle' in parsed &&
+      'messages' in parsed &&
+      Array.isArray(parsed.messages)
+    ) {
+      return parsed;
+    }
+  } catch (error) {
+    console.warn('[demo] Failed to restore snapshot', error);
+  }
+
+  return null;
+};
+
+const clearPersistedSnapshot = () => {
+  if (!isBrowser) return;
+  try {
+    window.localStorage.removeItem(DEMO_STATE_KEY);
+  } catch (error) {
+    console.warn('[demo] Failed to clear persisted snapshot', error);
+  }
+};
+
+/* ---------- сам стор ---------- */
+
 export const createDemoWeekcrewStorage = (): WeekcrewStorage => {
-  const joinDemoCircleFromInterest = async (interestId: InterestId): Promise<CircleMeta> => {
-    const interestKey = interestId as keyof typeof INTERESTS_MAP;
-    const interest = INTERESTS_MAP[interestKey];
-    if (!interest) {
-      throw new Error(`Unknown interest: ${interestId}`);
+  const listeners = new Set<() => void>();
+  let snapshot: WeekcrewStorageSnapshot = createEmptySnapshot();
+
+  // поднять сохранённое состояние, если есть
+  const restored = restoreSnapshot();
+  if (restored) {
+    snapshot = restored;
+  }
+
+  const notify = () => {
+    listeners.forEach((l) => l());
+  };
+
+  const updateSnapshot = (updater: SnapshotUpdater) => {
+    const prev = snapshot;
+    const next = updater(prev);
+
+    if (next === prev) return;
+
+    const changed =
+      prev.currentCircle !== next.currentCircle ||
+      prev.messages !== next.messages;
+
+    snapshot = next;
+
+    if (changed) {
+      persistSnapshot(snapshot);
+      notify();
     }
-    useDemoCircleStore.getState().joinInterest(interest.key);
-    const circle = mapStateToCircle();
-    if (!circle) {
-      throw new Error('Unable to create demo circle');
-    }
+  };
+
+  const scheduleBotReply = (lastUserText: string) => {
+    if (!isBrowser) return; // на сервере таймеры не создаём
+
+    // лёгкий «анти-спам» — если нет кружка, не отвечаем
+    if (!snapshot.currentCircle) return;
+
+    const delay = 1200 + Math.random() * 2000; // 1.2–3.2 сек
+
+    setTimeout(() => {
+      // ещё раз проверим, что кружок жив
+      if (!snapshot.currentCircle) return;
+
+      const now = new Date().toISOString();
+      const replyText = pickRandomReply();
+
+      const botMessage: CircleMessage = {
+        id: `bot-${now}-${Math.random().toString(36).slice(2)}`,
+        circleId: snapshot.currentCircle.id,
+        role: 'member',
+        text: replyText,
+        createdAt: now,
+      };
+
+      updateSnapshot((prev) => ({
+        ...prev,
+        messages: [...prev.messages, botMessage],
+      }));
+    }, delay);
+  };
+
+  const joinDemoCircleFromInterest = async (
+    interestId: InterestId,
+  ): Promise<CircleMeta> => {
+    const circle: CircleMeta = createDemoCircle(interestId);
+
+    const baseMessages =
+      snapshot.currentCircle && snapshot.currentCircle.id === circle.id
+        ? snapshot.messages
+        : createInitialMessages();
+
+    updateSnapshot(() => ({
+      currentCircle: circle,
+      messages: baseMessages,
+    }));
+
     return circle;
   };
 
   const leaveCircle = async (): Promise<void> => {
-    useDemoCircleStore.getState().leaveCircle();
+    updateSnapshot(() => createEmptySnapshot());
   };
 
-  const listMessages = async (circleId: string): Promise<CircleMessage[]> => {
-    const circle = mapStateToCircle();
-    if (!circle || circle.id !== circleId) {
-      return [];
-    }
-    return mapStateToMessages();
+  const listMessages = async (_circleId: string): Promise<CircleMessage[]> => {
+    return snapshot.messages;
   };
 
-  const sendMessage = async (circleId: string, text: string): Promise<void> => {
-    const circle = mapStateToCircle();
-    if (!circle || circle.id !== circleId) {
-      throw new Error('Cannot send message: circle not found');
+  const sendMessage = async (_circleId: string, text: string): Promise<void> => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+
+    if (!snapshot.currentCircle) {
+      return;
     }
-    useDemoCircleStore.getState().sendMessage(text);
+
+    const now = new Date().toISOString();
+
+    const userMessage: CircleMessage = {
+      id: `demo-${now}-${Math.random().toString(36).slice(2)}`,
+      circleId: snapshot.currentCircle.id,
+      role: 'me',
+      text: trimmed,
+      createdAt: now,
+    };
+
+    // сначала добавляем сообщение пользователя
+    updateSnapshot((prev) => ({
+      ...prev,
+      messages: [...prev.messages, userMessage],
+    }));
+
+    // потом планируем ответ «бота»
+    scheduleBotReply(trimmed);
   };
 
   const clearAllLocalData = async (): Promise<void> => {
-    resetDeviceId();
-    const appStore = useAppStore.getState();
-    const demoStore = useDemoCircleStore.getState();
-    appStore.reset();
-    demoStore.reset();
-    const newId = getOrCreateDeviceId();
-    appStore.setDevice({ deviceId: newId, createdAt: new Date().toISOString() });
+    clearPersistedSnapshot();
+    updateSnapshot(() => createEmptySnapshot());
   };
 
+  const subscribe = (listener: () => void): (() => void) => {
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+    };
+  };
+
+  const getSnapshot = () => snapshot;
+
+  const SERVER_SNAPSHOT: WeekcrewStorageSnapshot = createEmptySnapshot();
+  const getServerSnapshot = () => SERVER_SNAPSHOT;
+
   return {
-    getCurrentCircle: () => mapStateToCircle(),
+    getCurrentCircle: () => snapshot.currentCircle,
     joinDemoCircleFromInterest,
     leaveCircle,
     listMessages,
     sendMessage,
     clearAllLocalData,
-    subscribe: (listener) => useDemoCircleStore.subscribe(() => listener()),
-    getSnapshot: () => createSnapshot(),
-    getServerSnapshot: () => createSnapshot()
+    subscribe,
+    getSnapshot,
+    getServerSnapshot,
   };
 };

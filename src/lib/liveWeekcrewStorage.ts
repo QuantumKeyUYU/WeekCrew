@@ -5,7 +5,7 @@ import type {
   CircleMeta,
   InterestId,
   WeekcrewStorage,
-  WeekcrewStorageSnapshot
+  WeekcrewStorageSnapshot,
 } from '@/lib/weekcrewStorage';
 
 const MEMBERS_FALLBACK = 6;
@@ -13,7 +13,10 @@ const DAYS_FALLBACK = 7;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const LIVE_STATE_KEY = 'weekcrew:live-circle-state-v1';
 
-const createEmptySnapshot = (): WeekcrewStorageSnapshot => ({ currentCircle: null, messages: [] });
+const createEmptySnapshot = (): WeekcrewStorageSnapshot => ({
+  currentCircle: null,
+  messages: [],
+});
 
 const isBrowser = typeof window !== 'undefined';
 
@@ -30,79 +33,57 @@ type ApiCircle = {
 type ApiMessage = {
   id: string;
   circleId: string;
-  body: string;
-  authorDeviceId: string | null;
+  role: 'host' | 'member' | 'me';
+  text: string;
   createdAt: string;
 };
 
-type PersistedState = {
-  currentCircle: CircleMeta;
-};
+type CircleResponse = { circle: ApiCircle };
+type MessagesResponse = { messages: ApiMessage[] };
+type MessageCreateResponse = { message: ApiMessage };
 
-type ErrorResponse = {
-  ok: false;
-  error: string;
-  message?: string;
-};
+type SnapshotUpdater = (prev: WeekcrewStorageSnapshot) => WeekcrewStorageSnapshot;
 
-type FetchRequestInit = Parameters<typeof fetch>[1];
-
-type CircleResponse = {
-  ok: true;
-  circle: ApiCircle;
-};
-
-type MessageListResponse = {
-  ok: true;
-  messages: ApiMessage[];
-};
-
-type MessageCreateResponse = {
-  ok: true;
-  message: ApiMessage;
-};
-
-// eslint-disable-next-line no-unused-vars
-type SnapshotUpdater = (state: WeekcrewStorageSnapshot) => WeekcrewStorageSnapshot;
-
-const calculateDaysLeft = (joinedAt: string | null, expiresAt?: string | null): number => {
-  const joined = joinedAt ? new Date(joinedAt).getTime() : Date.now();
-  const deadline = expiresAt ? new Date(expiresAt).getTime() : joined + DAYS_FALLBACK * DAY_MS;
-  const diff = deadline - Date.now();
-  if (!Number.isFinite(diff)) {
-    return DAYS_FALLBACK;
+const requestJson = async <T>(input: RequestInfo, init?: RequestInit): Promise<T> => {
+  const res = await fetch(input, init);
+  if (!res.ok) {
+    throw new Error(`Request failed with status ${res.status}`);
   }
-  return Math.max(0, Math.ceil(diff / DAY_MS));
+  return res.json() as Promise<T>;
 };
 
-const mapCircleMeta = (circle: ApiCircle, joinedAt: string | null): CircleMeta => ({
-  id: circle.id,
-  interestId: circle.interestId,
-  title: circle.title,
-  description: circle.description ?? '',
-  joinedAt,
-  membersCount: circle.memberCount ?? MEMBERS_FALLBACK,
-  daysLeft: calculateDaysLeft(joinedAt, circle.expiresAt ?? null)
-});
+// 🔧 ВАЖНО: теперь ВСЕГДА возвращает CircleMeta, без null
+const mapCircleMeta = (circle: ApiCircle, joinedAt: string | null): CircleMeta => {
+  let daysLeft = DAYS_FALLBACK;
 
-const mapMessage = (message: ApiMessage, deviceId: string): CircleMessage => ({
-  id: message.id,
-  circleId: message.circleId,
-  role: message.authorDeviceId && message.authorDeviceId === deviceId ? 'me' : 'member',
-  text: message.body,
-  createdAt: message.createdAt
-});
+  if (circle.expiresAt) {
+    const now = Date.now();
+    const expires = new Date(circle.expiresAt).getTime();
+    const diff = Math.max(expires - now, 0);
+    daysLeft = Math.max(1, Math.round(diff / DAY_MS));
+  }
 
-const readPersistedCircle = (): CircleMeta | null => {
+  return {
+    id: circle.id,
+    interestId: circle.interestId,
+    title: circle.title,
+    description: circle.description ?? 'Еженедельный круг WeekCrew',
+    joinedAt,
+    membersCount: circle.memberCount ?? MEMBERS_FALLBACK,
+    daysLeft,
+  };
+};
+
+const restoreCircleFromStorage = (): CircleMeta | null => {
   if (!isBrowser) {
     return null;
   }
-  const raw = window.localStorage.getItem(LIVE_STATE_KEY);
-  if (!raw) {
-    return null;
-  }
   try {
-    const parsed = JSON.parse(raw) as PersistedState;
+    const raw = window.localStorage.getItem(LIVE_STATE_KEY);
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw) as WeekcrewStorageSnapshot;
     if (parsed?.currentCircle?.id) {
       return parsed.currentCircle;
     }
@@ -120,34 +101,21 @@ const persistCircle = (circle: CircleMeta | null) => {
     window.localStorage.removeItem(LIVE_STATE_KEY);
     return;
   }
-  const payload: PersistedState = { currentCircle: circle };
-  window.localStorage.setItem(LIVE_STATE_KEY, JSON.stringify(payload));
-};
-
-const requestJson = async <T>(input: string, init?: FetchRequestInit): Promise<T> => {
-  const response = await fetch(input, init);
-  const payload = (await response.json().catch(() => null)) as T | ErrorResponse | null;
-
-  if (!response.ok) {
-    const message = (payload as ErrorResponse | null)?.message ?? `Request failed with status ${response.status}`;
-    throw new Error(message);
+  const snapshot: WeekcrewStorageSnapshot = {
+    currentCircle: circle,
+    messages: [],
+  };
+  try {
+    window.localStorage.setItem(LIVE_STATE_KEY, JSON.stringify(snapshot));
+  } catch (error) {
+    console.warn('Failed to persist live circle snapshot', error);
   }
-
-  if (payload && typeof (payload as any).ok === 'boolean' && !(payload as any).ok) {
-    throw new Error((payload as ErrorResponse).message ?? 'Request returned an error');
-  }
-
-  if (!payload) {
-    throw new Error('EMPTY_RESPONSE');
-  }
-
-  return payload as T;
 };
 
 export const createLiveWeekcrewStorage = (): WeekcrewStorage => {
   const listeners = new Set<() => void>();
   let snapshot: WeekcrewStorageSnapshot = createEmptySnapshot();
-  let deviceId = isBrowser ? getOrCreateDeviceId() : 'server-device';
+  let deviceId: string = isBrowser ? getOrCreateDeviceId() : 'server-device';
 
   const notify = () => {
     listeners.forEach((listener) => listener());
@@ -156,51 +124,68 @@ export const createLiveWeekcrewStorage = (): WeekcrewStorage => {
   const updateSnapshot = (updater: SnapshotUpdater) => {
     const prev = snapshot;
     const next = updater(prev);
-    if (next === prev) {
-      return;
-    }
+
+    if (next === prev) return;
+
     const changed =
       prev.currentCircle !== next.currentCircle ||
       prev.messages !== next.messages;
+
     snapshot = next;
+
     if (changed) {
       notify();
     }
   };
 
+  const getSnapshot = () => snapshot;
+
+  const getServerSnapshot = () => createEmptySnapshot();
+
   const refreshMessages = async (circleId: string): Promise<CircleMessage[]> => {
-    const search = new URLSearchParams({ circleId });
-    const data = await requestJson<MessageListResponse>(`/api/message?${search.toString()}`, {
-      cache: 'no-store'
-    });
-    const nextMessages = data.messages
-      .map((message) => mapMessage(message, deviceId))
-      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    try {
+      const search = new URLSearchParams({ circleId });
+      const data = await requestJson<MessagesResponse>(
+        `/api/messages?${search.toString()}`,
+        { cache: 'no-store' },
+      );
 
-    updateSnapshot((prev) => {
-      if (!prev.currentCircle || prev.currentCircle.id !== circleId) {
-        return prev;
-      }
-      return { ...prev, messages: nextMessages };
-    });
+      const mapped: CircleMessage[] = data.messages.map((msg) => ({
+        id: msg.id,
+        circleId: msg.circleId,
+        role: msg.role,
+        text: msg.text,
+        createdAt: msg.createdAt,
+      }));
 
-    return nextMessages;
+      updateSnapshot((prev) => ({
+        ...prev,
+        messages: mapped,
+      }));
+
+      return mapped;
+    } catch (error) {
+      console.warn('Failed to fetch live messages', error);
+      return snapshot.messages;
+    }
   };
 
   const fetchCircleByInterest = async (interestId: InterestId): Promise<ApiCircle> => {
     const search = new URLSearchParams({ interestId: String(interestId) });
-    const data = await requestJson<CircleResponse>(`/api/circle?${search.toString()}`, {
-      cache: 'no-store'
-    });
+    const data = await requestJson<CircleResponse>(
+      `/api/circle?${search.toString()}`,
+      { cache: 'no-store' },
+    );
     return data.circle;
   };
 
   const fetchCircleById = async (circleId: string): Promise<ApiCircle | null> => {
     const search = new URLSearchParams({ circleId });
     try {
-      const data = await requestJson<CircleResponse>(`/api/circle?${search.toString()}`, {
-        cache: 'no-store'
-      });
+      const data = await requestJson<CircleResponse>(
+        `/api/circle?${search.toString()}`,
+        { cache: 'no-store' },
+      );
       return data.circle;
     } catch (error) {
       console.warn('Failed to fetch circle by id', error);
@@ -208,17 +193,21 @@ export const createLiveWeekcrewStorage = (): WeekcrewStorage => {
     }
   };
 
-  const joinDemoCircleFromInterest = async (interestId: InterestId): Promise<CircleMeta> => {
-    const circle = await fetchCircleByInterest(interestId);
+  const joinDemoCircleFromInterest = async (
+    interestId: InterestId,
+  ): Promise<CircleMeta> => {
+    const circle = await fetchCircleByInterest(interestId); // ApiCircle, не null
     const joinedAt = new Date().toISOString();
-    const meta = mapCircleMeta(circle, joinedAt);
+    const meta = mapCircleMeta(circle, joinedAt);           // CircleMeta, не null
 
     persistCircle(meta);
     updateSnapshot(() => ({ currentCircle: meta, messages: [] }));
+
     await refreshMessages(circle.id).catch((error) => {
       console.warn('Failed to fetch live messages after join', error);
     });
-    return meta;
+
+    return meta; // ✅ теперь тип строго CircleMeta, TS не будет ругаться
   };
 
   const leaveCircle = async (): Promise<void> => {
@@ -232,20 +221,34 @@ export const createLiveWeekcrewStorage = (): WeekcrewStorage => {
 
   const sendMessage = async (circleId: string, text: string): Promise<void> => {
     const trimmed = text.trim();
-    if (!trimmed) {
-      return;
-    }
+    if (!trimmed) return;
+
     const payload = await requestJson<MessageCreateResponse>(`/api/message`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ circleId, body: trimmed, authorDeviceId: deviceId ?? null })
+      body: JSON.stringify({
+        circleId,
+        deviceId,
+        text: trimmed,
+      }),
     });
-    const message = mapMessage(payload.message, deviceId);
+
+    const message: CircleMessage = {
+      id: payload.message.id,
+      circleId: payload.message.circleId,
+      role: payload.message.role,
+      text: payload.message.text,
+      createdAt: payload.message.createdAt,
+    };
+
     updateSnapshot((prev) => {
       if (!prev.currentCircle || prev.currentCircle.id !== circleId) {
         return prev;
       }
-      return { ...prev, messages: [...prev.messages, message] };
+      return {
+        ...prev,
+        messages: [...prev.messages, message],
+      };
     });
   };
 
@@ -253,23 +256,24 @@ export const createLiveWeekcrewStorage = (): WeekcrewStorage => {
     await leaveCircle();
     resetDeviceId();
     deviceId = isBrowser ? getOrCreateDeviceId() : 'server-device';
+
     const appStore = useAppStore.getState();
     appStore.reset();
     appStore.setDevice({ deviceId, createdAt: new Date().toISOString() });
   };
 
-  const getSnapshot = () => snapshot;
-  const getServerSnapshot = () => createEmptySnapshot();
-
-  const subscribe = (listener: () => void) => {
+  const subscribe = (listener: () => void): (() => void) => {
     listeners.add(listener);
-    return () => listeners.delete(listener);
+    return () => {
+      listeners.delete(listener);
+    };
   };
 
   if (isBrowser) {
-    const persisted = readPersistedCircle();
+    const persisted = restoreCircleFromStorage();
     if (persisted) {
       snapshot = { currentCircle: persisted, messages: [] };
+
       const hydrate = async () => {
         const circle = await fetchCircleById(persisted.id);
         if (circle) {
@@ -279,7 +283,10 @@ export const createLiveWeekcrewStorage = (): WeekcrewStorage => {
         }
         await refreshMessages(persisted.id);
       };
-      hydrate().catch((error) => console.warn('Failed to hydrate live storage', error));
+
+      hydrate().catch((error) =>
+        console.warn('Failed to hydrate live storage', error),
+      );
     }
   }
 
@@ -292,6 +299,6 @@ export const createLiveWeekcrewStorage = (): WeekcrewStorage => {
     clearAllLocalData,
     subscribe,
     getSnapshot,
-    getServerSnapshot
+    getServerSnapshot,
   };
 };
