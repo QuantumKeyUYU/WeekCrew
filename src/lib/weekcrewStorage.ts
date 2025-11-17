@@ -33,6 +33,9 @@ export interface WeekcrewStorageSnapshot {
   messages: CircleMessage[];
 }
 
+// eslint-disable-next-line no-unused-vars
+type SnapshotSelector<T> = (snapshot: WeekcrewStorageSnapshot) => T;
+
 /* eslint-disable no-unused-vars */
 export interface WeekcrewStorage {
   getCurrentCircle(): CircleMeta | null;
@@ -65,9 +68,7 @@ export const getWeekcrewStorage = (): WeekcrewStorage => {
 
 export const useWeekcrewStorage = (): WeekcrewStorage => getWeekcrewStorage();
 
-export const useWeekcrewSnapshot = <T,>(
-  selector: (snapshot: WeekcrewStorageSnapshot) => T
-): T => {
+export const useWeekcrewSnapshot = <T,>(selector: SnapshotSelector<T>): T => {
   const storage = getWeekcrewStorage();
   return useSyncExternalStore(
     storage.subscribe,

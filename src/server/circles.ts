@@ -81,6 +81,23 @@ export async function getOrCreateCircleByInterest(
   return mapCircle(row);
 }
 
+export async function getCircleById(circleId: string): Promise<Circle | null> {
+  ensureDbConfigured();
+
+  const rows = await db.query<CircleRow>(
+    `
+    select id, interest_id, title, description, created_at, expires_at, member_count
+    from circles
+    where id = $1
+    limit 1
+    `,
+    [Number(circleId)]
+  );
+
+  const row = rows[0];
+  return row ? mapCircle(row) : null;
+}
+
 // Список сообщений в кружке
 export async function listMessages(circleId: string): Promise<CircleMessage[]> {
   ensureDbConfigured();

@@ -1,5 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
-import { appendMessage } from "@/server/circles";
+import { appendMessage, listMessages } from "@/server/circles";
+
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const circleId = searchParams.get("circleId");
+
+  if (!circleId) {
+    return NextResponse.json(
+      { ok: false, error: "MISSING_CIRCLE_ID" },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const messages = await listMessages(circleId);
+    return NextResponse.json({ ok: true, messages }, { status: 200 });
+  } catch (err: any) {
+    const message = String(err?.message || "UNKNOWN_ERROR");
+    const status = message.includes("LIVE_BACKEND_NOT_CONFIGURED") ? 503 : 500;
+
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "BACKEND_UNAVAILABLE",
+        message,
+      },
+      { status }
+    );
+  }
+}
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
