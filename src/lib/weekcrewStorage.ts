@@ -65,8 +65,9 @@ export const getWeekcrewStorage = (): WeekcrewStorage => {
 
 export const useWeekcrewStorage = (): WeekcrewStorage => getWeekcrewStorage();
 
-// eslint-disable-next-line no-unused-vars
-export const useWeekcrewSnapshot = <T,>(selector: (snapshot: WeekcrewStorageSnapshot) => T): T => {
+export const useWeekcrewSnapshot = <T,>(
+  selector: (snapshot: WeekcrewStorageSnapshot) => T
+): T => {
   const storage = getWeekcrewStorage();
   return useSyncExternalStore(
     storage.subscribe,

@@ -1,20 +1,16 @@
-import type { WeekcrewStorage } from '@/lib/weekcrewStorage';
+export const useWeekcrewSnapshot = <T,>(
+  selector: (snapshot: WeekcrewStorageSnapshot) => T
+): T => {
+  const storage = getWeekcrewStorage();
 
-const notImplemented = (): never => {
-  throw new Error('Live storage is not implemented yet');
+  // 1) useSyncExternalStore подписывается на store
+  // 2) getSnapshot / getServerSnapshot ничего не создают, просто отдают снапшот
+  const snapshot = useSyncExternalStore(
+    storage.subscribe,
+    storage.getSnapshot,
+    storage.getServerSnapshot
+  );
+
+  // 3) А уже тут, после того как React получил стабильный снапшот, применяем селектор
+  return selector(snapshot);
 };
-
-export const createLiveWeekcrewStorage = (): WeekcrewStorage => ({
-  getCurrentCircle: () => null,
-  joinDemoCircleFromInterest: async () => notImplemented(),
-  leaveCircle: async () => notImplemented(),
-  listMessages: async () => notImplemented(),
-  sendMessage: async () => notImplemented(),
-  clearAllLocalData: async () => notImplemented(),
-  subscribe: () => {
-    notImplemented();
-    return () => {};
-  },
-  getSnapshot: () => ({ currentCircle: null, messages: [] }),
-  getServerSnapshot: () => ({ currentCircle: null, messages: [] })
-});
