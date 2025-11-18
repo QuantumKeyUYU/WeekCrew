@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
 import { useWeekcrewSnapshot, useWeekcrewStorage } from '@/lib/weekcrewStorage';
 import { CircleEmptyState } from '@/components/circle/empty-state';
+import { motionTimingClass, primaryCtaClass } from '@/styles/tokens';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const panelClass =
-  'rounded-[2.5rem] border border-slate-200/70 bg-white/95 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-slate-900/70 sm:p-7';
+  'rounded-[2.5rem] border border-white/10 bg-slate-950/70 p-5 text-slate-50 shadow-[0_28px_80px_rgba(3,5,20,0.85)] sm:p-7';
 
 const DAYS_FALLBACK = 7;
 const DEFAULT_MEMBERS = 6;
@@ -16,6 +18,7 @@ const SAFETY_KEY = 'weekcrew:safety-accepted-v2';
 export default function CirclePage() {
   const router = useRouter();
   const storage = useWeekcrewStorage();
+  const t = useTranslation();
 
   const { currentCircle, messages } = useWeekcrewSnapshot((snapshot) => ({
     currentCircle: snapshot.currentCircle,
@@ -111,40 +114,50 @@ export default function CirclePage() {
     <div className="space-y-6 sm:space-y-8">
       {/* Шапка кружка */}
       <section className={panelClass}>
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">Твой круг недели</p>
-            <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">{currentCircle.title}</h1>
-            <p className="text-sm text-slate-600 dark:text-slate-300">{currentCircle.description}</p>
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand/80">{t('circle_header_topic_label')}</p>
+            <h1 className="text-2xl font-semibold text-white">{currentCircle.title}</h1>
+            <p className="text-sm text-white/70">{currentCircle.description}</p>
           </div>
-          <div className="flex flex-col items-start gap-3 text-sm text-slate-600 dark:text-slate-200 lg:items-end">
-            <div className="flex flex-wrap gap-2">
-              <span className="inline-flex items-center rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-xs font-semibold text-brand">
+          <div className="flex flex-col gap-3 text-xs text-white/70">
+            <div className="flex flex-wrap gap-2 text-sm">
+              <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 font-medium text-white">
                 {remainingDays} дн. до финала
               </span>
-              <span className="inline-flex items-center rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 dark:border-white/20 dark:text-white">
+              <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1 font-medium text-white/90">
                 {currentCircle.membersCount ?? DEFAULT_MEMBERS} участников
               </span>
             </div>
-            <div className="text-xs text-slate-500 dark:text-slate-300">
-              Круг обновится автоматически после недели, можно выбрать новое настроение.
-            </div>
-            <div className="flex flex-wrap gap-2">
+            <p>{t('circle_header_hint')}</p>
+            <div className="flex flex-wrap gap-2 text-sm text-white/80">
               <button
                 onClick={handleLeaveCircle}
-                className="inline-flex items-center justify-center rounded-full border border-slate-200 px-4 py-1.5 text-xs font-medium text-slate-500 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-slate-400 hover:text-slate-800 dark:border-white/20 dark:text-slate-200"
+                className={clsx(
+                  'inline-flex items-center justify-center rounded-full border border-white/20 px-4 py-1.5',
+                  motionTimingClass,
+                  'hover:-translate-y-0.5 hover:border-white/40',
+                )}
               >
                 Выйти из круга
               </button>
               <button
                 onClick={handleStartNewCircle}
-                className="inline-flex items-center justify-center rounded-full border border-brand/40 px-4 py-1.5 text-xs font-semibold text-brand transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-brand hover:text-brand"
+                className={clsx(
+                  'inline-flex items-center justify-center rounded-full border border-brand/50 px-4 py-1.5 text-brand-foreground',
+                  motionTimingClass,
+                  'hover:-translate-y-0.5 hover:border-brand hover:text-white',
+                )}
               >
                 Сменить настроение
               </button>
               <button
                 onClick={handleResetDemo}
-                className="inline-flex items-center justify-center rounded-full border border-slate-200 px-4 py-1.5 text-xs font-medium text-slate-500 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-slate-400 hover:text-slate-800 dark:border-white/20 dark:text-slate-200"
+                className={clsx(
+                  'inline-flex items-center justify-center rounded-full border border-white/15 px-4 py-1.5 text-white/70',
+                  motionTimingClass,
+                  'hover:-translate-y-0.5 hover:text-white',
+                )}
               >
                 Сбросить демо
               </button>
@@ -189,25 +202,13 @@ export default function CirclePage() {
 
       {/* Баннер про завершение недели */}
       {isLastDay && (
-        <section className="rounded-3xl border border-violet-300/70 bg-violet-900/40 p-4 text-sm text-violet-50 shadow-[0_18px_50px_rgba(76,29,149,0.7)] sm:p-5">
-          <h2 className="text-sm font-semibold sm:text-base">
-            Неделя в этом круге почти закончилась 💫
-          </h2>
-          <p className="mt-2 text-xs leading-relaxed text-violet-100/90 sm:text-sm">
-            Спасибо, что был(а) здесь. Даже если ты писал(а) мало — это всё равно часть
-            чьей-то спокойной недели. Можно поделиться в чате тем, что запомнилось, или
-            просто тихо завершить этот круг.
-          </p>
-          <p className="mt-2 text-xs leading-relaxed text-violet-100/80">
-            Когда будешь готов(а), можно подобрать следующий круг — с новым настроением
-            или тем же интересом.
-          </p>
-          <div className="mt-3">
-            <button
-              onClick={handleStartNewCircle}
-              className="inline-flex items-center justify-center rounded-full bg-brand px-4 py-1.5 text-xs font-semibold text-white shadow-[0_14px_36px_rgba(129,140,248,0.8)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_52px_rgba(129,140,248,0.95)]"
-            >
-              Подобрать новый круг
+        <section className="rounded-3xl border border-violet-400/40 bg-gradient-to-br from-violet-900/60 to-slate-900/60 p-5 text-sm text-white shadow-[0_22px_60px_rgba(59,7,100,0.65)]">
+          <h2 className="text-base font-semibold">{t('circle_last_week_title')}</h2>
+          <p className="mt-2 text-sm text-white/80">{t('circle_last_week_description')}</p>
+          <p className="mt-2 text-sm text-white/70">{t('circle_last_week_hint')}</p>
+          <div className="mt-4">
+            <button onClick={handleStartNewCircle} className={primaryCtaClass}>
+              {t('circle_last_week_cta')}
             </button>
           </div>
         </section>

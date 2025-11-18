@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import clsx from 'clsx';
 import type { InterestTag } from '@/types';
 import { INTERESTS } from '@/config/interests';
@@ -9,7 +10,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { useWeekcrewStorage } from '@/lib/weekcrewStorage';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Notice } from '@/components/shared/notice';
-import { primaryCtaClass } from '@/styles/tokens';
+import { motionTimingClass, primaryCtaClass } from '@/styles/tokens';
 
 export default function ExplorePage() {
   const router = useRouter();
@@ -49,13 +50,25 @@ export default function ExplorePage() {
         <p className="mt-2 text-xs text-slate-300">{t('explore_reminder')}</p>
       </section>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        {interestCards.map((card) => (
-          <button
+      <motion.div
+        className="grid gap-3 sm:grid-cols-2"
+        initial="hidden"
+        animate="visible"
+        variants={{ hidden: {}, visible: {} }}
+      >
+        {interestCards.map((card, index) => (
+          <motion.button
             key={card.key}
+            custom={index}
+            variants={{
+              hidden: { opacity: 0, translateY: 12 },
+              visible: { opacity: 1, translateY: 0, transition: { delay: index * 0.05 + 0.05, duration: 0.25, ease: 'easeOut' } },
+            }}
             onClick={() => handleSelect(card.key)}
             className={clsx(
-              'rounded-3xl border px-5 py-4 text-left transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900',
+              'rounded-3xl border px-5 py-4 text-left',
+              motionTimingClass,
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900',
               pendingKey === card.key
                 ? 'border-brand bg-brand/10 text-slate-900 shadow-[0_18px_45px_rgba(120,90,240,0.2)] dark:text-white'
                 : 'border-slate-200/70 bg-white/95 text-slate-700 shadow-[0_12px_30px_rgba(15,23,42,0.06)] hover:-translate-y-0.5 hover:border-brand/40 hover:bg-white dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-200',
@@ -65,17 +78,13 @@ export default function ExplorePage() {
           >
             <div className="text-base font-semibold text-brand-foreground">{card.label}</div>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{card.description}</p>
-          </button>
+          </motion.button>
         ))}
-      </div>
+      </motion.div>
 
       <div className="rounded-3xl border border-slate-200/80 bg-white/95 p-5 text-sm text-slate-600 shadow-[0_12px_34px_rgba(15,23,42,0.06)] dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-200" aria-live="polite">
         {!pendingKey && <p>{t('explore_status_idle')}</p>}
-        {pendingKey && (
-          <p>
-            {t('explore_status_loading')}
-          </p>
-        )}
+        {pendingKey && <p>{t('explore_status_loading')}</p>}
         <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('explore_status_hint')}</p>
       </div>
 

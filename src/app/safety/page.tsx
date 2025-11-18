@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { primaryCtaClass, secondaryCtaClass } from '@/styles/tokens';
 
 const SAFETY_KEY = 'weekcrew:safety-accepted-v2';
 
@@ -60,12 +61,12 @@ export default function SafetyPage() {
 
   return (
     <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-10">
-      <section className="w-full max-w-2xl space-y-5 rounded-[2.75rem] border border-white/10 bg-slate-950/80 p-6 text-sm text-slate-50 shadow-[0_35px_110px_rgba(3,5,20,0.95)] backdrop-blur-xl sm:p-9">
+      <section className="w-full max-w-3xl space-y-6 rounded-[2.75rem] border border-white/15 bg-slate-950/80 p-6 text-sm text-slate-50 shadow-[0_35px_110px_rgba(3,5,20,0.95)] backdrop-blur-xl sm:p-9">
         <div className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-brand/70">WeekCrew safety</p>
           <h1 className="text-xl font-semibold sm:text-2xl">Перед стартом — договариваемся о правилах</h1>
           <p className="text-xs leading-relaxed text-slate-200/90 sm:text-sm">
-            Неделя проходит в маленьком круге, поэтому нам важно общее чувство безопасности. Вот что помогает всем чувствовать себя спокойно.
+            Неделя проходит в маленьком круге. Чтобы всем было спокойно, держим в голове несколько простых ориентиров.
           </p>
         </div>
 
@@ -89,7 +90,7 @@ export default function SafetyPage() {
         </div>
 
         <div className="rounded-2xl border border-white/10 bg-brand/10 p-4 text-xs text-slate-100">
-          WeekCrew не заменяет врачей и службы помощи. Если есть риск для жизни или здоровья, обращайся в местные экстренные службы или к взрослым, которым доверяешь.
+          WeekCrew не заменяет врачей и службы помощи. Если есть риск для жизни или здоровья, обращайся в местные службы поддержки или к взрослым, которому доверяешь.
         </div>
 
         <p className="text-[11px] leading-relaxed text-slate-400">
@@ -97,18 +98,10 @@ export default function SafetyPage() {
         </p>
 
         <div className="flex flex-wrap gap-3 pt-2">
-          <button
-            onClick={handleAccept}
-            className="inline-flex flex-1 items-center justify-center rounded-full bg-brand px-5 py-2 text-xs font-semibold text-white shadow-[0_18px_50px_rgba(129,140,248,0.85)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_26px_60px_rgba(129,140,248,0.95)] sm:flex-none"
-          >
+          <button onClick={handleAccept} className={`${primaryCtaClass} flex-1 justify-center sm:flex-none`}>
             Понял(а), можно к интересам
           </button>
-          <button
-            onClick={handleBack}
-            className="inline-flex items-center justify-center rounded-full border border-white/30 px-4 py-2 text-xs font-medium text-slate-100 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-white/60"
-          >
-            Вернуться на главную
-          </button>
+          <button onClick={handleBack} className={secondaryCtaClass}>Вернуться на главную</button>
         </div>
       </section>
     </main>
