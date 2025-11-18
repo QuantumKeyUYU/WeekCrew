@@ -1,5 +1,6 @@
 import { getOrCreateDeviceId, resetDeviceId } from '@/lib/device';
 import { useAppStore } from '@/store/useAppStore';
+import { clearCircleSelection } from '@/lib/circleSelection';
 import type {
   CircleMessage,
   CircleMeta,
@@ -42,9 +43,10 @@ type CircleResponse = { circle: ApiCircle };
 type MessagesResponse = { messages: ApiMessage[] };
 type MessageCreateResponse = { message: ApiMessage };
 
-type SnapshotUpdater = (prev: WeekcrewStorageSnapshot) => WeekcrewStorageSnapshot;
-
-const requestJson = async <T>(input: RequestInfo, init?: RequestInit): Promise<T> => {
+const requestJson = async <T>(
+  input: Parameters<typeof fetch>[0],
+  init?: Parameters<typeof fetch>[1],
+): Promise<T> => {
   const res = await fetch(input, init);
   if (!res.ok) {
     throw new Error(`Request failed with status ${res.status}`);
@@ -121,7 +123,10 @@ export const createLiveWeekcrewStorage = (): WeekcrewStorage => {
     listeners.forEach((listener) => listener());
   };
 
-  const updateSnapshot = (updater: SnapshotUpdater) => {
+  const updateSnapshot = (
+    // eslint-disable-next-line no-unused-vars
+    updater: (current: WeekcrewStorageSnapshot) => WeekcrewStorageSnapshot,
+  ) => {
     const prev = snapshot;
     const next = updater(prev);
 
@@ -260,6 +265,7 @@ export const createLiveWeekcrewStorage = (): WeekcrewStorage => {
     const appStore = useAppStore.getState();
     appStore.reset();
     appStore.setDevice({ deviceId, createdAt: new Date().toISOString() });
+    clearCircleSelection();
   };
 
   const subscribe = (listener: () => void): (() => void) => {

@@ -1,20 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { motion } from 'framer-motion';
 import clsx from 'clsx';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useWeekcrewSnapshot } from '@/lib/weekcrewStorage';
+import { LanguageSwitch } from '@/components/layout/language-switch';
 
 export const Header = () => {
-  const pathname = usePathname();
   const t = useTranslation();
-  const { currentCircle } = useWeekcrewSnapshot((snapshot) => ({
-    currentCircle: snapshot.currentCircle,
-  }));
-
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -26,18 +19,6 @@ export const Header = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Если у пользователя уже есть активный кружок, показываем «Новый круг» вместо «Интересы».
-  const hasCircle = Boolean(currentCircle);
-
-  const navItems = useMemo(
-    () => [
-      { href: '/explore', labelKey: hasCircle ? 'nav_new_circle' : 'nav_interests' },
-      { href: '/circle', labelKey: 'nav_my_circle' },
-      { href: '/settings', labelKey: 'nav_settings' },
-    ],
-    [hasCircle],
-  );
-
   return (
     <header
       className={clsx(
@@ -48,7 +29,7 @@ export const Header = () => {
           : 'bg-transparent text-slate-900 dark:text-slate-50',
       )}
     >
-      <div className="mx-auto flex w-full max-w-5xl items-center gap-3 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <Link
           href="/"
           aria-label="WeekCrew — на главную"
@@ -56,42 +37,15 @@ export const Header = () => {
         >
           WeekCrew
         </Link>
-        <nav className="flex w-full flex-1 justify-end">
-          <div className="flex w-full items-center gap-1 rounded-full border border-slate-200/70 bg-white/80 p-1 text-[13px] font-medium text-slate-600 shadow-[0_20px_50px_rgba(11,15,36,0.08)] dark:border-white/10 dark:bg-white/10 dark:text-slate-100 sm:w-auto sm:text-sm">
-            {navItems.map((item) => {
-              const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
-              const label = t(item.labelKey);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={clsx(
-                    'group relative flex min-h-[42px] flex-1 items-center justify-center rounded-full px-3 py-2 text-[13px] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent sm:min-w-[120px] sm:flex-none sm:px-4 sm:text-sm',
-                    isActive
-                      ? 'font-semibold text-slate-900 dark:text-white'
-                      : 'text-slate-500 hover:text-slate-900 dark:text-slate-100',
-                  )}
-                  aria-current={isActive ? 'page' : undefined}
-                >
-                  {!isActive && (
-                    <span className="absolute inset-0 rounded-full border border-transparent bg-slate-900/5 opacity-0 transition-all duration-200 ease-out group-hover:opacity-100 dark:bg-white/15" />
-                  )}
-                  {isActive && (
-                    <motion.span
-                      layoutId="active-nav"
-                      className="absolute inset-0 rounded-full bg-white shadow-[0_14px_35px_rgba(15,23,42,0.16)] ring-1 ring-brand/50 dark:bg-brand/80 dark:shadow-[0_14px_35px_rgba(2,6,23,0.6)]"
-                      transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-                    />
-                  )}
-                  <span className="relative z-10 flex items-center gap-1 text-sm font-medium">
-                    {item.labelKey === 'nav_new_circle' && <span aria-hidden className="text-base leading-none text-brand">＋</span>}
-                    <span>{label}</span>
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        </nav>
+        <div className="flex items-center gap-3">
+          <LanguageSwitch />
+          <Link
+            href="/settings"
+            className="inline-flex items-center rounded-full border border-slate-200/70 bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 shadow-[0_12px_30px_rgba(15,23,42,0.08)] transition hover:-translate-y-0.5 hover:border-brand/40 hover:text-brand-foreground dark:border-white/10 dark:bg-white/10 dark:text-white"
+          >
+            {t('nav_settings')}
+          </Link>
+        </div>
       </div>
     </header>
   );
