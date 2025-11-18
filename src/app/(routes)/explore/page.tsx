@@ -170,7 +170,7 @@ export default function ExplorePage() {
         {error && <p className="mt-3 text-sm text-red-500 dark:text-red-400">{error}</p>}
       </section>
 
-      <p className="text-center text-xs text-slate-500 dark:text-slate-400">{t('test_mode_notice')}</p>
+      <p className="text-center text-xs text-slate-500 dark:text-slate-400">{t('landing_test_mode_hint')}</p>
     </div>
   );
 }

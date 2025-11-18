@@ -62,7 +62,7 @@ export default function HomePage() {
                 onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
                 className="text-sm font-medium text-white/80 transition hover:text-white"
               >
-                {t('landing_hero_secondary')}
+                {t('landing_more_link')}
               </button>
             </div>
             {currentCircle && (
@@ -77,11 +77,13 @@ export default function HomePage() {
           </motion.div>
         </section>
 
-        <section id="how-it-works" className="rounded-[2.5rem] border border-slate-200/80 bg-white/95 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-slate-900/80">
+        <section
+          id="how-it-works"
+          className="rounded-[2.5rem] border border-slate-200/80 bg-white/95 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] scroll-mt-24 md:scroll-mt-28 dark:border-white/10 dark:bg-slate-900/80"
+        >
           <div className="space-y-4 text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400 dark:text-white/60">{t('landing_how_label')}</p>
             <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">{t('landing_how_title')}</h2>
-            <p className="text-sm text-slate-600 dark:text-slate-300">{t('landing_how_description')}</p>
+            <p className="text-sm text-slate-600 dark:text-slate-300">{t('landing_how_subtitle')}</p>
           </div>
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
             {steps.map((step) => (
@@ -97,6 +99,7 @@ export default function HomePage() {
             </button>
           </div>
         </section>
+        <p className="text-center text-xs text-slate-500 dark:text-slate-400">{t('landing_test_mode_hint')}</p>
       </div>
       <SafetyRulesModal open={showModal} onAccept={handleAcceptRules} onClose={handleCloseModal} />
     </>
