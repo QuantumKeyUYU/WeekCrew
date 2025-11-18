@@ -5,6 +5,7 @@ import type {
   WeekcrewStorageSnapshot,
   InterestId,
 } from '@/lib/weekcrewStorage';
+import { clearCircleSelection } from '@/lib/circleSelection';
 
 const DEMO_STATE_KEY = 'weekcrew:demo-snapshot-v1';
 const DEMO_CIRCLE_ID = 'demo-circle';
@@ -50,8 +51,6 @@ const createInitialMessages = (): CircleMessage[] => [
     createdAt: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
   },
 ];
-
-type SnapshotUpdater = (prev: WeekcrewStorageSnapshot) => WeekcrewStorageSnapshot;
 
 /* ---------- bot-сообщения ---------- */
 
@@ -133,7 +132,10 @@ export const createDemoWeekcrewStorage = (): WeekcrewStorage => {
     listeners.forEach((l) => l());
   };
 
-  const updateSnapshot = (updater: SnapshotUpdater) => {
+  const updateSnapshot = (
+    // eslint-disable-next-line no-unused-vars
+    updater: (current: WeekcrewStorageSnapshot) => WeekcrewStorageSnapshot,
+  ) => {
     const prev = snapshot;
     const next = updater(prev);
 
@@ -151,8 +153,8 @@ export const createDemoWeekcrewStorage = (): WeekcrewStorage => {
     }
   };
 
-  const scheduleBotReply = (lastUserText: string) => {
-    if (!isBrowser) return; // на сервере таймеры не создаём
+const scheduleBotReply = () => {
+  if (!isBrowser) return; // на сервере таймеры не создаём
 
     // лёгкий «анти-спам» — если нет кружка, не отвечаем
     if (!snapshot.currentCircle) return;
@@ -203,7 +205,8 @@ export const createDemoWeekcrewStorage = (): WeekcrewStorage => {
     updateSnapshot(() => createEmptySnapshot());
   };
 
-  const listMessages = async (_circleId: string): Promise<CircleMessage[]> => {
+  const listMessages = async (circleId: string): Promise<CircleMessage[]> => {
+    void circleId;
     return snapshot.messages;
   };
 
@@ -232,12 +235,13 @@ export const createDemoWeekcrewStorage = (): WeekcrewStorage => {
     }));
 
     // потом планируем ответ «бота»
-    scheduleBotReply(trimmed);
+    scheduleBotReply();
   };
 
   const clearAllLocalData = async (): Promise<void> => {
     clearPersistedSnapshot();
     updateSnapshot(() => createEmptySnapshot());
+    clearCircleSelection();
   };
 
   const subscribe = (listener: () => void): (() => void) => {

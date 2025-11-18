@@ -35,7 +35,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <div className="flex min-h-screen flex-col">
             <Header />
             <main className="flex-1 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.98),_rgba(235,234,255,0.7))] transition-colors duration-300 dark:bg-gradient-to-b dark:from-slate-950 dark:via-slate-900/70 dark:to-slate-950">
-              <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 sm:py-12">
+              <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-12">
                 {children}
               </div>
             </main>

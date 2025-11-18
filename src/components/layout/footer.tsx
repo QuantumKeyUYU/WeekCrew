@@ -21,6 +21,12 @@ export const Footer = () => {
           >
             {t('footer_inspiration')}
           </a>
+          <a
+            href="/settings"
+            className="text-neutral-600 transition-colors hover:text-brand-foreground dark:text-neutral-400"
+          >
+            {t('nav_settings')}
+          </a>
         </div>
       </div>
     </footer>

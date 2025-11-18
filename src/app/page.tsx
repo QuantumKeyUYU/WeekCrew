@@ -1,230 +1,104 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
-import Link from 'next/link';
+import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import clsx from 'clsx';
 import { useTranslation } from '@/i18n/useTranslation';
+import { primaryCtaClass } from '@/styles/tokens';
+import { SafetyRulesModal } from '@/components/modals/safety-rules-modal';
+import { useSafetyRules } from '@/hooks/useSafetyRules';
 import { useWeekcrewSnapshot } from '@/lib/weekcrewStorage';
-import { motionTimingClass, primaryCtaClass, secondaryCtaClass } from '@/styles/tokens';
 
 export default function HomePage() {
+  const router = useRouter();
   const t = useTranslation();
-  const { currentCircle } = useWeekcrewSnapshot((snapshot) => ({
-    currentCircle: snapshot.currentCircle,
-  }));
+  const { accepted, markAccepted } = useSafetyRules();
+  const { currentCircle } = useWeekcrewSnapshot((snapshot) => ({ currentCircle: snapshot.currentCircle }));
+  const [showModal, setShowModal] = useState(false);
 
-  const hasCircle = Boolean(currentCircle);
-  const primaryCtaHref = hasCircle ? '/circle' : '/explore';
-
-  const handleScrollToHow = useCallback(() => {
-    const target = document.getElementById('how-it-works');
-    if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const handleStart = () => {
+    if (accepted) {
+      router.push('/explore');
+      return;
     }
-  }, []);
+    setShowModal(true);
+  };
+
+  const handleAcceptRules = () => {
+    markAccepted();
+    setShowModal(false);
+    router.push('/explore');
+  };
+
+  const handleCloseModal = () => setShowModal(false);
 
   const steps = useMemo(
     () => [
-      {
-        title: t('home_step_select_interest_title'),
-        description: t('home_step_select_interest_description'),
-      },
-      {
-        title: t('home_step_join_circle_title'),
-        description: t('home_step_join_circle_description'),
-      },
-      {
-        title: t('home_step_week_of_warmth_title'),
-        description: t('home_step_week_of_warmth_description'),
-      },
-    ],
-    [t],
-  );
-
-  const essentials = useMemo(
-    () => [
-      {
-        title: t('home_essentials_single_circle_title'),
-        description: t('home_essentials_single_circle_description'),
-      },
-      {
-        title: t('home_essentials_fresh_mood_title'),
-        description: t('home_essentials_fresh_mood_description'),
-      },
-      {
-        title: t('home_essentials_soft_finish_title'),
-        description: t('home_essentials_soft_finish_description'),
-      },
-    ],
-    [t],
-  );
-
-  const features = useMemo(
-    () => [
-      { title: t('feature_one_circle_title'), description: t('feature_one_circle_description') },
-      { title: t('feature_week_length_title'), description: t('feature_week_length_description') },
-      { title: t('feature_small_group_title'), description: t('feature_small_group_description') },
-      { title: t('feature_daily_icebreaker_title'), description: t('feature_daily_icebreaker_description') },
-      { title: t('feature_no_likes_title'), description: t('feature_no_likes_description') },
-    ],
-    [t],
-  );
-
-  const stats = useMemo(
-    () => [
-      { label: t('hero_stat_circle_label'), description: t('hero_stat_circle_description') },
-      { label: t('hero_stat_size_label'), description: t('hero_stat_size_description') },
-      { label: t('hero_stat_feed_label'), description: t('hero_stat_feed_description') },
+      { title: t('landing_step_one_title'), description: t('landing_step_one_description') },
+      { title: t('landing_step_two_title'), description: t('landing_step_two_description') },
+      { title: t('landing_step_three_title'), description: t('landing_step_three_description') },
     ],
     [t],
   );
 
   return (
-    <main className="px-4 py-12 sm:py-16">
-      <div className="mx-auto flex max-w-5xl flex-col space-y-10 sm:space-y-16">
-        <motion.section
-          initial={{ opacity: 0, translateY: 12 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
-          className="rounded-[2.75rem] border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(129,140,248,0.35),_transparent),_rgba(6,9,26,0.98)] px-6 py-8 text-slate-100 shadow-[0_35px_100px_rgba(5,7,22,0.75)] dark:border-white/10 sm:px-10 sm:py-12"
-        >
-          <div className="space-y-8">
-            <header className="space-y-4">
-              <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white/80">
-                {t('hero_intro_label')}
-              </span>
-              <div className="space-y-4">
-                <h1 className="text-[2.2rem] font-semibold leading-tight sm:text-4xl">{t('hero_title')}</h1>
-                <p className="max-w-3xl text-sm text-white/85 sm:text-base">{t('hero_description')}</p>
-              </div>
-            </header>
+    <>
+      <div className="space-y-16 py-10 sm:py-16">
+        <section className="flex flex-col items-center gap-3 text-center">
+          <span className="text-lg font-semibold text-slate-900 dark:text-white">WeekCrew</span>
+          <p className="text-sm text-slate-500 dark:text-slate-300">{t('landing_logo_tagline')}</p>
+        </section>
 
-            <div className="grid gap-4 rounded-3xl border border-white/10 bg-white/5 p-4 text-sm text-white/80 shadow-[0_16px_45px_rgba(4,6,20,0.5)] sm:grid-cols-2">
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-white/60">{t('hero_story_title')}</p>
-                <p className="mt-2 text-base text-white">{t('hero_story_description')}</p>
-              </div>
-              <div className="grid gap-3 text-left text-sm text-white/80 sm:grid-cols-3 sm:text-[13px]">
-                {stats.map((stat) => (
-                  <div key={stat.label} className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-[0_10px_40px_rgba(4,6,20,0.35)]">
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-white/60">{stat.label}</p>
-                    <p className="mt-1 text-base font-semibold text-white">{stat.description}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-3">
-              <Link href={primaryCtaHref} className={primaryCtaClass}>
-                {t('hero_primary_cta')}
-              </Link>
-              <button type="button" onClick={handleScrollToHow} className={secondaryCtaClass}>
-                {t('hero_secondary_cta')}
+        <section className="rounded-[3rem] border border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-brand/20 px-6 py-12 text-center text-white shadow-[0_35px_100px_rgba(5,7,22,0.85)] sm:px-12">
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: 'easeOut' }}>
+            <h1 className="text-3xl font-semibold leading-tight sm:text-[2.9rem]">{t('landing_hero_title')}</h1>
+            <p className="mt-4 text-base text-white/80">{t('landing_hero_subtitle')}</p>
+            <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+              <button type="button" onClick={handleStart} className={primaryCtaClass}>
+                {t('landing_hero_cta')}
+              </button>
+              <button
+                type="button"
+                onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
+                className="text-sm font-medium text-white/80 transition hover:text-white"
+              >
+                {t('landing_hero_secondary')}
               </button>
             </div>
-          </div>
-        </motion.section>
-
-        <section className="rounded-[2.75rem] border border-slate-200/80 bg-white/95 px-6 py-8 text-sm text-slate-900 shadow-[0_25px_80px_rgba(15,23,42,0.12)] dark:border-white/10 dark:bg-slate-900/80 dark:text-slate-50 sm:px-10">
-          <div className="flex flex-col gap-6">
-            <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400 dark:text-white/60">
-                {t('home_essentials_label')}
-              </p>
-              <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">{t('home_essentials_title')}</h2>
-              <p className="text-sm text-slate-500 dark:text-slate-300">{t('home_essentials_description')}</p>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-3">
-              {essentials.map((item) => (
-                <article
-                  key={item.title}
-                  className="rounded-3xl border border-slate-200/70 bg-white/95 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.09)] dark:border-white/10 dark:bg-slate-900/70"
-                >
-                  <h3 className="text-base font-semibold text-slate-900 dark:text-white">{item.title}</h3>
-                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{item.description}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section
-          id="how-it-works"
-          className="rounded-[2.75rem] border border-slate-200/70 bg-white/95 px-6 py-8 text-sm text-slate-900 shadow-[0_25px_80px_rgba(15,23,42,0.12)] backdrop-blur dark:border-white/10 dark:bg-slate-900/80 dark:text-slate-50 sm:px-10"
-        >
-          <div>
-            <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400 dark:text-white/60">
-                {t('home_how_it_works_label')}
-              </p>
-              <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">{t('home_how_it_works_title')}</h2>
-              <p className="max-w-3xl text-sm text-slate-500 dark:text-slate-300">{t('home_how_it_works_description')}</p>
-            </div>
-            <div className="relative mt-6">
-              <span className="absolute left-4 right-4 top-1/2 hidden h-px -translate-y-1/2 bg-gradient-to-r from-transparent via-brand/30 to-transparent sm:block" aria-hidden />
-              <ol className="grid gap-5 sm:grid-cols-3">
-                {steps.map((step, index) => (
-                  <li
-                    key={step.title}
-                    className="relative rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-[0_14px_40px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-slate-900/70"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-brand/40 bg-brand/10 text-base font-semibold text-brand">
-                        {index + 1}
-                      </span>
-                      <p className="text-base font-semibold text-slate-900 dark:text-white">{step.title}</p>
-                    </div>
-                    <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">{step.description}</p>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          </div>
-        </section>
-
-        <section className="rounded-[2.75rem] border border-slate-200/70 bg-white/95 px-6 py-8 text-sm text-slate-900 shadow-[0_25px_80px_rgba(15,23,42,0.12)] dark:border-white/10 dark:bg-slate-900/80 dark:text-slate-50 sm:px-10">
-          <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400 dark:text-white/60">
-              {t('home_why_cozy_label')}
-            </p>
-            <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">{t('home_why_cozy_title')}</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-300">{t('home_why_cozy_description')}</p>
-          </div>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            {features.map((feature) => (
-              <div
-                key={feature.title}
-                className={clsx(
-                  'rounded-3xl border border-slate-200/70 bg-white/95 p-5 shadow-[0_12px_36px_rgba(15,23,42,0.08)]',
-                  motionTimingClass,
-                  'dark:border-white/10 dark:bg-slate-900/70',
-                )}
+            {currentCircle && (
+              <button
+                type="button"
+                onClick={() => router.push('/circle')}
+                className="mt-4 text-sm font-medium text-white/70 underline-offset-4 transition hover:text-white"
               >
-                <p className="text-base font-semibold text-slate-900 dark:text-white">{feature.title}</p>
-                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{feature.description}</p>
-              </div>
+                {t('landing_go_to_circle')}
+              </button>
+            )}
+          </motion.div>
+        </section>
+
+        <section id="how-it-works" className="rounded-[2.5rem] border border-slate-200/80 bg-white/95 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-slate-900/80">
+          <div className="space-y-4 text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400 dark:text-white/60">{t('landing_how_label')}</p>
+            <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">{t('landing_how_title')}</h2>
+            <p className="text-sm text-slate-600 dark:text-slate-300">{t('landing_how_description')}</p>
+          </div>
+          <div className="mt-8 grid gap-4 sm:grid-cols-3">
+            {steps.map((step) => (
+              <article key={step.title} className="rounded-3xl border border-slate-200/70 bg-white/95 p-5 text-left shadow-[0_18px_40px_rgba(15,23,42,0.06)] dark:border-white/10 dark:bg-slate-900/70">
+                <h3 className="text-base font-semibold text-slate-900 dark:text-white">{step.title}</h3>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{step.description}</p>
+              </article>
             ))}
           </div>
-        </section>
-
-        <section className="rounded-3xl border border-slate-200/70 bg-gradient-to-r from-brand/10 via-white to-brand/10 p-6 text-center text-sm text-slate-700 shadow-[0_22px_55px_rgba(15,23,42,0.12)] dark:border-white/10 dark:from-brand/20 dark:via-slate-900/60 dark:to-brand/20 dark:text-slate-200">
-          <p className="text-base font-semibold text-slate-900 dark:text-white">{t('home_ready_title')}</p>
-          <p className="mt-1 text-slate-600 dark:text-slate-200">{t('home_ready_description')}</p>
-          <div className="mt-4 flex flex-wrap justify-center gap-3">
-            <Link href={primaryCtaHref} className={primaryCtaClass}>
-              {t('home_ready_cta')}
-            </Link>
-            <button
-              type="button"
-              onClick={handleScrollToHow}
-              className="inline-flex items-center justify-center rounded-full border border-slate-300/70 bg-transparent px-6 py-2.5 text-sm font-medium text-slate-700 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-brand/40 hover:text-brand-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent dark:border-white/30 dark:text-slate-200"
-            >
-              {t('hero_secondary_cta')}
+          <div className="mt-10 flex justify-center">
+            <button type="button" onClick={handleStart} className={primaryCtaClass}>
+              {t('landing_hero_cta')}
             </button>
           </div>
         </section>
       </div>
-    </main>
+      <SafetyRulesModal open={showModal} onAccept={handleAcceptRules} onClose={handleCloseModal} />
+    </>
   );
 }

@@ -2,15 +2,14 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import clsx from 'clsx';
 import { useTranslation } from '@/i18n/useTranslation';
-import { primaryCtaClass, secondaryCtaClass } from '@/styles/tokens';
+import { primaryCtaClass } from '@/styles/tokens';
 
 type CircleEmptyStateProps = {
-  onReset: () => void;
+  onStart: () => void;
 };
 
-export const CircleEmptyState = ({ onReset }: CircleEmptyStateProps) => {
+export const CircleEmptyState = ({ onStart }: CircleEmptyStateProps) => {
   const t = useTranslation();
   return (
     <motion.div
@@ -24,14 +23,9 @@ export const CircleEmptyState = ({ onReset }: CircleEmptyStateProps) => {
         <h2 className="text-2xl font-semibold text-white">{t('circle_empty_title')}</h2>
         <p className="mx-auto max-w-md text-sm text-white/80">{t('circle_empty_description')}</p>
       </div>
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <Link href="/explore" className={primaryCtaClass}>
-          {t('circle_empty_cta')}
-        </Link>
-        <button type="button" onClick={onReset} className={clsx(secondaryCtaClass, 'text-white/80 hover:text-white')}>
-          {t('circle_empty_reset_cta')}
-        </button>
-      </div>
+      <Link href="/explore" onClick={(event) => { event.preventDefault(); onStart(); }} className={primaryCtaClass}>
+        {t('circle_empty_cta')}
+      </Link>
     </motion.div>
   );
 };
