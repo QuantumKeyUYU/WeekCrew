@@ -12,11 +12,14 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { Notice } from '@/components/shared/notice';
 import { motionTimingClass, primaryCtaClass } from '@/styles/tokens';
 
+type MoodKey = 'calm' | 'inspired' | 'support' | 'hobby';
+
 export default function ExplorePage() {
   const router = useRouter();
   const firebaseReady = useAppStore((state) => state.firebaseReady);
   const t = useTranslation();
   const [pendingKey, setPendingKey] = useState<InterestTag | null>(null);
+  const [selectedMood, setSelectedMood] = useState<MoodKey | null>(null);
   const storage = useWeekcrewStorage();
   const interestCards = useMemo(
     () =>
@@ -27,6 +30,22 @@ export default function ExplorePage() {
       })),
     [t],
   );
+  const moods = useMemo(
+    () => [
+      { key: 'calm' satisfies MoodKey, label: t('explore_mood_chip_calm') },
+      { key: 'inspired' satisfies MoodKey, label: t('explore_mood_chip_inspired') },
+      { key: 'support' satisfies MoodKey, label: t('explore_mood_chip_support') },
+      { key: 'hobby' satisfies MoodKey, label: t('explore_mood_chip_hobby') },
+    ],
+    [t],
+  );
+
+  const selectedMoodLabel = selectedMood
+    ? t('explore_mood_selected', {
+        mood: moods.find((mood) => mood.key === selectedMood)?.label ?? '',
+      })
+    : t('explore_mood_placeholder');
+
   const handleSelect = async (interest: InterestTag) => {
     if (pendingKey) {
       return;
@@ -48,6 +67,35 @@ export default function ExplorePage() {
         <h1 className="mt-2 text-2xl font-semibold sm:text-3xl">{t('explore_title')}</h1>
         <p className="mt-3 text-sm text-slate-200/90 sm:text-base">{t('explore_description')}</p>
         <p className="mt-2 text-xs text-slate-300">{t('explore_reminder')}</p>
+
+        <div className="mt-6 space-y-4 rounded-[2rem] border border-white/10 bg-white/5 p-4 text-white/90 shadow-[0_18px_55px_rgba(2,4,18,0.65)]">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/60">{t('explore_mood_title')}</p>
+            <p className="text-sm text-slate-100/90 sm:text-base">{t('explore_mood_description')}</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {moods.map((mood) => {
+              const isActive = selectedMood === mood.key;
+              return (
+                <button
+                  key={mood.key}
+                  type="button"
+                  onClick={() => setSelectedMood((prev) => (prev === mood.key ? null : mood.key))}
+                  className={clsx(
+                    'rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200',
+                    isActive
+                      ? 'border-white/90 bg-white text-slate-900 shadow-[0_12px_25px_rgba(255,255,255,0.25)]'
+                      : 'border-white/20 bg-white/5 text-white/80 hover:-translate-y-0.5 hover:border-white/50 hover:text-white',
+                  )}
+                  aria-pressed={isActive}
+                >
+                  {mood.label}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-white/70">{selectedMoodLabel}</p>
+        </div>
       </section>
 
       <motion.div
@@ -56,6 +104,14 @@ export default function ExplorePage() {
         animate="visible"
         variants={{ hidden: {}, visible: {} }}
       >
+        <div className="sm:col-span-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">
+            {t('explore_intro_label')}
+          </p>
+          <h2 className="mt-1 text-xl font-semibold text-slate-900 dark:text-white">{t('explore_title')}</h2>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">{t('explore_interest_subtitle')}</p>
+          <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">{selectedMoodLabel}</p>
+        </div>
         {interestCards.map((card, index) => (
           <motion.button
             key={card.key}
@@ -82,7 +138,11 @@ export default function ExplorePage() {
         ))}
       </motion.div>
 
-      <div className="rounded-3xl border border-slate-200/80 bg-white/95 p-5 text-sm text-slate-600 shadow-[0_12px_34px_rgba(15,23,42,0.06)] dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-200" aria-live="polite">
+      <div
+        className="rounded-3xl border border-slate-200/80 bg-white/95 p-5 text-sm text-slate-600 shadow-[0_12px_34px_rgba(15,23,42,0.06)] dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-200"
+        aria-live="polite"
+        aria-busy={Boolean(pendingKey)}
+      >
         {!pendingKey && <p>{t('explore_status_idle')}</p>}
         {pendingKey && <p>{t('explore_status_loading')}</p>}
         <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('explore_status_hint')}</p>
@@ -106,7 +166,6 @@ export default function ExplorePage() {
       {!firebaseReady && (
         <Notice>
           <p>{t('firebase_demo_notice')}</p>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Сейчас всё работает локально, без регистрации и серверов.</p>
         </Notice>
       )}
     </div>
