@@ -41,7 +41,7 @@ export const Header = () => {
           WeekCrew
         </Link>
         <nav className="flex w-full flex-1 items-center justify-end sm:w-auto">
-          <div className="flex w-full max-w-md flex-1 items-center gap-1 rounded-full border border-slate-200/70 bg-white/70 p-1 text-[13px] font-medium text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_24px_rgba(15,23,42,0.06)] backdrop-blur dark:border-white/10 dark:bg-white/5 dark:text-slate-100 sm:max-w-none sm:gap-1.5 sm:text-sm">
+          <div className="flex w-full max-w-md flex-1 items-center gap-1 rounded-full border border-slate-200/70 bg-white/80 p-1 text-[13px] font-medium text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_24px_rgba(15,23,42,0.06)] backdrop-blur dark:border-white/10 dark:bg-white/10 dark:text-slate-100 sm:max-w-none sm:gap-1.5 sm:text-sm">
             {navItems.map((item) => {
               const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
               const label = t(item.labelKey);
@@ -52,7 +52,7 @@ export const Header = () => {
                   className={clsx(
                     'group relative flex flex-1 items-center justify-center rounded-full px-2.5 py-1.5 text-[13px] font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent sm:flex-none sm:px-3.5 sm:py-1.5 sm:text-sm',
                     isActive
-                      ? 'text-slate-900 dark:text-white'
+                      ? 'font-semibold text-slate-900 dark:text-white'
                       : 'text-slate-500 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white'
                   )}
                   aria-current={isActive ? 'page' : undefined}
@@ -63,7 +63,7 @@ export const Header = () => {
                   {isActive && (
                     <motion.span
                       layoutId="active-nav"
-                      className="absolute inset-0 rounded-full bg-white shadow-[0_10px_28px_rgba(15,23,42,0.08)] ring-1 ring-slate-900/10 dark:bg-white/20 dark:shadow-[0_8px_22px_rgba(2,6,23,0.65)] dark:ring-white/25"
+                      className="absolute inset-0 rounded-full bg-white shadow-[0_12px_30px_rgba(15,23,42,0.12)] ring-1 ring-brand/30 dark:bg-white/20 dark:shadow-[0_10px_26px_rgba(2,6,23,0.65)] dark:ring-white/35"
                       transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                     />
                   )}

@@ -50,33 +50,29 @@ export default function HomePage() {
     [t],
   );
 
+  const primaryCtaClass =
+    'inline-flex items-center justify-center rounded-full bg-brand px-6 py-2.5 text-sm font-semibold text-white shadow-[0_0_36px_rgba(129,140,248,0.45)] transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_0_46px_rgba(129,140,248,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent';
+
   return (
-    <main className="px-4 py-10 sm:py-14">
-      <section className="relative mx-auto flex max-w-4xl flex-col gap-6 overflow-hidden rounded-[2.75rem] border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(129,140,248,0.25),_transparent),_rgba(15,23,42,0.92)] p-6 text-slate-100 shadow-[0_30px_80px_rgba(15,23,42,0.8)] dark:border-white/10 sm:p-10">
+    <main className="px-4 py-12 sm:py-16">
+      <section className="relative mx-auto flex max-w-4xl flex-col gap-6 rounded-[2.75rem] border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(129,140,248,0.25),_transparent),_rgba(15,23,42,0.92)] p-6 text-slate-100 shadow-[0_30px_80px_rgba(15,23,42,0.8)] dark:border-white/10 sm:p-10">
         <div className="pointer-events-none absolute -top-12 right-0 h-48 w-48 rounded-full bg-brand/30 blur-3xl" aria-hidden />
-        <div className="space-y-4">
+        <header className="flex flex-col gap-4">
           <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-100/80">
             {t('hero_intro_label')}
           </span>
-          <h1 className="text-[2rem] font-semibold leading-tight sm:text-4xl">
-            {t('hero_title')}
-          </h1>
-          <p className="max-w-3xl text-sm text-slate-100/85 sm:text-base">
-            {t('hero_description')}
-          </p>
-        </div>
+          <h1 className="text-[2rem] font-semibold leading-tight sm:text-4xl">{t('hero_title')}</h1>
+          <p className="max-w-3xl text-sm text-slate-100/85 sm:text-base">{t('hero_description')}</p>
+        </header>
 
         <div className="flex flex-wrap gap-3">
-          <Link
-            href={primaryCtaHref}
-            className="inline-flex items-center justify-center rounded-full bg-brand px-6 py-2.5 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(129,140,248,0.45)] transition hover:-translate-y-0.5"
-          >
+          <Link href={primaryCtaHref} className={primaryCtaClass}>
             {t('hero_primary_cta')}
           </Link>
           <button
             type="button"
             onClick={handleScrollToHow}
-            className="inline-flex items-center justify-center rounded-full border border-white/30 bg-transparent px-5 py-2.5 text-sm font-medium text-white/90 transition hover:-translate-y-0.5 hover:border-white/60"
+            className="inline-flex items-center justify-center rounded-full border border-white/30 bg-transparent px-5 py-2.5 text-sm font-medium text-white/90 transition-all duration-150 hover:-translate-y-0.5 hover:border-white/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
           >
             {t('hero_secondary_cta')}
           </button>
@@ -85,14 +81,14 @@ export default function HomePage() {
 
       <section
         id="how-it-works"
-        className="mx-auto mt-10 flex max-w-4xl flex-col gap-6 rounded-[2.75rem] border border-slate-200/70 bg-white/90 p-6 text-sm text-slate-900 shadow-[0_20px_60px_rgba(15,23,42,0.18)] backdrop-blur dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100 sm:mt-12 sm:p-8"
+        className="mx-auto mt-14 flex max-w-4xl flex-col gap-6 rounded-[2.75rem] border border-slate-200/70 bg-white/90 p-6 text-sm text-slate-900 shadow-[0_20px_60px_rgba(15,23,42,0.18)] backdrop-blur dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100 sm:mt-16 sm:p-8"
       >
         <h2 className="text-base font-semibold text-slate-900 dark:text-slate-50 sm:text-lg">{t('home_how_it_works_title')}</h2>
         <div className="grid gap-4 sm:grid-cols-3">
           {steps.map((step, index) => (
             <div
               key={step.title}
-              className="rounded-3xl border border-slate-200/80 bg-white/90 p-4 text-xs text-slate-600 shadow-[0_12px_30px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200 sm:text-sm"
+              className="rounded-3xl border border-slate-200/80 bg-white/90 p-4 text-xs text-slate-600 shadow-[0_12px_30px_rgba(15,23,42,0.08)] transition-transform transition-shadow duration-150 ease-out hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(15,23,42,0.12)] dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200 sm:text-sm"
             >
               <p className="text-[11px] font-semibold uppercase tracking-wide text-brand/80">{`0${index + 1}`}</p>
               <p className="mt-2 font-medium text-slate-900 dark:text-white">{step.title}</p>
@@ -101,12 +97,12 @@ export default function HomePage() {
           ))}
         </div>
 
-        <h2 className="mt-2 text-base font-semibold text-slate-900 dark:text-slate-50 sm:text-lg">{t('home_why_cozy_title')}</h2>
+        <h2 className="mt-6 text-base font-semibold text-slate-900 dark:text-slate-50 sm:mt-8 sm:text-lg">{t('home_why_cozy_title')}</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           {features.map((feature) => (
             <div
               key={feature.title}
-              className="rounded-3xl border border-slate-200/80 bg-white/90 p-4 text-xs text-slate-600 shadow-[0_12px_30px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200 sm:text-sm"
+              className="rounded-3xl border border-slate-200/80 bg-white/90 p-4 text-xs text-slate-600 shadow-[0_12px_30px_rgba(15,23,42,0.08)] transition-transform transition-shadow duration-150 ease-out hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(15,23,42,0.12)] dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200 sm:text-sm"
             >
               <p className="font-medium text-slate-900 dark:text-white">{feature.title}</p>
               <p className="mt-1 text-slate-500 dark:text-slate-300">{feature.description}</p>
@@ -114,14 +110,11 @@ export default function HomePage() {
           ))}
         </div>
 
-        <div className="mt-4 rounded-3xl border border-slate-200/80 bg-gradient-to-r from-brand/10 via-white to-brand/10 p-5 text-center text-sm text-slate-700 shadow-[0_18px_40px_rgba(15,23,42,0.08)] dark:border-white/10 dark:from-brand/20 dark:via-slate-900/40 dark:to-brand/20 dark:text-slate-200">
+        <div className="mt-6 rounded-3xl border border-slate-200/80 bg-gradient-to-r from-brand/10 via-white to-brand/10 p-5 text-center text-sm text-slate-700 shadow-[0_18px_40px_rgba(15,23,42,0.08)] dark:border-white/10 dark:from-brand/20 dark:via-slate-900/40 dark:to-brand/20 dark:text-slate-200 sm:mt-8">
           <p className="text-base font-semibold text-slate-900 dark:text-white">{t('home_ready_title')}</p>
           <p className="mt-1 text-slate-600 dark:text-slate-200">{t('home_ready_description')}</p>
           <div className="mt-3">
-            <Link
-              href={primaryCtaHref}
-              className="inline-flex items-center justify-center rounded-full bg-brand px-6 py-2.5 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(129,140,248,0.45)] transition hover:-translate-y-0.5"
-            >
+            <Link href={primaryCtaHref} className={primaryCtaClass}>
               {t('home_ready_cta')}
             </Link>
           </div>
