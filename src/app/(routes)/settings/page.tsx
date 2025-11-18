@@ -96,6 +96,8 @@ export default function SettingsPage() {
         </div>
       </details>
 
+      <p className="text-center text-xs text-slate-500 dark:text-slate-400">{t('landing_test_mode_hint')}</p>
+
       <SafetyRulesModal
         open={showRules}
         onAccept={() => {
