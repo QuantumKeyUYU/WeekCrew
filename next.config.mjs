@@ -1,14 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Можно оставить включённым, локально это помогает ловить баги
   reactStrictMode: true,
 
-  // Не заваливаем прод-сборку из-за ESLint
+  // В демо-режиме не валим сборку из-за ESLint — в lib/*weekcrewStorage.ts есть временные предупреждения.
   eslint: {
     ignoreDuringBuilds: true,
   },
 
-  // И не заваливаем из-за ошибок TypeScript (как на Vercel)
+  // Аналогично для TypeScript: пусть билд проходит, пока стореджи не переедут на новую реализацию.
   typescript: {
     ignoreBuildErrors: true,
   },
