@@ -1,11 +1,11 @@
-import type { InterestTag } from '@/types';
 import type { MoodKey } from '@/constants/moods';
+import type { InterestId } from '@/lib/weekcrewStorage';
 
 const STORAGE_KEY = 'weekcrew:last-circle-selection';
 
 export interface CircleSelection {
   mood: MoodKey;
-  interestId: InterestTag;
+  interestId: InterestId;
 }
 
 export const saveCircleSelection = (selection: CircleSelection) => {

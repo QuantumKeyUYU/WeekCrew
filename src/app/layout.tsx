@@ -1,10 +1,12 @@
 import type { Metadata, Viewport } from 'next';
 import { ReactNode } from 'react';
+import Script from 'next/script';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ClientProviders } from '@/components/providers/client-providers';
+import { THEME_STORAGE_KEY } from '@/constants/theme';
 
 const inter = Inter({ subsets: ['latin', 'cyrillic'], variable: '--font-inter' });
 
@@ -27,14 +29,38 @@ export const viewport: Viewport = {
   themeColor: '#7F5AF0'
 };
 
+const themeInitScript = `(() => {
+  try {
+    if (typeof window === 'undefined') return;
+    const storageKey = '${THEME_STORAGE_KEY}';
+    const stored = window.localStorage.getItem(storageKey);
+    const setting = stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const resolved = setting === 'system' ? (prefersDark ? 'dark' : 'light') : setting;
+    const root = document.documentElement;
+    if (resolved === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    root.dataset.theme = resolved;
+    root.dataset.themeMode = setting;
+  } catch (error) {
+    console.warn('Failed to initialize theme preference', error);
+  }
+})();`;
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ru" className={`${inter.variable} font-sans`}>
-      <body className="min-h-screen bg-[#f9f7ff] text-slate-900 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-50">
+      <body className="min-h-screen text-slate-900 transition-colors duration-300 dark:text-slate-50">
+        <Script id="weekcrew-theme-init" strategy="beforeInteractive">
+          {themeInitScript}
+        </Script>
         <ClientProviders>
           <div className="flex min-h-screen flex-col">
             <Header />
-            <main className="flex-1 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.98),_rgba(235,234,255,0.7))] transition-colors duration-300 dark:bg-gradient-to-b dark:from-slate-950 dark:via-slate-900/70 dark:to-slate-950">
+            <main className="flex-1">
               <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-12">
                 {children}
               </div>

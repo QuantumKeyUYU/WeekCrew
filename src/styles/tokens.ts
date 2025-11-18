@@ -2,10 +2,10 @@ const motionTiming = 'transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,
 
 export const primaryCtaClass = [
   'inline-flex items-center justify-center rounded-full px-6 py-2.5 text-sm font-semibold text-white sm:text-base',
-  'bg-gradient-to-r from-[#6f5be9] via-[#7867f1] to-[#927cff]',
-  'shadow-[0_18px_55px_rgba(116,96,239,0.55)] ring-1 ring-white/30',
+  'bg-[linear-gradient(120deg,#7f5af0,#9d7bff)]',
+  'shadow-[0_0_30px_rgba(142,97,255,0.45)] ring-1 ring-white/30 dark:ring-white/10',
   motionTiming,
-  'hover:-translate-y-0.5 hover:shadow-[0_26px_70px_rgba(116,96,239,0.65)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent active:translate-y-0',
+  'hover:-translate-y-0.5 hover:shadow-[0_0_45px_rgba(142,97,255,0.65)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent active:translate-y-0',
 ].join(' ');
 
 export const secondaryCtaClass = [
