@@ -7,57 +7,69 @@ export const copy = {
     nav_my_circle: 'Мой круг',
     nav_new_circle: 'Новый круг',
     nav_settings: 'Настройки',
-    hero_intro_label: 'Небольшие анонимные кружки по интересам',
-    hero_title: 'Один круг на неделю. Без лент и лайков.',
+    hero_intro_label: 'Неделя общения по настроению',
+    hero_title: 'Один круг. Семь дней рядом.',
     hero_description:
-      'Выбираешь настроение — мы собираем небольшой чат на 3–8 человек. Семь дней общения в одном месте, потом аккуратно запускаем новый круг.',
-    hero_story_title: 'О чём WeekCrew',
+      'Мы собираем анонимный чат на 3–8 человек. Неделя проходит в одном спокойном месте — без лент, гонки за вниманием и лишнего шума.',
+    hero_story_title: 'Что за формат',
     hero_story_description:
-      'Один уютный чат без бесконечных лент. Живёте неделю вместе и знаете, что все здесь по схожему состоянию, а не ради лайков.',
+      'WeekCrew — недельные круги для спокойного общения. Формат простой: один чат, понятный старт и мягкий финал. Внутри — реальные люди с похожим настроением.',
     hero_primary_cta: 'Начать подбор',
     hero_secondary_cta: 'Как всё работает',
     hero_stat_circle_label: 'Один круг',
-    hero_stat_circle_description: 'Каждая неделя — новый запуск',
+    hero_stat_circle_description: 'Новый запуск каждую неделю',
     hero_stat_size_label: '3–8 человек',
-    hero_stat_size_description: 'Тёплая компания без толпы',
+    hero_stat_size_description: 'Каждый слышен и виден',
     hero_stat_feed_label: 'Без лент',
-    hero_stat_feed_description: 'Только один чат и никакой гонки за лайками',
-    home_week_story_title: 'Как живёт неделя',
-    home_week_story_description: 'Вся неделя — короткая история из трёх сцен: знакомство, свой круг, мягкое завершение.',
-    home_week_story_stage_one_label: 'День 1–2',
-    home_week_story_stage_one_title: 'Спокойное знакомство',
-    home_week_story_stage_one_description: 'Круг собирается и делится первыми заметками — без спешки и обязаловки.',
-    home_week_story_stage_two_label: 'День 3–5',
-    home_week_story_stage_two_title: 'Уже своя компания',
-    home_week_story_stage_two_description: 'Темы ложатся на настроение, разговор идёт своим темпом, можно писать или просто читать.',
-    home_week_story_stage_three_label: 'День 6–7',
-    home_week_story_stage_three_title: 'Итоги без драмы',
-    home_week_story_stage_three_description: 'Подводите итоги недели и мягко закрываете круг. Чат остаётся для чтения.',
-    home_how_it_works_title: 'Как проходит неделя',
+    hero_stat_feed_description: 'Один чат и ноль алгоритмов',
+    home_essentials_label: 'Суть продукта',
+    home_essentials_title: 'Неделя в одном круге',
+    home_essentials_description:
+      'Формат с понятным началом и завершением: заходишь, неделю живёте вместе, спокойно расходитесь и при желании берёте новый круг.',
+    home_essentials_single_circle_title: 'Один чат вместо ленты',
+    home_essentials_single_circle_description:
+      'Вся неделя живёт в одном чате. Меньше отвлекает, внимание не распадается между десятком каналов.',
+    home_essentials_fresh_mood_title: 'Круг под настроение',
+    home_essentials_fresh_mood_description:
+      'Перед стартом отмечаешь настроение и запрос недели — в круг попадают люди с похожим состоянием.',
+    home_essentials_soft_finish_title: 'Мягкий финал',
+    home_essentials_soft_finish_description:
+      'Финал известен заранее, поэтому неделя заканчивается спокойно. Чат остаётся для чтения и небольших выводов.',
+    home_how_it_works_label: 'Как проходит неделя',
+    home_how_it_works_title: 'Три шага до круга',
     home_how_it_works_description:
-      'Путь простой: выбираешь настроение, попадаешь в спокойный чат и семь дней общаешься без лент и беготни. Не обязательно писать каждый день — подключайся в своём темпе.',
-    home_step_select_interest_title: 'Выбери настроение',
+      'Короткий путь от настроения до первой переписки. Без анкет и длинной регистрации.',
+    home_step_select_interest_title: 'Выбор настроения',
     home_step_select_interest_description:
-      'Перед каждой новой неделей можно сменить настроение и попробовать другой круг.',
-    home_step_join_circle_title: 'Мы собираем круг',
+      'Отмечаешь тему или настроение недели — этого достаточно, чтобы начать.',
+    home_step_join_circle_title: 'Подбор круга',
     home_step_join_circle_description:
-      'Подберём 3–8 человек с похожим запросом — никто не теряется в толпе.',
+      'Мы собираем 3–8 человек с похожими ожиданиями и добавляем всех в один чат.',
     home_step_week_of_warmth_title: 'Неделя общения',
     home_step_week_of_warmth_description:
-      'Семь дней общаетесь в одном чате. Потом круг мягко закрывается, а чат остаётся для чтения.',
-    home_why_cozy_title: 'Почему здесь спокойно',
+      'Живёте в одном чате, отвечаете на вопросы дня, иногда просто читаете — любой ритм нормален.',
+    home_why_cozy_label: 'Почему спокойно',
+    home_why_cozy_title: 'Структура спокойного общения',
+    home_why_cozy_description:
+      'Формат опирается на то, как людям проще общаться в маленьких группах: меньше шума, больше внимания друг к другу.',
     feature_week_length_title: 'Ритм в одну неделю',
-    feature_week_length_description: 'Неделя достаточно длинная, чтобы почувствовать людей, и достаточно короткая, чтобы не устать.',
+    feature_week_length_description:
+      'Семь дней — достаточно, чтобы почувствовать людей, и недостаточно, чтобы устать.',
     feature_small_group_title: 'Маленькая компания',
-    feature_small_group_description: '3–8 человек, разговор не превращается в общий чат на сотню сообщений.',
-    feature_daily_icebreaker_title: 'Мягкие подсказки',
-    feature_daily_icebreaker_description: 'Когда в чате тихо, система подкидывает аккуратные вопросы и темы.',
+    feature_small_group_description:
+      '3–8 человек создают ощущение личного разговора — никто не теряется и не тонет в сотне сообщений.',
+    feature_daily_icebreaker_title: 'Вопросы дня',
+    feature_daily_icebreaker_description:
+      'Один аккуратный вопрос в день помогает включиться, когда нет сил начинать разговор с нуля.',
     feature_no_likes_title: 'Без лент и лайков',
-    feature_no_likes_description: 'Никакой гонки за реакциями — только живой разговор в одном месте.',
+    feature_no_likes_description:
+      'Без ленты, лайков и оценок — меньше сравнения и лишних триггеров, больше живого диалога.',
     feature_one_circle_title: 'Один круг — один трек',
-    feature_one_circle_description: 'На неделю только один чат. Всё внимание здесь, без прыжков между кружками.',
+    feature_one_circle_description:
+      'На неделю только один круг: понятная структура и предсказуемый ритм без ощущения «ещё одного чата».',
     home_ready_title: 'Готов к новой неделе?',
-    home_ready_description: 'Если круга ещё нет — соберём его без суеты. Если уже есть, просто вернём тебя в этот чат.',
+    home_ready_description:
+      'Если круга ещё нет — спокойно соберём его под твоё настроение. Если уже есть, просто вернём тебя в текущий чат.',
     home_ready_cta: 'Начать подбор',
     interest_kpop_label: 'K-pop',
     interest_kpop_description: 'камбеки, фан-проекты и мягкие плейлисты',
@@ -266,58 +278,80 @@ export const copy = {
     nav_my_circle: 'My circle',
     nav_new_circle: 'New circle',
     nav_settings: 'Settings',
-    hero_intro_label: 'Small anonymous circles by vibe',
-    hero_title: 'One circle per week. No feeds, no likes.',
+    hero_intro_label: 'A week of calm conversations',
+    hero_title: 'One circle. Seven days together.',
     hero_description:
-      'Pick a mood and we’ll gather a 3–8 person chat around it. Seven days happen in one calm space and then we gently launch a new circle.',
-    hero_story_title: 'What WeekCrew is about',
+      'We gather an anonymous chat of 3–8 people. The week lives in one quiet space — no feeds, no race for attention, no extra noise.',
+    hero_story_title: 'About the format',
     hero_story_description:
-      'One cozy chat instead of endless feeds. You spend a week together knowing everyone joined for a similar mood, not for likes.',
+      'WeekCrew is weekly circles for calm conversation. The format is simple: one chat, a clear start, and a gentle finish. Inside are real people with a similar mood.',
     hero_primary_cta: 'Start matching',
-    hero_secondary_cta: 'See how it works',
+    hero_secondary_cta: 'How it works',
+
     hero_stat_circle_label: 'One circle',
-    hero_stat_circle_description: 'Fresh vibe every week',
+    hero_stat_circle_description: 'New circle every week',
     hero_stat_size_label: '3–8 people',
-    hero_stat_size_description: 'Small, cozy crew',
+    hero_stat_size_description: 'Everyone is heard',
     hero_stat_feed_label: 'No feeds',
-    hero_stat_feed_description: 'One chat, zero like chasing',
-    home_week_story_title: 'How the week feels',
-    home_week_story_description: 'Each week is a three-scene story: meet, settle in, and close the circle gently.',
-    home_week_story_stage_one_label: 'Days 1–2',
-    home_week_story_stage_one_title: 'Slow introductions',
-    home_week_story_stage_one_description: 'The circle gathers and shares first notes without pressure or rush.',
-    home_week_story_stage_two_label: 'Days 3–5',
-    home_week_story_stage_two_title: 'Feels like your crew',
-    home_week_story_stage_two_description: 'Topics match the mood, the chat finds its pace, you can write or simply read.',
-    home_week_story_stage_three_label: 'Days 6–7',
-    home_week_story_stage_three_title: 'Closing without drama',
-    home_week_story_stage_three_description: 'You wrap up the week and close the circle softly. The chat stays for reading.',
-    home_how_it_works_title: 'How the week flows',
+    hero_stat_feed_description: 'One chat, zero algorithms',
+
+    home_essentials_label: 'Essence',
+    home_essentials_title: 'A week in one circle',
+    home_essentials_description:
+      'A format with a clear beginning and end: you enter, spend a week together, step out calmly, and pick a new circle if you like.',
+
+    home_essentials_single_circle_title: 'One chat instead of a feed',
+    home_essentials_single_circle_description:
+      'The whole week lives in a single thread. Fewer distractions, no need to follow a dozen channels.',
+
+    home_essentials_fresh_mood_title: 'A circle for your mood',
+    home_essentials_fresh_mood_description:
+      'Before the week starts you mark your mood and focus — people with a similar state land in the same circle.',
+
+    home_essentials_soft_finish_title: 'Soft ending',
+    home_essentials_soft_finish_description:
+      'The ending is known in advance, so the week closes gently. The chat stays for reading and small reflections.',
+
+    home_how_it_works_label: 'How the week flows',
+    home_how_it_works_title: 'Three steps to your circle',
     home_how_it_works_description:
-      'It’s simple: choose a mood, step into a calm chat, and spend seven days together without feeds or noise. No need to post daily — join in at your own pace.',
-    home_step_select_interest_title: 'Choose a mood',
+      'A short path from your mood to the first messages. No long forms, no heavy onboarding.',
+    home_step_select_interest_title: 'Pick your mood',
     home_step_select_interest_description:
-      'Before each new week you can switch the mood and try another circle.',
-    home_step_join_circle_title: 'We gather the circle',
+      'You choose a theme or weekly mood — that’s enough to get started.',
+    home_step_join_circle_title: 'Circle matching',
     home_step_join_circle_description:
-      'We match 3–8 people with a similar request so no one fades into the crowd.',
+      'We gather 3–8 people with similar expectations and bring everyone into one chat.',
     home_step_week_of_warmth_title: 'A week of chatting',
     home_step_week_of_warmth_description:
-      'You spend seven days in one chat. Afterwards the circle closes gently while the archive stays for reading.',
-    home_why_cozy_title: 'Why it stays calm',
+      'You share one chat, reply to daily prompts, sometimes just read — any pace is welcome.',
+
+    home_why_cozy_label: 'Why it feels calm',
+    home_why_cozy_title: 'Structure for gentle conversation',
+    home_why_cozy_description:
+      'The format follows how people naturally talk in small groups: less noise, more attention to each other.',
+
     feature_week_length_title: 'Weekly rhythm',
-    feature_week_length_description: 'A week is long enough to feel close and short enough not to burn out.',
-    feature_small_group_title: 'Small group energy',
-    feature_small_group_description: '3–8 people keep the thread calm — no hundred-message chaos.',
-    feature_daily_icebreaker_title: 'Gentle prompts',
-    feature_daily_icebreaker_description: 'If it goes quiet, the app nudges with soft questions and themes.',
-    feature_no_likes_title: 'No feeds, no likes',
-    feature_no_likes_description: 'Zero race for reactions — just a living chat in one place.',
-    feature_one_circle_title: 'Single-track focus',
-    feature_one_circle_description: 'One chat per week so your attention stays here without juggling.',
+    feature_week_length_description:
+      'Seven days are long enough to get a feel for people, and short enough not to get tired.',
+    feature_small_group_title: 'Small company',
+    feature_small_group_description:
+      '3–8 people feel like a personal conversation — no one disappears in a hundred-message thread.',
+    feature_daily_icebreaker_title: 'Daily questions',
+    feature_daily_icebreaker_description:
+      'One gentle question a day helps you join in, even when you don’t have energy to start a topic from scratch.',
+    feature_no_likes_title: 'No feeds or likes',
+    feature_no_likes_description:
+      'No feeds, likes, or scores — fewer comparisons and triggers, more live dialogue.',
+    feature_one_circle_title: 'One circle, one track',
+    feature_one_circle_description:
+      'One circle for the week: a clear structure and predictable rhythm without the feeling of “yet another chat”.',
+
     home_ready_title: 'Ready for a new week?',
-    home_ready_description: 'No circle yet? We’ll assemble one without any rush. Already have one? This button takes you straight back.',
+    home_ready_description:
+      'No circle yet? We’ll calmly match one to your mood. Already have one? This button takes you back to your current chat.',
     home_ready_cta: 'Start matching',
+
     interest_kpop_label: 'K-pop',
     interest_kpop_description: 'comebacks, fan projects, and soft playlists',
     interest_anime_label: 'Anime',
@@ -333,15 +367,15 @@ export const copy = {
     interest_it_label: 'IT',
     interest_it_description: 'product, code, design, and backstage stories',
     interest_games_label: 'Games',
-    interest_games_description: 'indie pearls, AAA launches, cozy farms',
+    interest_games_description: 'indie gems, AAA launches, cozy farms',
     interest_movies_label: 'Movies',
     interest_movies_description: 'premieres, directors, and favorite frames',
-    interest_custom_label: 'Surprise me',
-    interest_custom_description: 'let the system surface something unexpected',
-    explore_intro_label: 'Weekly vibe',
+    interest_custom_label: 'Surprise',
+    interest_custom_description: 'let the system pick something unexpected',
+    explore_intro_label: 'Weekly mood',
     explore_title: 'Choose an interest',
     explore_description:
-      'Each week means a fresh circle. Tap an interest and we’ll invite you into a cozy chat or assemble a new crew.',
+      'Each week is a new circle. Tap an interest and we’ll find you a cozy chat or assemble a fresh crew.',
     explore_mood_title: 'How do you feel?',
     explore_mood_description:
       'Start by picking this week’s mood — a calm chat, inspiration, or gentle support.',
