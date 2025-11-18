@@ -12,6 +12,7 @@ import { INTERESTS_MAP } from '@/config/interests';
 import { MOOD_OPTIONS } from '@/constants/moods';
 import { clearCircleSelection, loadCircleSelection } from '@/lib/circleSelection';
 import { useAppStore } from '@/store/useAppStore';
+import { LANGUAGE_INTERESTS } from '@/constants/language-interests';
 
 export default function CirclePage() {
   const router = useRouter();
@@ -41,7 +42,12 @@ export default function CirclePage() {
       const moodLabelKey = MOOD_OPTIONS.find((option) => option.key === stored.mood)?.shortLabelKey;
       setSelectionMood(moodLabelKey ? t(moodLabelKey) : null);
       const interestConfig = INTERESTS_MAP[stored.interestId];
-      setSelectionInterest(interestConfig ? t(interestConfig.labelKey) : null);
+      if (interestConfig) {
+        setSelectionInterest(t(interestConfig.labelKey));
+      } else {
+        const languageInterest = LANGUAGE_INTERESTS.find((interest) => interest.id === stored.interestId);
+        setSelectionInterest(languageInterest ? t(languageInterest.labelKey) : null);
+      }
     }
   }, [t]);
 

@@ -23,10 +23,10 @@ export const Header = () => {
     <header
       className={clsx(
         'sticky top-0 z-50 border-b border-transparent transition-all duration-300 ease-out',
-        'backdrop-blur-xl supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-slate-950/70',
+        'backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-[#050816]/60',
         isScrolled
-          ? 'bg-white/90 text-slate-900 shadow-[0_18px_45px_rgba(11,15,36,0.08)] dark:border-white/10 dark:bg-slate-950/95 dark:text-slate-50'
-          : 'bg-transparent text-slate-900 dark:text-slate-50',
+          ? 'bg-white/85 text-slate-900 shadow-[0_18px_45px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-[#050816]/90 dark:text-white'
+          : 'bg-transparent text-slate-900 dark:text-white',
       )}
     >
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
@@ -41,7 +41,7 @@ export const Header = () => {
           <LanguageSwitch />
           <Link
             href="/settings"
-            className="inline-flex items-center rounded-full border border-slate-200/70 bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 shadow-[0_12px_30px_rgba(15,23,42,0.08)] transition hover:-translate-y-0.5 hover:border-brand/40 hover:text-brand-foreground dark:border-white/10 dark:bg-white/10 dark:text-white"
+            className="inline-flex items-center rounded-full border border-white/70 bg-white/90 px-4 py-2 text-sm font-medium text-slate-700 shadow-[0_18px_45px_rgba(15,23,42,0.12)] transition hover:-translate-y-0.5 hover:text-brand-foreground dark:border-white/20 dark:bg-white/10 dark:text-white"
           >
             {t('nav_settings')}
           </Link>

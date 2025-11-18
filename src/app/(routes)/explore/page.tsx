@@ -3,31 +3,45 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
-import type { InterestTag } from '@/types';
+import type { InterestId } from '@/lib/weekcrewStorage';
 import { INTERESTS } from '@/config/interests';
 import { useWeekcrewStorage } from '@/lib/weekcrewStorage';
 import { useTranslation } from '@/i18n/useTranslation';
 import { motionTimingClass, primaryCtaClass } from '@/styles/tokens';
 import { MOOD_OPTIONS, type MoodKey } from '@/constants/moods';
 import { saveCircleSelection } from '@/lib/circleSelection';
+import { LANGUAGE_INTERESTS } from '@/constants/language-interests';
+import { TestModeHint } from '@/components/shared/test-mode-hint';
 
 export default function ExplorePage() {
   const router = useRouter();
   const t = useTranslation();
   const storage = useWeekcrewStorage();
 
-  const interestCards = useMemo(
+  type InterestCard = { id: InterestId; label: string; emoji: string };
+
+  const defaultInterestCards = useMemo<InterestCard[]>(
     () =>
       INTERESTS.map((interest) => ({
-        key: interest.key,
+        id: interest.key,
         label: t(interest.labelKey),
-        emoji: interest.emoji,
+        emoji: interest.emoji ?? '✨',
+      })),
+    [t],
+  );
+
+  const languageInterestCards = useMemo<InterestCard[]>(
+    () =>
+      LANGUAGE_INTERESTS.map((interest) => ({
+        id: interest.id,
+        label: t(interest.labelKey),
+        emoji: interest.icon,
       })),
     [t],
   );
 
   const [selectedMood, setSelectedMood] = useState<MoodKey | null>(null);
-  const [selectedInterest, setSelectedInterest] = useState<InterestTag | null>(null);
+  const [selectedInterest, setSelectedInterest] = useState<InterestId | null>(null);
   const [randomInterest, setRandomInterest] = useState(false);
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,11 +50,15 @@ export default function ExplorePage() {
     ? t(MOOD_OPTIONS.find((option) => option.key === selectedMood)?.labelKey ?? '')
     : null;
 
-  const canStart = Boolean(selectedMood && (selectedInterest || randomInterest));
+  const isLanguageMood = selectedMood === 'languages';
+  const interestsToRender = isLanguageMood ? languageInterestCards : defaultInterestCards;
+  const selectedInterestIsValid = interestsToRender.some((interest) => interest.id === selectedInterest);
+  const effectiveInterest = selectedInterestIsValid ? selectedInterest : null;
+  const canStart = Boolean(selectedMood && (effectiveInterest || randomInterest));
 
-  const handleSelectInterest = (key: InterestTag) => {
+  const handleSelectInterest = (id: InterestId) => {
     if (joining) return;
-    setSelectedInterest((prev) => (prev === key ? null : key));
+    setSelectedInterest((prev) => (prev === id ? null : id));
     setRandomInterest(false);
   };
 
@@ -56,9 +74,14 @@ export default function ExplorePage() {
     setJoining(true);
     setError(null);
 
-    const interestPool = INTERESTS.map((interest) => interest.key);
-    const randomChoice = interestPool[Math.floor(Math.random() * interestPool.length)];
-    const interestId = randomInterest ? randomChoice : selectedInterest!;
+    const interestPool = interestsToRender.map((interest) => interest.id);
+    const randomChoice = interestPool[Math.floor(Math.random() * interestPool.length)] ?? null;
+    const interestId = randomInterest ? randomChoice : effectiveInterest;
+
+    if (!interestId) {
+      setJoining(false);
+      return;
+    }
 
     try {
       await storage.joinDemoCircleFromInterest(interestId);
@@ -73,16 +96,18 @@ export default function ExplorePage() {
 
   return (
     <div className="space-y-8 py-6">
-      <section className="rounded-[2.75rem] border border-white/10 bg-slate-950/80 p-6 text-white shadow-[0_35px_90px_rgba(5,7,22,0.85)] sm:p-10">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/60">{t('explore_intro_label')}</p>
-        <h1 className="mt-3 text-3xl font-semibold">{t('explore_page_title')}</h1>
-        <p className="mt-2 text-sm text-white/80">{t('explore_page_subtitle')}</p>
+      <section className="app-hero overflow-hidden p-6 text-white shadow-[0_24px_120px_rgba(8,7,20,0.55)] sm:p-10">
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/70">{t('explore_intro_label')}</p>
+        <h1 className="mt-3 text-3xl font-semibold sm:text-[2.25rem]">{t('explore_page_title')}</h1>
+        <p className="mt-3 text-base text-white/80">{t('explore_page_subtitle')}</p>
       </section>
 
-      <section className="rounded-[2.5rem] border border-slate-200/70 bg-white/95 p-6 shadow-[0_18px_60px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-slate-900/70">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400 dark:text-slate-300">{t('explore_step_one_title')}</p>
+      <section className="app-panel p-6">
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-300">
+          {t('explore_step_one_title')}
+        </p>
         <h2 className="mt-2 text-xl font-semibold text-slate-900 dark:text-white">{t('explore_step_one_heading')}</h2>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">{t('explore_step_one_description')}</p>
+        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{t('explore_step_one_description')}</p>
         <div className="mt-4 flex flex-wrap gap-2">
           {MOOD_OPTIONS.map((mood) => {
             const active = selectedMood === mood.key;
@@ -92,10 +117,10 @@ export default function ExplorePage() {
                 type="button"
                 onClick={() => setSelectedMood((prev) => (prev === mood.key ? null : mood.key))}
                 className={clsx(
-                  'rounded-full border px-4 py-2 text-sm font-medium transition',
+                  'app-chip px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
                   active
-                    ? 'border-brand bg-brand/10 text-brand-foreground'
-                    : 'border-slate-200 bg-white text-slate-600 hover:border-brand/40 hover:text-brand-foreground dark:border-white/10 dark:bg-slate-900/80 dark:text-slate-200',
+                    ? 'border-brand/70 bg-brand text-white shadow-[0_0_30px_rgba(142,97,255,0.45)]'
+                    : 'text-slate-600 hover:-translate-y-0.5 hover:text-brand-foreground dark:text-slate-200',
                 )}
                 aria-pressed={active}
               >
@@ -104,29 +129,35 @@ export default function ExplorePage() {
             );
           })}
         </div>
-        {moodLabel && <p className="mt-3 text-xs text-slate-400 dark:text-slate-500">{t('explore_mood_selected_label', { mood: moodLabel })}</p>}
+        {moodLabel && (
+          <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+            {t('explore_mood_selected_label', { mood: moodLabel })}
+          </p>
+        )}
       </section>
 
-      <section className="space-y-4 rounded-[2.5rem] border border-slate-200/70 bg-white/95 p-6 shadow-[0_18px_60px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-slate-900/70">
+      <section className="app-panel space-y-4 p-6">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400 dark:text-slate-300">{t('explore_step_two_title')}</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-300">
+            {t('explore_step_two_title')}
+          </p>
           <h2 className="mt-2 text-xl font-semibold text-slate-900 dark:text-white">{t('explore_step_two_heading')}</h2>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">{t('explore_step_two_description')}</p>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{t('explore_step_two_description')}</p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          {interestCards.map((card) => {
-            const active = selectedInterest === card.key;
+          {interestsToRender.map((card) => {
+            const active = selectedInterest === card.id;
             return (
               <button
-                key={card.key}
+                key={card.id}
                 type="button"
-                onClick={() => handleSelectInterest(card.key)}
+                onClick={() => handleSelectInterest(card.id)}
                 className={clsx(
-                  'rounded-3xl border px-5 py-4 text-left text-slate-700 shadow-sm transition',
+                  'rounded-3xl border px-5 py-4 text-left transition',
                   motionTimingClass,
                   active
-                    ? 'border-brand bg-brand/5 text-brand-foreground'
-                    : 'border-slate-200/80 bg-white hover:-translate-y-0.5 hover:border-brand/40 dark:border-white/10 dark:bg-slate-900/80 dark:text-slate-100',
+                    ? 'border-brand/60 bg-brand/10 text-brand-foreground shadow-[0_0_30px_rgba(142,97,255,0.35)] dark:bg-brand/25 dark:text-white'
+                    : 'border-slate-100/80 bg-white/90 text-slate-700 shadow-[0_20px_60px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 dark:border-white/10 dark:bg-[#050816]/60 dark:text-slate-100',
                 )}
                 aria-pressed={active}
               >
@@ -144,19 +175,19 @@ export default function ExplorePage() {
           type="button"
           onClick={handleRandomInterest}
           className={clsx(
-            'w-full rounded-3xl border px-5 py-3 text-sm font-medium transition',
+            'w-full rounded-3xl border border-dashed px-5 py-3 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
             randomInterest
               ? 'border-brand bg-brand/10 text-brand-foreground'
-              : 'border-dashed border-slate-300 text-slate-500 hover:border-brand/40 hover:text-brand-foreground dark:border-white/20 dark:text-slate-300',
+              : 'border-slate-300 text-slate-500 hover:border-brand/40 hover:text-brand-foreground dark:border-white/20 dark:text-slate-300',
           )}
         >
           {t('explore_random_button')}
         </button>
       </section>
 
-      <section className="rounded-[2.5rem] border border-slate-200/70 bg-white/95 p-6 text-center shadow-[0_18px_60px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-slate-900/70">
+      <section className="app-panel p-6 text-center">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{t('explore_ready_title')}</h3>
-        <p className="mt-2 text-sm text-slate-500 dark:text-slate-300">{t('explore_ready_description')}</p>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{t('explore_ready_description')}</p>
         <div className="mt-4 flex justify-center">
           <button
             type="button"
@@ -170,7 +201,7 @@ export default function ExplorePage() {
         {error && <p className="mt-3 text-sm text-red-500 dark:text-red-400">{error}</p>}
       </section>
 
-      <p className="text-center text-xs text-slate-500 dark:text-slate-400">{t('landing_test_mode_hint')}</p>
+      <TestModeHint />
     </div>
   );
 }
