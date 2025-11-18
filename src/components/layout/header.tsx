@@ -35,21 +35,22 @@ export const Header = () => {
       <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <Link
           href="/"
-          className="text-base font-semibold tracking-tight text-slate-900 transition-colors hover:text-brand-foreground dark:text-white sm:text-lg"
+          aria-label="WeekCrew — на главную"
+          className="inline-flex items-center rounded-full border border-transparent px-3 py-1 text-base font-semibold tracking-tight text-slate-900 transition-colors duration-200 hover:border-slate-200 hover:bg-white/80 hover:text-brand-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent dark:text-white sm:text-lg"
         >
           WeekCrew
         </Link>
-        <nav className="flex flex-1 items-center justify-end overflow-x-auto">
-          <div className="flex flex-wrap items-center gap-0.5 rounded-full border border-slate-200/70 bg-white/70 p-1 text-xs font-medium text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_24px_rgba(15,23,42,0.06)] backdrop-blur dark:border-white/10 dark:bg-white/5 dark:text-slate-100 sm:gap-1.5 sm:text-sm">
+        <nav className="flex w-full flex-1 items-center justify-end sm:w-auto">
+          <div className="flex w-full max-w-md flex-1 items-center gap-1 rounded-full border border-slate-200/70 bg-white/70 p-1 text-[13px] font-medium text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_24px_rgba(15,23,42,0.06)] backdrop-blur dark:border-white/10 dark:bg-white/5 dark:text-slate-100 sm:max-w-none sm:gap-1.5 sm:text-sm">
             {navItems.map((item) => {
-              const isActive = pathname === item.href;
+              const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
               const label = t(item.labelKey);
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   className={clsx(
-                    'group relative flex items-center rounded-full px-3 py-1.5 text-[13px] font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent sm:px-3.5 sm:py-1.5 sm:text-sm',
+                    'group relative flex flex-1 items-center justify-center rounded-full px-2.5 py-1.5 text-[13px] font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent sm:flex-none sm:px-3.5 sm:py-1.5 sm:text-sm',
                     isActive
                       ? 'text-slate-900 dark:text-white'
                       : 'text-slate-500 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white'

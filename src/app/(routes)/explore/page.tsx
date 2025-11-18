@@ -38,6 +38,7 @@ export default function ExplorePage() {
       <div className={panelClass}>
         <h1 className="text-xl font-semibold text-brand-foreground sm:text-2xl">{t('explore_title')}</h1>
         <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">{t('explore_description')}</p>
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('explore_reminder')}</p>
       </div>
 
       <div className="grid gap-2.5 sm:grid-cols-2 sm:gap-3.5">
@@ -54,8 +55,8 @@ export default function ExplorePage() {
             )}
             disabled={Boolean(pendingKey)}
           >
-            <div className="text-sm font-semibold text-brand-foreground">{interest.title}</div>
-            <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{interest.description}</p>
+            <div className="text-sm font-semibold text-brand-foreground">{t(interest.labelKey)}</div>
+            <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{t(interest.descriptionKey)}</p>
           </button>
         ))}
       </div>
