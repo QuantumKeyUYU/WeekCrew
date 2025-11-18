@@ -1,6 +1,15 @@
+'use client';
+
 import Link from 'next/link';
 
 export default function HomePage() {
+  const handleScrollToHow = () => {
+    const target = document.getElementById('how-it-works');
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
     <main className="px-4 py-10 sm:py-14">
       <section className="mx-auto flex max-w-4xl flex-col gap-6 rounded-3xl border border-slate-200/80 bg-slate-900/40 p-6 text-slate-100 shadow-[0_24px_80px_rgba(15,23,42,0.75)] dark:border-white/10 sm:p-10">
@@ -22,12 +31,13 @@ export default function HomePage() {
           >
             Начать подбор
           </Link>
-          <a
-            href="#how-it-works"
+          <button
+            type="button"
+            onClick={handleScrollToHow}
             className="inline-flex items-center justify-center rounded-full border border-slate-500/80 bg-transparent px-5 py-2.5 text-sm font-medium text-slate-200 transition hover:-translate-y-0.5 hover:border-slate-300 hover:text-white"
           >
             Как всё работает
-          </a>
+          </button>
         </div>
       </section>
 
@@ -44,7 +54,7 @@ export default function HomePage() {
             </p>
             <p className="mt-2 font-medium">Выбери настроение</p>
             <p className="mt-1 text-slate-300/90">
-              K-pop, книги, фильмы или что-то новое — интерес можно менять в любой момент.
+              К-поп, книги, фильмы или что-то новое — интерес можно менять перед каждой новой неделей.
             </p>
           </div>
           <div className="rounded-2xl border border-slate-200/60 bg-slate-900/40 p-4 text-xs sm:text-sm dark:border-white/10">

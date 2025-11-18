@@ -71,8 +71,8 @@ export default function SettingsPage() {
         <section className="rounded-3xl border border-slate-200/80 bg-slate-900/40 p-5 text-slate-50 shadow-[0_20px_60px_rgba(15,23,42,0.8)] dark:border-white/10 sm:p-7">
           <h1 className="text-lg font-semibold sm:text-xl">Настройки WeekCrew</h1>
           <p className="mt-2 text-xs text-slate-300/95 sm:text-sm">
-            Здесь можно посмотреть режим работы приложения, свой анонимный идентификатор
-            устройства и при необходимости очистить локальные данные.
+            Пара коротких подсказок про режим работы и локальные данные. Никаких сложных
+            меню — только то, что может пригодиться прямо сейчас.
           </p>
         </section>
 
@@ -95,7 +95,7 @@ export default function SettingsPage() {
 
         {/* Устройство */}
         <section className="rounded-3xl border border-slate-200/80 bg-slate-900/40 p-5 text-sm text-slate-50 shadow-[0_16px_50px_rgba(15,23,42,0.7)] dark:border-white/10 sm:p-6">
-          <h2 className="text-sm font-semibold sm:text-base">Твоё устройство</h2>
+          <h2 className="text-sm font-semibold sm:text-base">Твоё устройство (технические детали)</h2>
           <p className="mt-2 text-xs text-slate-300/95 sm:text-sm">
             WeekCrew использует анонимный идентификатор, чтобы понимать, что это всё ещё
             ты — без логина и пароля.
@@ -121,13 +121,17 @@ export default function SettingsPage() {
             Этот код не связан с именем или аккаунтом. Он нужен только для работы
             кружков и может быть сброшен вместе с локальными данными.
           </p>
+          <p className="mt-2 text-[11px] leading-relaxed text-slate-400">
+            Эту секцию можно смело пропустить — она для тех, кому интересно, как устроено
+            приложение внутри.
+          </p>
         </section>
 
         {/* Управление данными */}
         <section className="rounded-3xl border border-slate-200/80 bg-slate-900/40 p-5 text-sm text-slate-50 shadow-[0_16px_50px_rgba(15,23,42,0.7)] dark:border-white/10 sm:p-6">
           <h2 className="text-sm font-semibold sm:text-base">Управление локальными данными</h2>
           <p className="mt-2 text-xs leading-relaxed text-slate-300/95 sm:text-sm">
-            Если хочешь начать всё с чистого листа — можно очистить локальное хранилище:
+            Если хочется начать всё с чистого листа — можно очистить локальное хранилище:
             текущее устройство, демо-кружки, сообщения и статус просмотра правил
             безопасности.
           </p>

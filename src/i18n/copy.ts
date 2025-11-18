@@ -3,8 +3,9 @@ export type Locale = 'ru' | 'en';
 export const copy = {
   ru: {
     nav_home: 'Главная',
-    nav_circles: 'Интересы',
+    nav_interests: 'Интересы',
     nav_my_circle: 'Мой круг',
+    nav_new_circle: 'Новый круг',
     nav_settings: 'Настройки',
     hero_title: 'WeekCrew — новый кружок каждую неделю.',
     hero_description:
@@ -13,7 +14,7 @@ export const copy = {
     hero_secondary_cta: 'Как всё работает',
     home_how_it_works_title: 'Как проходит неделя',
     home_step_select_interest_title: '1. Выбери настроение',
-    home_step_select_interest_description: 'К-поп, игры, психология или что-то новое — меняется в любой момент.',
+    home_step_select_interest_description: 'К-поп, игры, психология или что-то новое — интерес можно менять перед каждой новой неделей.',
     home_step_join_circle_title: '2. Присоединяйся к кружку',
     home_step_join_circle_description: 'Мы собираем 3–8 человек с похожим настроем — никто не остаётся без внимания.',
     home_step_week_of_warmth_title: '3. Семь дней тепла',
@@ -157,8 +158,9 @@ export const copy = {
   },
   en: {
     nav_home: 'Home',
-    nav_circles: 'Explore',
+    nav_interests: 'Explore',
     nav_my_circle: 'My circle',
+    nav_new_circle: 'New circle',
     nav_settings: 'Settings',
     hero_title: 'WeekCrew — a new circle every week.',
     hero_description:
@@ -167,7 +169,7 @@ export const copy = {
     hero_secondary_cta: 'See how it works',
     home_how_it_works_title: 'How the week flows',
     home_step_select_interest_title: '1. Choose your vibe',
-    home_step_select_interest_description: 'Choose what you’re into — K-pop, games, psychology or something new.',
+    home_step_select_interest_description: 'Choose what you’re into — K-pop, games, psychology or something new. You can change it before each new week.',
     home_step_join_circle_title: '2. We gather the circle',
     home_step_join_circle_description: 'We match 3–8 people with similar moods.',
     home_step_week_of_warmth_title: '3. Seven days together',

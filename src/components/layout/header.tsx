@@ -5,17 +5,30 @@ import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import clsx from 'clsx';
 import { useTranslation } from '@/i18n/useTranslation';
-
-const navItems = [
-  { href: '/', labelKey: 'nav_home' },
-  { href: '/explore', labelKey: 'nav_circles' },
-  { href: '/circle', labelKey: 'nav_my_circle' },
-  { href: '/settings', labelKey: 'nav_settings' }
-] as const;
+import { useWeekcrewSnapshot } from '@/lib/weekcrewStorage';
 
 export const Header = () => {
   const pathname = usePathname();
   const t = useTranslation();
+  const { currentCircle } = useWeekcrewSnapshot((snapshot) => ({
+    currentCircle: snapshot.currentCircle,
+  }));
+
+  // Если у пользователя уже есть активный кружок, показываем «Новый круг» вместо «Интересы».
+  // В обычном состоянии вход в систему идёт через выбор интересов.
+  const hasCircle = Boolean(currentCircle);
+
+  const navItems = hasCircle
+    ? [
+        { href: '/circle', labelKey: 'nav_my_circle' },
+        { href: '/explore', labelKey: 'nav_new_circle' },
+        { href: '/settings', labelKey: 'nav_settings' },
+      ]
+    : [
+        { href: '/explore', labelKey: 'nav_interests' },
+        { href: '/circle', labelKey: 'nav_my_circle' },
+        { href: '/settings', labelKey: 'nav_settings' },
+      ];
 
   return (
     <header className="app-header sticky top-0 z-50 border-b border-white/70 bg-[rgba(252,251,255,0.85)] text-slate-900 shadow-[0_6px_30px_rgba(15,23,42,0.05)] backdrop-blur supports-[backdrop-filter]:bg-[rgba(252,251,255,0.75)] transition-colors duration-300 dark:border-white/10 dark:bg-[rgba(1,6,24,0.86)] dark:text-slate-50">
