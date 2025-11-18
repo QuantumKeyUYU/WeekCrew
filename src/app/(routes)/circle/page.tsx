@@ -65,6 +65,8 @@ export default function CirclePage() {
     return currentCircle.daysLeft;
   }, [currentCircle?.daysLeft]);
 
+  const safetyPoints = useMemo(() => t('circle_safety_points').split('|'), [t]);
+
   const isLastDay = remainingDays <= 1;
 
   const handleSubmit = async (event: FormEvent) => {
@@ -119,16 +121,20 @@ export default function CirclePage() {
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand/80">{t('circle_header_topic_label')}</p>
             <h1 className="text-2xl font-semibold text-white">{currentCircle.title}</h1>
             <p className="text-sm text-white/70">{currentCircle.description}</p>
-          </div>
-          <div className="flex flex-col gap-3 text-xs text-white/70">
-            <div className="flex flex-wrap gap-2 text-sm">
-              <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 font-medium text-white">
-                {remainingDays} дн. до финала
+            <div className="flex flex-wrap gap-2 text-xs text-white/70">
+              <span className="inline-flex items-center rounded-full border border-white/20 bg-white/5 px-3 py-1 font-medium text-white/90">
+                {t('circle_active_badge')}
               </span>
-              <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1 font-medium text-white/90">
-                {currentCircle.membersCount ?? DEFAULT_MEMBERS} участников
+              <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1 font-medium text-white/80">
+                {t('circle_days_left_chip', { count: remainingDays })}
+              </span>
+              <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1 font-medium text-white/80">
+                {t('circle_members_chip', { count: currentCircle.membersCount ?? DEFAULT_MEMBERS })}
               </span>
             </div>
+            <p className="text-xs text-white/70 sm:text-sm">{t('circle_active_notice')}</p>
+          </div>
+          <div className="flex flex-col gap-3 text-xs text-white/70">
             <p>{t('circle_header_hint')}</p>
             <div className="flex flex-wrap gap-2 text-sm text-white/80">
               <button
@@ -139,7 +145,7 @@ export default function CirclePage() {
                   'hover:-translate-y-0.5 hover:border-white/40',
                 )}
               >
-                Выйти из круга
+                {t('circle_leave_button')}
               </button>
               <button
                 onClick={handleStartNewCircle}
@@ -149,7 +155,7 @@ export default function CirclePage() {
                   'hover:-translate-y-0.5 hover:border-brand hover:text-white',
                 )}
               >
-                Сменить настроение
+                {t('circle_change_mood_button')}
               </button>
               <button
                 onClick={handleResetDemo}
@@ -159,7 +165,7 @@ export default function CirclePage() {
                   'hover:-translate-y-0.5 hover:text-white',
                 )}
               >
-                Сбросить демо
+                {t('circle_reset_demo_button')}
               </button>
             </div>
           </div>
@@ -169,32 +175,22 @@ export default function CirclePage() {
       {/* Баннер про безопасность */}
       {!safetyAccepted && (
         <section className="rounded-3xl border border-amber-200/80 bg-amber-50/90 p-4 text-sm text-amber-900 shadow-[0_10px_30px_rgba(251,191,36,0.25)] dark:border-amber-400/40 dark:bg-amber-950/60 dark:text-amber-50 sm:p-5">
-          <h2 className="text-sm font-semibold">Безопасное общение</h2>
-          <p className="mt-2 text-xs sm:text-sm">
-            Этот круг — про поддержку и уважение. Чтобы всем было спокойно, помни о
-            простых правилах:
-          </p>
+          <h2 className="text-sm font-semibold">{t('circle_safety_title')}</h2>
+          <p className="mt-2 text-xs sm:text-sm">{t('circle_safety_intro')}</p>
           <ul className="mt-2 space-y-1 text-xs sm:text-[13px]">
-            <li>• не делись телефоном, ссылками на мессенджеры и личными соцсетями;</li>
-            <li>• не рассказывай точный адрес, школу, место учёбы или работы;</li>
-            <li>
-              • если кто-то пишет то, от чего становится страшно или неприятно — можно
-              прекратить разговор и рассказать об этом взрослому;
-            </li>
-            <li>
-              • при реальной угрозе жизни и здоровью обращайся в службы помощи в своём
-              городе.
-            </li>
+            {safetyPoints.map((point) => (
+              <li key={point}>• {point}</li>
+            ))}
           </ul>
           <div className="mt-3 flex flex-wrap gap-2">
             <button
               onClick={handleAcceptSafety}
               className="inline-flex items-center justify-center rounded-full bg-slate-900 px-4 py-1.5 text-xs font-semibold text-white transition hover:-translate-y-0.5 dark:bg-white dark:text-slate-900"
             >
-              Понятно, можно общаться
+              {t('circle_safety_acknowledge')}
             </button>
             <span className="text-[11px] text-amber-900/80 dark:text-amber-100/80">
-              Кнопка просто сохранит, что ты видел правила, и скроет это сообщение.
+              {t('circle_safety_dismiss_hint')}
             </span>
           </div>
         </section>
