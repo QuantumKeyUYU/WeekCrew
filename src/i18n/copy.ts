@@ -14,7 +14,7 @@ export const copy = {
     landing_more_link: 'Как устроено',
     landing_go_to_circle: 'У меня уже есть круг',
     landing_test_mode_hint: 'Пока WeekCrew работает в тестовом режиме: сообщения живут только на этом устройстве.',
-    landing_how_title: 'Как всё устроено',
+    landing_how_title: 'Как устроен наш проект',
     landing_how_subtitle: 'Всё очень просто.',
     landing_step_one_title: 'Шаг 1',
     landing_step_one_description:
@@ -331,7 +331,7 @@ export const copy = {
     landing_more_link: 'How it works',
     landing_go_to_circle: 'Go to my circle',
     landing_test_mode_hint: 'WeekCrew is in test mode: messages stay only on this device.',
-    landing_how_title: 'How it works',
+    landing_how_title: 'How our project works',
     landing_how_subtitle: 'It’s very simple.',
     landing_step_one_title: 'Step 1',
     landing_step_one_description:
