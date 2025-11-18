@@ -106,7 +106,10 @@ export default function CirclePage() {
   const fallbackInterest = interestConfig ? t(interestConfig.labelKey) : null;
   const moodTitle = selectionMood;
   const interestTitle = selectionInterest ?? fallbackInterest;
-  const circleTitle = moodTitle && interestTitle ? t('circle_weekly_title', { mood: moodTitle, interest: interestTitle }) : currentCircle?.title ?? t('circle_header_default_title');
+  const circleTitle =
+    moodTitle && interestTitle
+      ? t('circle_weekly_title', { mood: moodTitle, topic: interestTitle })
+      : currentCircle?.title ?? t('circle_header_default_title');
 
   if (!currentCircle) {
     return (
