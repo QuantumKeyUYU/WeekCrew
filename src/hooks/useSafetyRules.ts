@@ -36,7 +36,7 @@ const createStorage = () =>
     const withStorage = <T>(
       handler: (storage: Storage) => T,
       fallback: () => T,
-    ) => {
+    ): T => {
       if (useMemoryFallback) {
         return fallback();
       }
@@ -55,6 +55,7 @@ const createStorage = () =>
         withStorage(
           (storage) => {
             const value = storage.getItem(name);
+            // миграция старого значения '1' → новый формат Zustand
             if (value === '1') {
               const migrated = JSON.stringify({ state: { accepted: true }, version: 0 });
               try {
@@ -69,6 +70,7 @@ const createStorage = () =>
           },
           () => memoryStorage.getItem(name),
         ),
+
       setItem: (name: string, value: string) =>
         withStorage(
           (storage) => {
@@ -76,6 +78,7 @@ const createStorage = () =>
           },
           () => memoryStorage.setItem(name, value),
         ),
+
       removeItem: (name: string) =>
         withStorage(
           (storage) => {
@@ -106,7 +109,9 @@ export const useSafetyRules = () => {
   const accepted = useSafetyRulesStore((state) => state.accepted);
   const markAccepted = useSafetyRulesStore((state) => state.markAccepted);
   const resetAccepted = useSafetyRulesStore((state) => state.resetAccepted);
-  const [hydrated, setHydrated] = useState(() => useSafetyRulesStore.persist?.hasHydrated?.() ?? false);
+  const [hydrated, setHydrated] = useState(
+    () => useSafetyRulesStore.persist?.hasHydrated?.() ?? false,
+  );
 
   useEffect(() => {
     if (useSafetyRulesStore.persist?.hasHydrated?.()) {
@@ -114,6 +119,7 @@ export const useSafetyRules = () => {
     }
     const unsubHydrate = useSafetyRulesStore.persist?.onHydrate?.(() => setHydrated(false));
     const unsubFinish = useSafetyRulesStore.persist?.onFinishHydration?.(() => setHydrated(true));
+
     return () => {
       unsubHydrate?.();
       unsubFinish?.();
