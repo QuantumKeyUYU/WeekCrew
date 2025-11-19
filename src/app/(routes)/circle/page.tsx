@@ -485,39 +485,34 @@ export default function CirclePage() {
     return 'circle_host_final';
   }, [circle]);
 
-  if (!circle && !loadingCircle) {
-    return (
-      <>
-        <div className="space-y-6">
-          {notMember && (
-            <div className="rounded-[2.5rem] border border-amber-200 bg-amber-50/90 p-6 text-center text-amber-900 shadow-sm dark:border-amber-400/40 dark:bg-amber-500/10 dark:text-amber-100">
-              <p className="text-base font-semibold">{t('circle_not_member_notice')}</p>
-              <button
-                type="button"
-                onClick={handleStartMatching}
-                className="mt-4 inline-flex items-center justify-center rounded-full border border-transparent bg-amber-500 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-sm transition hover:bg-amber-600"
-              >
-                {t('circle_not_member_cta')}
-              </button>
-            </div>
-          )}
-          <CircleEmptyState onStart={handleStartMatching} />
-        </div>
-        <SafetyRulesModal open={showModal} onAccept={handleAcceptRules} onClose={handleCloseModal} />
-      </>
-    );
-  }
+  let pageContent: JSX.Element;
 
-  if (!circle) {
-    return (
+  if (!circle && !loadingCircle) {
+    pageContent = (
+      <div className="space-y-6">
+        {notMember && (
+          <div className="rounded-[2.5rem] border border-amber-200 bg-amber-50/90 p-6 text-center text-amber-900 shadow-sm dark:border-amber-400/40 dark:bg-amber-500/10 dark:text-amber-100">
+            <p className="text-base font-semibold">{t('circle_not_member_notice')}</p>
+            <button
+              type="button"
+              onClick={handleStartMatching}
+              className="mt-4 inline-flex items-center justify-center rounded-full border border-transparent bg-amber-500 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-sm transition hover:bg-amber-600"
+            >
+              {t('circle_not_member_cta')}
+            </button>
+          </div>
+        )}
+        <CircleEmptyState onStart={handleStartMatching} />
+      </div>
+    );
+  } else if (!circle) {
+    pageContent = (
       <div className="py-10 text-center text-sm text-slate-700 dark:text-slate-200">
         {t('explore_starting_state')}
       </div>
     );
-  }
-
-  return (
-    <>
+  } else {
+    pageContent = (
       <div className="space-y-6 py-4">
         <section className="rounded-[2.5rem] border border-slate-200/70 bg-white/95 p-6 shadow-[0_28px_80px_rgba(15,23,42,0.12)] dark:border-white/10 dark:bg-slate-900/70">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -681,6 +676,12 @@ export default function CirclePage() {
 
         <p className="text-center text-xs text-slate-500 dark:text-slate-400">{t('landing_test_mode_hint')}</p>
       </div>
+    );
+  }
+
+  return (
+    <>
+      {pageContent}
       <SafetyRulesModal open={showModal} onAccept={handleAcceptRules} onClose={handleCloseModal} />
     </>
   );

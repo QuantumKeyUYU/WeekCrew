@@ -21,7 +21,7 @@ export default function ExplorePage() {
   const t = useTranslation();
   const setCircle = useAppStore((state) => state.setCircle);
   const setMessages = useAppStore((state) => state.setMessages);
-  const { accepted, markAccepted } = useSafetyRules();
+  const { accepted, hydrated, markAccepted } = useSafetyRules();
 
   type InterestCard = { id: InterestId; label: string; emoji: string };
 
@@ -50,13 +50,15 @@ export default function ExplorePage() {
   const [randomInterest, setRandomInterest] = useState(false);
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showRulesModal, setShowRulesModal] = useState(!accepted);
+  const [showRulesModal, setShowRulesModal] = useState(false);
+  const [autoPrompted, setAutoPrompted] = useState(false);
 
   useEffect(() => {
-    if (!accepted) {
+    if (hydrated && !accepted && !autoPrompted) {
       setShowRulesModal(true);
+      setAutoPrompted(true);
     }
-  }, [accepted]);
+  }, [hydrated, accepted, autoPrompted]);
 
   const moodLabel = selectedMood
     ? t(MOOD_OPTIONS.find((option) => option.key === selectedMood)?.labelKey ?? '')
