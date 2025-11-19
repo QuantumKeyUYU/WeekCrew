@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { Circle as CircleModel, PrismaClient } from '@prisma/client';
-import { prisma } from '@/server/prisma';
-import { getOrCreateDevice } from '@/server/device';
-import { toCircleMessage, toCircleSummary } from '@/server/serializers';
+import { prisma } from '@/lib/prisma';
+import { getOrCreateDevice } from '@/lib/server/device';
+import { toCircleMessage, toCircleSummary } from '@/lib/server/serializers';
 import { DEVICE_HEADER_NAME } from '@/lib/device';
 
 const DEFAULT_MAX_MEMBERS = 5;

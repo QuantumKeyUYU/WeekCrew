@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { randomUUID } from 'crypto';
-import { prisma } from '@/server/prisma';
+import { prisma } from '@/lib/prisma';
 import { DEVICE_HEADER_NAME } from '@/lib/device';
 
 export const resolveDeviceId = (request: NextRequest) => {

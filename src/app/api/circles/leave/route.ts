@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/server/prisma';
-import { getOrCreateDevice } from '@/server/device';
+import { prisma } from '@/lib/prisma';
+import { getOrCreateDevice } from '@/lib/server/device';
 import { DEVICE_HEADER_NAME } from '@/lib/device';
 
 export async function POST(request: NextRequest) {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/server/prisma';
-import { getOrCreateDevice } from '@/server/device';
-import { toCircleMessage } from '@/server/serializers';
+import { prisma } from '@/lib/prisma';
+import { getOrCreateDevice } from '@/lib/server/device';
+import { toCircleMessage } from '@/lib/server/serializers';
 import { DEVICE_HEADER_NAME } from '@/lib/device';
 
 const MAX_RESULTS = 200;
