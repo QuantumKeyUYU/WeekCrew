@@ -2,22 +2,24 @@
 
 import { create } from 'zustand';
 import { devtools, persist, createJSONStorage } from 'zustand/middleware';
-import type { AppSettings, Circle, CircleMessage, DeviceInfo, UserProfile } from '@/types';
+import type { AppSettings, CircleSummary, CircleMessage, DeviceInfo, UserProfile } from '@/types';
 
 /* eslint-disable no-unused-vars */
 interface AppStore {
   device: DeviceInfo | null;
   user: UserProfile | null;
-  circle: Circle | null;
+  circle: CircleSummary | null;
   messages: CircleMessage[];
   settings: AppSettings;
   firebaseReady: boolean;
   setDevice(device: DeviceInfo): void;
   setUser(profile: UserProfile | null): void;
   updateUser(updater: (prev: UserProfile | null) => UserProfile | null): void;
-  setCircle(circle: Circle | null): void;
+  setCircle(circle: CircleSummary | null): void;
   setMessages(messages: CircleMessage[]): void;
   addMessage(message: CircleMessage): void;
+  replaceMessage(tempId: string, message: CircleMessage): void;
+  removeMessage(id: string): void;
   updateSettings(settings: Partial<AppSettings>): void;
   setFirebaseReady(ready: boolean): void;
   reset(): void;
@@ -29,6 +31,11 @@ const defaultSettings: AppSettings = {
   theme: 'system',
   animationsEnabled: true
 };
+
+const sortMessages = (messages: CircleMessage[]) =>
+  [...messages].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  );
 
 const memoryStorage = (() => {
   let storage: Record<string, string> = {};
@@ -64,8 +71,18 @@ export const useAppStore = create<AppStore>()(
         setUser: (profile) => set({ user: profile }),
         updateUser: (updater) => set({ user: updater(get().user) }),
         setCircle: (circle) => set({ circle }),
-        setMessages: (messages) => set({ messages }),
-        addMessage: (message) => set({ messages: [...get().messages, message] }),
+        setMessages: (messages) => set({ messages: sortMessages(messages) }),
+        addMessage: (message) => set({ messages: sortMessages([...get().messages, message]) }),
+        replaceMessage: (tempId, message) =>
+          set((state) => ({
+            messages: state.messages.map((existing) =>
+              existing.id === tempId ? message : existing
+            ),
+          })),
+        removeMessage: (id) =>
+          set((state) => ({
+            messages: state.messages.filter((message) => message.id !== id),
+          })),
         updateSettings: (settings) => set({ settings: { ...get().settings, ...settings } }),
         setFirebaseReady: (ready) => set({ firebaseReady: ready }),
         reset: () => set({
@@ -82,7 +99,8 @@ export const useAppStore = create<AppStore>()(
         partialize: (state) => ({
           device: state.device,
           user: state.user,
-          settings: state.settings
+          settings: state.settings,
+          circle: state.circle
         })
       }
     )

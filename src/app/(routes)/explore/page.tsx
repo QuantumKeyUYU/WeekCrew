@@ -3,20 +3,22 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
-import type { InterestId } from '@/lib/weekcrewStorage';
+import type { InterestId } from '@/types';
 import { INTERESTS } from '@/config/interests';
-import { useWeekcrewStorage } from '@/lib/weekcrewStorage';
 import { useTranslation } from '@/i18n/useTranslation';
 import { motionTimingClass, primaryCtaClass } from '@/styles/tokens';
 import { MOOD_OPTIONS, type MoodKey } from '@/constants/moods';
 import { saveCircleSelection } from '@/lib/circleSelection';
 import { LANGUAGE_INTERESTS } from '@/constants/language-interests';
 import { TestModeHint } from '@/components/shared/test-mode-hint';
+import { joinCircle } from '@/lib/api/circles';
+import { useAppStore } from '@/store/useAppStore';
 
 export default function ExplorePage() {
   const router = useRouter();
   const t = useTranslation();
-  const storage = useWeekcrewStorage();
+  const setCircle = useAppStore((state) => state.setCircle);
+  const setMessages = useAppStore((state) => state.setMessages);
 
   type InterestCard = { id: InterestId; label: string; emoji: string };
 
@@ -84,12 +86,15 @@ export default function ExplorePage() {
     }
 
     try {
-      await storage.joinDemoCircleFromInterest(interestId);
+      const response = await joinCircle({ mood: selectedMood, interest: interestId });
+      setCircle(response.circle);
+      setMessages(response.messages);
       saveCircleSelection({ mood: selectedMood, interestId });
       router.push('/circle');
     } catch (err) {
       console.error(err);
       setError(t('explore_error_message'));
+    } finally {
       setJoining(false);
     }
   };

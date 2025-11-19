@@ -1,4 +1,5 @@
 export const DEVICE_ID_KEY = 'weekcrew:device-id';
+export const DEVICE_HEADER_NAME = 'X-Device-Id';
 
 const generateDeviceId = () => {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {

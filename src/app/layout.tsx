@@ -1,14 +1,11 @@
 import type { Metadata, Viewport } from 'next';
 import { ReactNode } from 'react';
 import Script from 'next/script';
-import { Inter } from 'next/font/google';
 import './globals.css';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ClientProviders } from '@/components/providers/client-providers';
 import { THEME_STORAGE_KEY } from '@/constants/theme';
-
-const inter = Inter({ subsets: ['latin', 'cyrillic'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
   title: 'WeekCrew — кружки недели',
@@ -52,7 +49,7 @@ const themeInitScript = `(() => {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="ru" className={`${inter.variable} font-sans`}>
+    <html lang="ru" className="font-sans">
       <body className="min-h-screen text-slate-900 transition-colors duration-300 dark:text-slate-50">
         <Script id="weekcrew-theme-init" strategy="beforeInteractive">
           {themeInitScript}

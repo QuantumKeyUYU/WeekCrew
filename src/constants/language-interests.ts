@@ -1,5 +1,5 @@
 import type { CopyKey } from '@/i18n/copy';
-import type { InterestId } from '@/lib/weekcrewStorage';
+import type { InterestId } from '@/types';
 
 export interface LanguageInterestConfig {
   id: InterestId;

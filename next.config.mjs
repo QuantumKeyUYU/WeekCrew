@@ -2,12 +2,12 @@
 const nextConfig = {
   reactStrictMode: true,
 
-  // В демо-режиме не валим сборку из-за ESLint — в lib/*weekcrewStorage.ts есть временные предупреждения.
+  // В экспериментальном режиме не валим сборку из-за ESLint, чтобы быстрее проверять живой бэкенд.
   eslint: {
     ignoreDuringBuilds: true,
   },
 
-  // Аналогично для TypeScript: пусть билд проходит, пока стореджи не переедут на новую реализацию.
+  // Аналогично для TypeScript: пусть билд проходит, даже если есть временные предупреждения.
   typescript: {
     ignoreBuildErrors: true,
   },
