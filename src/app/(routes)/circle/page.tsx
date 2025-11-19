@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
 import { CircleEmptyState } from '@/components/circle/empty-state';
@@ -10,24 +10,20 @@ import { SafetyRulesModal } from '@/components/modals/safety-rules-modal';
 import { INTERESTS_MAP } from '@/config/interests';
 import { MOOD_OPTIONS } from '@/constants/moods';
 import { clearCircleSelection, loadCircleSelection } from '@/lib/circleSelection';
+import { ApiError } from '@/lib/api-client';
 import { useAppStore } from '@/store/useAppStore';
 import { LANGUAGE_INTERESTS } from '@/constants/language-interests';
-import { getCurrentCircle, getCircleMessages, leaveCircle as leaveCircleApi, sendMessage as sendCircleMessage } from '@/lib/api/circles';
+import {
+  getCurrentCircle,
+  getCircleMessages,
+  leaveCircle as leaveCircleApi,
+  sendMessage as sendCircleMessage,
+} from '@/lib/api/circles';
 import { getOrCreateDeviceId } from '@/lib/device';
 import type { CircleMessage } from '@/types';
+import { useCircleMessagesPolling } from '@/hooks/useCircleMessagesPolling';
 
-const POLL_INTERVAL_MS = 7000;
 const DAY_MS = 1000 * 60 * 60 * 24;
-
-const mergeMessages = (existing: CircleMessage[], incoming: CircleMessage[]): CircleMessage[] => {
-  const map = new Map(existing.map((msg) => [msg.id, msg] as const));
-  incoming.forEach((msg) => {
-    map.set(msg.id, msg);
-  });
-  return Array.from(map.values()).sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-  );
-};
 
 export default function CirclePage() {
   const router = useRouter();
@@ -54,6 +50,7 @@ export default function CirclePage() {
   const [loadingCircle, setLoadingCircle] = useState(false);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [leavePending, setLeavePending] = useState(false);
+  const [notMember, setNotMember] = useState(false);
 
   const listRef = useRef<HTMLDivElement | null>(null);
   const currentDeviceId = useMemo(() => {
@@ -87,6 +84,15 @@ export default function CirclePage() {
   }, [messages]);
 
   useEffect(() => {
+    setNotMember(false);
+  }, [circle?.id]);
+
+  const handleAccessRevoked = useCallback(() => {
+    setNotMember(true);
+    setMessages([]);
+  }, [setMessages]);
+
+  useEffect(() => {
     if (circle) {
       return;
     }
@@ -117,7 +123,7 @@ export default function CirclePage() {
   }, [circle, setCircle, setMessages]);
 
   useEffect(() => {
-    if (!circle) {
+    if (!circle || notMember) {
       return;
     }
     let cancelled = false;
@@ -129,6 +135,13 @@ export default function CirclePage() {
         }
       })
       .catch((error) => {
+        if (error instanceof ApiError && error.status === 403) {
+          const details = typeof error.data === 'object' && error.data ? error.data : null;
+          if ((details as { error?: string } | null)?.error === 'not_member') {
+            handleAccessRevoked();
+            return;
+          }
+        }
         if (!cancelled) {
           console.error('Failed to fetch circle messages', error);
         }
@@ -142,42 +155,15 @@ export default function CirclePage() {
     return () => {
       cancelled = true;
     };
-  }, [circle, setMessages]);
+  }, [circle, notMember, setMessages, handleAccessRevoked]);
+
+  const { notMember: pollingNotMember } = useCircleMessagesPolling(circle?.id ?? null);
 
   useEffect(() => {
-    if (!circle) {
-      return;
+    if (pollingNotMember) {
+      handleAccessRevoked();
     }
-    let cancelled = false;
-
-    const poll = async () => {
-      try {
-        const current = useAppStore.getState().messages;
-        const last = current[current.length - 1];
-        const { messages: incoming } = await getCircleMessages({
-          circleId: circle.id,
-          since: last?.createdAt,
-        });
-        if (cancelled || incoming.length === 0) {
-          return;
-        }
-        const merged = mergeMessages(useAppStore.getState().messages, incoming);
-        setMessages(merged);
-      } catch (error) {
-        if (!cancelled) {
-          console.warn('Message polling failed', error);
-        }
-      }
-    };
-
-    const interval = setInterval(poll, POLL_INTERVAL_MS);
-    poll();
-
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, [circle, setMessages]);
+  }, [pollingNotMember, handleAccessRevoked]);
 
   const handleStartMatching = () => {
     if (accepted) {
@@ -216,7 +202,7 @@ export default function CirclePage() {
 
   const handleSendMessage = async (event: FormEvent) => {
     event.preventDefault();
-    if (!composerValue.trim() || !circle) return;
+    if (!composerValue.trim() || !circle || notMember) return;
 
     const trimmed = composerValue.trim();
     const optimisticId = `temp-${Date.now()}`;
@@ -257,7 +243,7 @@ export default function CirclePage() {
     return Math.max(1, Math.ceil(diff / DAY_MS));
   }, [circle]);
 
-  const membersCount = circle?.memberCount ?? 0;
+  const membersCount = Math.max(circle?.memberCount ?? 0, 1);
 
   const interestConfig = circle ? INTERESTS_MAP[circle.interest as keyof typeof INTERESTS_MAP] : null;
   const fallbackInterest = interestConfig ? t(interestConfig.labelKey) : null;
@@ -294,12 +280,22 @@ export default function CirclePage() {
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400 dark:text-slate-400">{t('circle_header_topic_label')}</p>
               <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">{circleTitle}</h1>
               <p className="text-sm text-slate-500 dark:text-slate-300">{t('circle_header_subtitle')}</p>
+              <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-300">
+                <span>{t('circle_member_count_label', { count: membersCount })}</span>
+                <span
+                  className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-slate-200 text-[10px] text-slate-400 dark:border-white/10"
+                  title={t('circle_members_tooltip')}
+                  aria-label={t('circle_members_tooltip')}
+                >
+                  i
+                </span>
+              </div>
               <div className="mt-3 flex flex-wrap gap-2 text-xs">
                 <span className="rounded-full border border-slate-200 px-3 py-1 text-slate-600 dark:border-white/10 dark:text-white/80">
                   {t('circle_days_left_chip', { count: daysLeft })}
                 </span>
                 <span className="rounded-full border border-slate-200 px-3 py-1 text-slate-600 dark:border-white/10 dark:text-white/80">
-                  {t('circle_members_chip', { count: membersCount > 0 ? membersCount : circle.maxMembers })}
+                  {t('circle_members_chip', { count: membersCount })}
                 </span>
               </div>
             </div>
@@ -350,6 +346,18 @@ export default function CirclePage() {
               <p key={line}>{line}</p>
             ))}
           </div>
+          {notMember && (
+            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-50">
+              <p>{t('circle_not_member_notice')}</p>
+              <button
+                type="button"
+                onClick={handleStartMatching}
+                className="mt-3 inline-flex items-center justify-center rounded-full border border-transparent bg-amber-600/80 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-sm transition hover:bg-amber-600"
+              >
+                {t('circle_not_member_cta')}
+              </button>
+            </div>
+          )}
           <div ref={listRef} className="mt-4 flex max-h-[400px] flex-col gap-3 overflow-y-auto pr-1">
             {messagesLoading && messages.length === 0 && (
               <p className="text-center text-sm text-slate-400 dark:text-slate-500">{t('explore_starting_state')}</p>
@@ -391,12 +399,12 @@ export default function CirclePage() {
                 onChange={(event) => setComposerValue(event.target.value)}
                 placeholder={t('composer_placeholder')}
                 className="flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-white/10 dark:bg-slate-900/70 dark:text-white"
-                disabled={isSending}
+                disabled={isSending || notMember}
               />
               <button
                 type="submit"
                 className="rounded-2xl bg-brand px-6 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(127,90,240,0.25)] transition hover:-translate-y-0.5 disabled:opacity-50"
-                disabled={isSending || !composerValue.trim()}
+                disabled={isSending || !composerValue.trim() || notMember}
               >
                 {isSending ? t('composer_submitting') : t('composer_submit')}
               </button>

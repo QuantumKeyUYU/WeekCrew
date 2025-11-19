@@ -14,6 +14,30 @@ const buildHeaders = (init?: FetchInit) => {
   return headers;
 };
 
+export class ApiError extends Error {
+  status: number;
+
+  data: unknown;
+
+  constructor(status: number, message: string, data?: unknown) {
+    super(message);
+    this.status = status;
+    this.data = data;
+  }
+}
+
+const parseResponseBody = async (response: Response) => {
+  const text = await response.text();
+  if (!text) {
+    return null;
+  }
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+};
+
 export const apiFetch = (input: FetchInput, init?: FetchInit) => {
   const headers = buildHeaders(init);
   return fetch(input, { ...init, headers, cache: 'no-store' });
@@ -31,9 +55,17 @@ export const fetchJson = async <T>(input: FetchInput, init?: JsonRequestInit): P
     cache: 'no-store',
     body: json !== undefined ? JSON.stringify(json) : rest?.body,
   });
+
+  const data = await parseResponseBody(response);
+
   if (!response.ok) {
-    const message = await response.text().catch(() => response.statusText);
-    throw new Error(message || `Request failed with status ${response.status}`);
+    const message = typeof data === 'string' ? data : response.statusText;
+    throw new ApiError(
+      response.status,
+      message || `Request failed with status ${response.status}`,
+      data,
+    );
   }
-  return (response.json() as Promise<T>);
+
+  return data as T;
 };

@@ -215,6 +215,11 @@ export const copy = {
     circle_reset_demo_button: 'Сбросить демо',
     circle_days_left_chip: '{count} дн. до финала',
     circle_members_chip: '{count} участников',
+    circle_member_count_label: '{count} участников',
+    circle_members_tooltip: 'Круги маленькие, чтобы беседа оставалась уютной.',
+    circle_not_member_notice:
+      'Похоже, вы больше не участвуете в этом круге. Попробуйте начать новый на странице подбора.',
+    circle_not_member_cta: 'Перейти к подбору',
     messages_empty_state: 'Пока тишина — напиши первым ✨',
     messages_author_unknown: 'Участник кружка',
     composer_alias_default: 'Участник',
@@ -541,6 +546,11 @@ export const copy = {
     circle_reset_demo_button: 'Reset demo',
     circle_days_left_chip: '{count} days left',
     circle_members_chip: '{count} people inside',
+    circle_member_count_label: '{count} people inside',
+    circle_members_tooltip: 'Circles stay small so the chat feels cozy.',
+    circle_not_member_notice:
+      'Looks like you are no longer part of this circle. Try starting a new one on the matching page.',
+    circle_not_member_cta: 'Go to matching',
     messages_empty_state: 'Still quiet — be the first to say hi ✨',
     messages_author_unknown: 'Circle member',
     composer_alias_default: 'Member',
