@@ -145,48 +145,51 @@ export default function CirclePage() {
 
   useEffect(() => {
     if (!circle || notMember) {
+      setMessages([]);
+      setMessagesLoading(false);
       return;
     }
+
     let cancelled = false;
-    const circleId = circle.id;
-    setMessagesLoading(true);
-    getCircleMessages({ circleId })
-      .then((response) => {
-        if (!cancelled) {
-          setMessages(response.messages);
-          setQuotaFromApi(response.quota ?? null);
-          if (typeof response.memberCount === 'number') {
-            updateCircle((prev) => {
-              if (!prev || prev.id !== circleId) {
-                return prev;
-              }
-              return { ...prev, memberCount: response.memberCount };
-            });
-          }
+
+    const loadMessages = async () => {
+      setMessagesLoading(true);
+
+      try {
+        const { messages: incoming, quota, memberCount } = await getCircleMessages({
+          circleId: circle.id,
+        });
+
+        if (cancelled) return;
+
+        setMessages(incoming);
+        setQuotaFromApi(quota ?? null);
+
+        if (typeof memberCount === 'number') {
+          updateCircle((prev) => {
+            if (!prev || prev.id !== circle.id) {
+              return prev;
+            }
+            return { ...prev, memberCount };
+          });
         }
-      })
-      .catch((error) => {
-        if (error instanceof ApiError && error.status === 403) {
-          const details = typeof error.data === 'object' && error.data ? error.data : null;
-          if ((details as { error?: string } | null)?.error === 'not_member') {
-            handleAccessRevoked();
-            return;
-          }
-        }
+      } catch (error) {
         if (!cancelled) {
           console.error('Failed to fetch circle messages', error);
         }
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) {
           setMessagesLoading(false);
         }
-      });
+      }
+    };
+
+    void loadMessages();
 
     return () => {
       cancelled = true;
     };
-  }, [circle, notMember, setMessages, handleAccessRevoked, setQuotaFromApi, updateCircle]);
+  }, [circle?.id, notMember, setMessages, setMessagesLoading, setQuotaFromApi, updateCircle]);
 
   const { notMember: pollingNotMember } = useCircleMessagesPolling(circleId);
 
@@ -615,7 +618,7 @@ export default function CirclePage() {
             <MessageList
               messages={messages}
               currentDeviceId={currentDeviceId}
-              isLoading={messagesLoading}
+              isLoading={Boolean(circle && messagesLoading)}
             />
           </div>
           <form onSubmit={handleSendMessage} className="mt-4 space-y-2">
