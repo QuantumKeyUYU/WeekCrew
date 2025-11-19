@@ -5,6 +5,7 @@ import { getOrCreateDevice } from '@/lib/server/device';
 import { toCircleMessage, toCircleSummary } from '@/lib/server/serializers';
 import { computeCircleExpiry } from '@/lib/server/circles';
 import { DEVICE_HEADER_NAME } from '@/lib/device';
+import { findLatestActiveMembershipForDevice } from '@/lib/server/circleMembership';
 
 const DEFAULT_MAX_MEMBERS = 5;
 const MESSAGE_LIMIT = 50;
@@ -81,10 +82,12 @@ export async function POST(request: NextRequest) {
     const now = new Date();
 
     const result = await prisma.$transaction(async (tx) => {
-      await tx.circleMembership.updateMany({
-        where: { deviceId, status: 'active' },
-        data: { status: 'left', leftAt: now },
-      });
+      const existingMembership = await findLatestActiveMembershipForDevice(deviceId, tx);
+
+      if (existingMembership?.circle) {
+        const memberCount = await getCircleMemberCount(tx, existingMembership.circle.id);
+        return { circle: existingMembership.circle, memberCount, isNewCircle: false };
+      }
 
       let circle = await findJoinableCircle(tx, mood, interest);
       let isNewCircle = false;
