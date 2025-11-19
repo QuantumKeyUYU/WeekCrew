@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
 import type { InterestId } from '@/types';
@@ -13,12 +13,15 @@ import { LANGUAGE_INTERESTS } from '@/constants/language-interests';
 import { TestModeHint } from '@/components/shared/test-mode-hint';
 import { joinCircle } from '@/lib/api/circles';
 import { useAppStore } from '@/store/useAppStore';
+import { SafetyRulesModal } from '@/components/modals/safety-rules-modal';
+import { useSafetyRules } from '@/hooks/useSafetyRules';
 
 export default function ExplorePage() {
   const router = useRouter();
   const t = useTranslation();
   const setCircle = useAppStore((state) => state.setCircle);
   const setMessages = useAppStore((state) => state.setMessages);
+  const { accepted, markAccepted } = useSafetyRules();
 
   type InterestCard = { id: InterestId; label: string; emoji: string };
 
@@ -47,6 +50,13 @@ export default function ExplorePage() {
   const [randomInterest, setRandomInterest] = useState(false);
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showRulesModal, setShowRulesModal] = useState(!accepted);
+
+  useEffect(() => {
+    if (!accepted) {
+      setShowRulesModal(true);
+    }
+  }, [accepted]);
 
   const moodLabel = selectedMood
     ? t(MOOD_OPTIONS.find((option) => option.key === selectedMood)?.labelKey ?? '')
@@ -56,7 +66,8 @@ export default function ExplorePage() {
   const interestsToRender = isLanguageMood ? languageInterestCards : defaultInterestCards;
   const selectedInterestIsValid = interestsToRender.some((interest) => interest.id === selectedInterest);
   const effectiveInterest = selectedInterestIsValid ? selectedInterest : null;
-  const canStart = Boolean(selectedMood && (effectiveInterest || randomInterest));
+  const selectionComplete = Boolean(selectedMood && (effectiveInterest || randomInterest));
+  const canStart = Boolean(accepted && selectionComplete);
 
   const handleSelectInterest = (id: InterestId) => {
     if (joining) return;
@@ -70,7 +81,11 @@ export default function ExplorePage() {
   };
 
   const handleStartCircle = async () => {
-    if (!selectedMood || !canStart || joining) {
+    if (!selectedMood || !selectionComplete || joining) {
+      return;
+    }
+    if (!accepted) {
+      setShowRulesModal(true);
       return;
     }
     setJoining(true);
@@ -106,6 +121,22 @@ export default function ExplorePage() {
         <h1 className="mt-3 text-3xl font-semibold sm:text-[2.25rem]">{t('explore_page_title')}</h1>
         <p className="mt-3 text-base text-white/80">{t('explore_page_subtitle')}</p>
       </section>
+
+      {!accepted && (
+        <section className="rounded-3xl border border-amber-200 bg-amber-50/90 p-5 text-amber-900 shadow-[0_16px_40px_rgba(245,158,11,0.25)] dark:border-amber-400/40 dark:bg-amber-500/10 dark:text-amber-100">
+          <p className="text-sm font-semibold">{t('explore_rules_notice')}</p>
+          <p className="mt-1 text-xs text-amber-800/80 dark:text-amber-100/70">{t('explore_rules_required')}</p>
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={() => setShowRulesModal(true)}
+              className="inline-flex items-center rounded-full border border-transparent bg-amber-500 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-sm transition hover:bg-amber-600 dark:bg-amber-400 dark:text-slate-900"
+            >
+              {t('explore_rules_button')}
+            </button>
+          </div>
+        </section>
+      )}
 
       <section className="app-panel p-6">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-300">
@@ -203,10 +234,22 @@ export default function ExplorePage() {
             {joining ? t('explore_starting_state') : t('explore_start_button')}
           </button>
         </div>
+        {!accepted && (
+          <p className="mt-2 text-xs text-amber-700 dark:text-amber-200">{t('explore_rules_required')}</p>
+        )}
         {error && <p className="mt-3 text-sm text-red-500 dark:text-red-400">{error}</p>}
       </section>
 
       <TestModeHint />
+
+      <SafetyRulesModal
+        open={showRulesModal}
+        onAccept={() => {
+          markAccepted();
+          setShowRulesModal(false);
+        }}
+        onClose={() => setShowRulesModal(false)}
+      />
     </div>
   );
 }
