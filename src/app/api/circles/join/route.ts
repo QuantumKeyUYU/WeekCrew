@@ -80,10 +80,10 @@ const listRecentMessages = async (circleId: string) => {
   const where = buildCircleMessagesWhere({ circleId });
   const rows = await prisma.message.findMany({
     where,
-    orderBy: { createdAt: 'asc' },
+    orderBy: { createdAt: 'desc' },
     take: MESSAGE_LIMIT,
   });
-  return rows.map(toCircleMessage);
+  return rows.reverse().map(toCircleMessage);
 };
 
 export async function POST(request: NextRequest) {
