@@ -1,6 +1,14 @@
 'use client';
 
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  FormEvent,
+  KeyboardEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useRouter } from 'next/navigation';
 import { CircleEmptyState } from '@/components/circle/empty-state';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -60,7 +68,10 @@ export default function CirclePage() {
   const [notMember, setNotMember] = useState(false);
   const [remainingMs, setRemainingMs] = useState<number | null>(circle?.remainingMs ?? null);
 
+  const circleId = circle?.id ?? null;
+
   const lastCircleIdRef = useRef<string | null>(circle?.id ?? null);
+  const composerRef = useRef<HTMLTextAreaElement | null>(null);
   const currentDeviceId = useMemo(() => {
     if (storeDeviceId) {
       return storeDeviceId;
@@ -184,7 +195,7 @@ export default function CirclePage() {
     };
   }, [circle, notMember, setMessages, handleAccessRevoked, setQuotaFromApi, updateCircle]);
 
-  const { notMember: pollingNotMember } = useCircleMessagesPolling(circle?.id ?? null);
+  const { notMember: pollingNotMember } = useCircleMessagesPolling(circleId);
 
   useEffect(() => {
     if (pollingNotMember) {
@@ -229,15 +240,23 @@ export default function CirclePage() {
     setNotMember(false);
   };
 
-  const handleSendMessage = async (event: FormEvent) => {
-    event.preventDefault();
-    if (!composerValue.trim() || !circle || notMember || isCircleExpired) return;
+  const adjustComposerHeight = useCallback(() => {
+    const node = composerRef.current;
+    if (!node) return;
+    node.style.height = 'auto';
+    const nextHeight = Math.min(node.scrollHeight, 200);
+    node.style.height = `${nextHeight}px`;
+  }, []);
 
-    if (isLimitReached) {
+  const attemptSendMessage = useCallback(async () => {
+    if (!circle || notMember || isCircleExpired || isLimitReached || isSending) {
+      return;
+    }
+    const trimmed = composerValue.trim();
+    if (!trimmed) {
       return;
     }
 
-    const trimmed = composerValue.trim();
     const optimisticId = `temp-${Date.now()}`;
     const optimisticMessage: CircleMessage = {
       id: optimisticId,
@@ -284,7 +303,22 @@ export default function CirclePage() {
     } finally {
       setIsSending(false);
     }
-  };
+  }, [
+    addMessage,
+    circle,
+    composerValue,
+    currentDeviceId,
+    isCircleExpired,
+    isLimitReached,
+    isSending,
+    notMember,
+    removeMessage,
+    replaceMessage,
+    sendCircleMessage,
+    setQuotaFromApi,
+    t,
+    updateCircle,
+  ]);
 
   const systemMessageLines = useMemo(() => t('circle_system_message').split('\n'), [t]);
   const quickRules = useMemo(() => t('rules_modal_points').split('|'), [t]);
@@ -330,6 +364,63 @@ export default function CirclePage() {
   }, [circle?.id, circle?.expiresAt, circle?.isExpired, updateCircle]);
 
   const isCircleExpired = Boolean(circle?.isExpired || (remainingMs !== null && remainingMs <= 0));
+
+  const composerPlaceholder = isCircleExpired
+    ? t('circle_expired_placeholder')
+    : t('composer_placeholder');
+
+  const composerDisabled =
+    !circle || isSending || notMember || isCircleExpired || isLimitReached;
+
+  const canSubmitMessage = Boolean(composerValue.trim()) && !composerDisabled;
+
+  const handleSendMessage = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      if (!canSubmitMessage) {
+        return;
+      }
+      void attemptSendMessage();
+    },
+    [attemptSendMessage, canSubmitMessage],
+  );
+
+  const handleComposerKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLTextAreaElement>) => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        if (!canSubmitMessage) {
+          return;
+        }
+        void attemptSendMessage();
+      }
+    },
+    [attemptSendMessage, canSubmitMessage],
+  );
+
+  useEffect(() => {
+    adjustComposerHeight();
+  }, [adjustComposerHeight, composerValue]);
+
+  useEffect(() => {
+    if (messagesLoading) {
+      return;
+    }
+    if (composerValue) {
+      return;
+    }
+    if (!circleId) {
+      return;
+    }
+    const node = composerRef.current;
+    if (!node) {
+      return;
+    }
+    if (typeof window !== 'undefined' && window.innerWidth < 640) {
+      return;
+    }
+    node.focus();
+  }, [circleId, composerValue, messagesLoading]);
 
   const timerLabel = useMemo(() => {
     if (!circle) {
@@ -543,29 +634,35 @@ export default function CirclePage() {
           </div>
           <form onSubmit={handleSendMessage} className="mt-4 space-y-2">
             <div className="flex flex-col gap-2 sm:flex-row">
-              <input
-                type="text"
+              <textarea
+                ref={composerRef}
+                rows={1}
                 value={composerValue}
                 onChange={(event) => setComposerValue(event.target.value)}
-                placeholder={isCircleExpired ? t('circle_expired_placeholder') : t('composer_placeholder')}
-                className="flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-white/10 dark:bg-slate-900/70 dark:text-white"
-                disabled={isSending || notMember || isCircleExpired || isLimitReached}
+                onKeyDown={handleComposerKeyDown}
+                placeholder={composerPlaceholder}
+                aria-label={composerPlaceholder}
+                className="flex-1 resize-none rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-white/10 dark:bg-slate-900/70 dark:text-white"
+                disabled={composerDisabled}
               />
               <button
                 type="submit"
-                className="rounded-2xl bg-brand px-6 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(127,90,240,0.25)] transition hover:-translate-y-0.5 disabled:opacity-50"
-                disabled={
-                  isSending ||
-                  !composerValue.trim() ||
-                  notMember ||
-                  isCircleExpired ||
-                  isLimitReached
-                }
+                className="rounded-2xl bg-brand px-6 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(127,90,240,0.25)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={!canSubmitMessage}
               >
                 {isSending ? t('composer_submitting') : t('composer_submit')}
               </button>
             </div>
-            {sendError && <p className="text-sm text-red-500 dark:text-red-400">{sendError}</p>}
+            {sendError && (
+              <p
+                className="inline-flex items-center gap-2 rounded-2xl bg-red-50/80 px-3 py-2 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-200"
+                role="status"
+                aria-live="assertive"
+              >
+                <span className="text-sm">⚠️</span>
+                <span>{sendError}</span>
+              </p>
+            )}
             {typeof dailyRemaining === 'number' && typeof dailyLimit === 'number' && (
               !isLimitReached ? (
                 <div className="text-xs text-slate-500 dark:text-slate-400">
