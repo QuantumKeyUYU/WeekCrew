@@ -194,6 +194,8 @@ export const copy = {
     circle_quota_exhausted:
       'Лимит сообщений на сегодня исчерпан. Попробуем продолжить завтра 💜',
     circle_quota_reset_hint: 'Лимит обновится около {time}.',
+    circle_quota_one_liner:
+      'Лимит 20 сообщений в день помогает не залипать в чате и оставляет время на настоящую жизнь.',
     circle_header_topic_label: 'Тема недели',
     circle_header_default_title: 'Кружок недели',
     circle_header_default_description: 'Уютный круг по интересу',
@@ -222,6 +224,12 @@ export const copy = {
     circle_reset_demo_button: 'Сбросить демо',
     circle_days_left_chip: '{count} дн. до финала',
     circle_members_chip: '{count} участников',
+    circle_host_start:
+      'У вас впереди целая неделя в этом круге — можно не спешить и знакомиться по-настоящему.',
+    circle_host_middle:
+      'Уже середина недели — если давно хотели что-то написать в круг, самое время.',
+    circle_host_final:
+      'Сегодня последние дни этого круга — можно подвести маленькие итоги недели и попрощаться по-тёплому.',
     circle_member_count_label: '{count} участников',
     circle_members_tooltip: 'Круги маленькие, чтобы беседа оставалась уютной.',
     circle_not_member_notice:
@@ -538,6 +546,8 @@ export const copy = {
     circle_quota_exhausted:
       "You've reached today's message limit. Let's continue tomorrow 💜",
     circle_quota_reset_hint: 'The limit refreshes around {time}.',
+    circle_quota_one_liner:
+      'A soft limit of 20 messages per day helps you stay out of endless chat loops and save time for real life.',
     circle_header_topic_label: 'Theme of the week',
     circle_header_default_title: 'Circle of the week',
     circle_header_default_description: 'A cozy group built around this interest',
@@ -565,6 +575,12 @@ export const copy = {
     circle_reset_demo_button: 'Reset demo',
     circle_days_left_chip: '{count} days left',
     circle_members_chip: '{count} people inside',
+    circle_host_start:
+      'You have a full week ahead in this circle — no rush, take your time to connect for real.',
+    circle_host_middle:
+      "We're halfway through — if you wanted to post something in the circle, now is a great moment.",
+    circle_host_final:
+      'These are the final days of this circle — wrap up the week gently and say goodbye warmly.',
     circle_member_count_label: '{count} people inside',
     circle_members_tooltip: 'Circles stay small so the chat feels cozy.',
     circle_not_member_notice:

@@ -22,6 +22,7 @@ import {
 import { getOrCreateDeviceId } from '@/lib/device';
 import type { CircleMessage, DailyQuotaSnapshot } from '@/types';
 import { useCircleMessagesPolling } from '@/hooks/useCircleMessagesPolling';
+import { getCircleWeekPhase } from '@/lib/circle-week-phase';
 
 const DAY_MS = 1000 * 60 * 60 * 24;
 
@@ -341,6 +342,8 @@ export default function CirclePage() {
 
   const membersCount = Math.max(circle?.memberCount ?? 0, 1);
   const timerChipText = timerLabel ?? t('circle_days_left_chip', { count: 7 });
+  const showQuotaOneLiner = typeof dailyLimit === 'number';
+
   const quotaResetLabel = useMemo(() => {
     if (!quotaResetAtIso) {
       return null;
@@ -360,6 +363,28 @@ export default function CirclePage() {
     moodTitle && interestTitle
       ? t('circle_weekly_title', { mood: moodTitle, topic: interestTitle })
       : circle?.mood ?? t('circle_header_default_title');
+
+  const circleHostKey = useMemo(() => {
+    if (!circle || circle.isExpired) {
+      return null;
+    }
+    if (!circle.startsAt || !circle.expiresAt) {
+      return null;
+    }
+    const startsAt = new Date(circle.startsAt);
+    const expiresAt = new Date(circle.expiresAt);
+    if (Number.isNaN(startsAt.getTime()) || Number.isNaN(expiresAt.getTime())) {
+      return null;
+    }
+    const phase = getCircleWeekPhase({ createdAt: startsAt, expiresAt });
+    if (phase === 'start') {
+      return 'circle_host_start';
+    }
+    if (phase === 'middle') {
+      return 'circle_host_middle';
+    }
+    return 'circle_host_final';
+  }, [circle]);
 
   if (!circle && !loadingCircle) {
     return (
@@ -408,6 +433,12 @@ export default function CirclePage() {
                   {t('circle_members_chip', { count: membersCount })}
                 </span>
               </div>
+              {showQuotaOneLiner && (
+                <p className="mt-1 text-xs text-slate-500 dark:text-white/60">{t('circle_quota_one_liner')}</p>
+              )}
+              {circleHostKey && (
+                <p className="mt-1 text-xs text-slate-600 dark:text-slate-100">{t(circleHostKey)}</p>
+              )}
             </div>
             <div className="flex flex-wrap gap-2">
               <button
