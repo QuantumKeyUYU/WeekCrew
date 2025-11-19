@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -32,7 +32,7 @@ export const SafetyRulesModal = ({ open, onAccept, onClose }: SafetyRulesModalPr
     };
   }, [open]);
 
-  const points = useMemo(() => t('rules_modal_points').split('|'), [t]);
+  const points = t('rules_modal_points').split('|');
 
   if (!mounted || !open) {
     return null;

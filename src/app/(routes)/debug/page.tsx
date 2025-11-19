@@ -1,7 +1,6 @@
 'use client';
 
 import clsx from 'clsx';
-import { useMemo } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { getFirebaseStatus } from '@/config/firebase';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -34,14 +33,10 @@ export default function DebugPage() {
   const circleId = useAppStore((state) => state.user?.currentCircleId ?? '—');
   const firebaseStatus = getFirebaseStatus();
   const t = useTranslation();
-  const envList = useMemo(
-    () =>
-      ENV_KEYS.map((key) => ({
-        key,
-        value: maskValue(process.env[key as EnvKey])
-      })),
-    []
-  );
+  const envList = ENV_KEYS.map((key) => ({
+    key,
+    value: maskValue(process.env[key as EnvKey])
+  }));
   const panelClass =
     'rounded-3xl border border-slate-200/80 bg-[#fefcff] p-4 space-y-3 text-sm shadow-[0_12px_32px_rgba(15,23,42,0.05)] dark:border-white/10 dark:bg-slate-950/60 sm:p-5';
 

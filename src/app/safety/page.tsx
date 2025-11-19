@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { primaryCtaClass, secondaryCtaClass } from '@/styles/tokens';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -11,9 +11,9 @@ export default function SafetyPage() {
   const router = useRouter();
   const t = useTranslation();
   const [ready, setReady] = useState(false);
-  const donts = useMemo(() => t('safety_dont_points').split('|'), [t]);
-  const okPoints = useMemo(() => t('safety_ok_points').split('|'), [t]);
-  const codePoints = useMemo(() => t('safety_code_points').split('|'), [t]);
+  const donts = t('safety_dont_points').split('|');
+  const okPoints = t('safety_ok_points').split('|');
+  const codePoints = t('safety_code_points').split('|');
 
   useEffect(() => {
     if (typeof window === 'undefined') return;

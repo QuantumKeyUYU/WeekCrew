@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
 import type { InterestId } from '@/types';
@@ -25,25 +25,17 @@ export default function ExplorePage() {
 
   type InterestCard = { id: InterestId; label: string; emoji: string };
 
-  const defaultInterestCards = useMemo<InterestCard[]>(
-    () =>
-      INTERESTS.map((interest) => ({
-        id: interest.key,
-        label: t(interest.labelKey),
-        emoji: interest.emoji ?? '✨',
-      })),
-    [t],
-  );
+  const defaultInterestCards: InterestCard[] = INTERESTS.map((interest) => ({
+    id: interest.key,
+    label: t(interest.labelKey),
+    emoji: interest.emoji ?? '✨',
+  }));
 
-  const languageInterestCards = useMemo<InterestCard[]>(
-    () =>
-      LANGUAGE_INTERESTS.map((interest) => ({
-        id: interest.id,
-        label: t(interest.labelKey),
-        emoji: interest.icon,
-      })),
-    [t],
-  );
+  const languageInterestCards: InterestCard[] = LANGUAGE_INTERESTS.map((interest) => ({
+    id: interest.id,
+    label: t(interest.labelKey),
+    emoji: interest.icon,
+  }));
 
   const [selectedMood, setSelectedMood] = useState<MoodKey | null>(null);
   const [selectedInterest, setSelectedInterest] = useState<InterestId | null>(null);

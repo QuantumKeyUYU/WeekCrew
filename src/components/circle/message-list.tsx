@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { CircleMessage } from '@/types';
 import clsx from 'clsx';
@@ -24,35 +24,23 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
   const language = useAppStore((state) => state.settings.language ?? 'ru');
   const locale = language === 'ru' ? 'ru-RU' : 'en-US';
 
-  const dayFormatter = useMemo(
-    () =>
-      new Intl.DateTimeFormat(locale, {
-        day: 'numeric',
-        month: 'long',
-      }),
-    [locale],
-  );
+  const dayFormatter = new Intl.DateTimeFormat(locale, {
+    day: 'numeric',
+    month: 'long',
+  });
 
-  const timeFormatter = useMemo(
-    () =>
-      new Intl.DateTimeFormat(locale, {
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
-    [locale],
-  );
+  const timeFormatter = new Intl.DateTimeFormat(locale, {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
-  const fullTimestampFormatter = useMemo(
-    () =>
-      new Intl.DateTimeFormat(locale, {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
-    [locale],
-  );
+  const fullTimestampFormatter = new Intl.DateTimeFormat(locale, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
   const getDayChipLabel = (date: Date) => {
     const startOfDay = new Date(date);
