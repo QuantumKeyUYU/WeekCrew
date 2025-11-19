@@ -1,7 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CircleMessage } from '@/types';
 import clsx from 'clsx';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -24,35 +23,23 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
   const language = useAppStore((state) => state.settings.language ?? 'ru');
   const locale = language === 'ru' ? 'ru-RU' : 'en-US';
 
-  const dayFormatter = useMemo(
-    () =>
-      new Intl.DateTimeFormat(locale, {
-        day: 'numeric',
-        month: 'long',
-      }),
-    [locale],
-  );
+  const dayFormatter = new Intl.DateTimeFormat(locale, {
+    day: 'numeric',
+    month: 'long',
+  });
 
-  const timeFormatter = useMemo(
-    () =>
-      new Intl.DateTimeFormat(locale, {
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
-    [locale],
-  );
+  const timeFormatter = new Intl.DateTimeFormat(locale, {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
-  const fullTimestampFormatter = useMemo(
-    () =>
-      new Intl.DateTimeFormat(locale, {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
-    [locale],
-  );
+  const fullTimestampFormatter = new Intl.DateTimeFormat(locale, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
   const getDayChipLabel = (date: Date) => {
     const startOfDay = new Date(date);
@@ -144,78 +131,68 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
       aria-live="polite"
       aria-busy={isLoading}
     >
-      <AnimatePresence initial={false}>
-        {messages.map((message, index) => {
-          const isOwn = message.deviceId === currentDeviceId;
-          const isSystem = Boolean(message.isSystem);
-          const authorLabel = isSystem
-            ? t('messages_author_system')
-            : isOwn
-            ? t('messages_you_label')
-            : t('messages_author_unknown');
-          const createdAt = new Date(message.createdAt);
-          const timeLabel = timeFormatter.format(createdAt);
-          const fullTimestamp = fullTimestampFormatter.format(createdAt);
-          const previous = messages[index - 1];
-          const currentDayKey = createdAt.toDateString();
-          const previousDayKey = previous ? new Date(previous.createdAt).toDateString() : null;
-          const showDayDivider = currentDayKey !== previousDayKey;
+      {messages.map((message, index) => {
+        const isOwn = message.deviceId === currentDeviceId;
+        const isSystem = Boolean(message.isSystem);
+        const authorLabel = isSystem
+          ? t('messages_author_system')
+          : isOwn
+          ? t('messages_you_label')
+          : t('messages_author_unknown');
+        const createdAt = new Date(message.createdAt);
+        const timeLabel = timeFormatter.format(createdAt);
+        const fullTimestamp = fullTimestampFormatter.format(createdAt);
+        const previous = messages[index - 1];
+        const currentDayKey = createdAt.toDateString();
+        const previousDayKey = previous ? new Date(previous.createdAt).toDateString() : null;
+        const showDayDivider = currentDayKey !== previousDayKey;
 
-          return (
-            <motion.div
-              key={message.id}
-              layout
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-              className="flex flex-col gap-3"
-            >
-              {showDayDivider && (
-                <div className="flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500">
-                  <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
-                  <div className="rounded-full border border-slate-200/80 bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600 shadow-sm dark:border-white/10 dark:bg-slate-800/70 dark:text-slate-100">
-                    {getDayChipLabel(createdAt)}
-                  </div>
-                  <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+        return (
+          <div key={message.id} className="flex flex-col gap-3">
+            {showDayDivider && (
+              <div className="flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500">
+                <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+                <div className="rounded-full border border-slate-200/80 bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600 shadow-sm dark:border-white/10 dark:bg-slate-800/70 dark:text-slate-100">
+                  {getDayChipLabel(createdAt)}
                 </div>
-              )}
+                <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+              </div>
+            )}
 
-              <div className={clsx('flex', isOwn ? 'justify-end' : 'justify-start')}>
-                <article
+            <div className={clsx('flex', isOwn ? 'justify-end' : 'justify-start')}>
+              <article
+                className={clsx(
+                  'max-w-[85%] rounded-3xl border px-4 py-3 text-sm shadow-sm backdrop-blur',
+                  isSystem
+                    ? 'border-slate-200 bg-slate-50/90 text-slate-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100'
+                    : isOwn
+                    ? 'border-brand/70 bg-brand text-white shadow-soft'
+                    : 'border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-100',
+                )}
+              >
+                <div
                   className={clsx(
-                    'max-w-[85%] rounded-3xl border px-4 py-3 text-sm shadow-sm backdrop-blur',
+                    'flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide',
                     isSystem
-                      ? 'border-slate-200 bg-slate-50/90 text-slate-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100'
+                      ? 'text-slate-500 dark:text-slate-200'
                       : isOwn
-                      ? 'border-brand/70 bg-brand text-white shadow-soft'
-                      : 'border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-100',
+                      ? 'text-white/80'
+                      : 'text-slate-500 dark:text-slate-300',
                   )}
                 >
-                  <div
-                    className={clsx(
-                      'flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide',
-                      isSystem
-                        ? 'text-slate-500 dark:text-slate-200'
-                        : isOwn
-                        ? 'text-white/80'
-                        : 'text-slate-500 dark:text-slate-300',
-                    )}
-                  >
-                    <span aria-label={authorLabel}>{authorLabel}</span>
-                    <time dateTime={message.createdAt} title={fullTimestamp}>
-                      {timeLabel}
-                    </time>
-                  </div>
-                  <p className="mt-2 whitespace-pre-wrap leading-snug text-base/[1.45] text-current">
-                    {message.content}
-                  </p>
-                </article>
-              </div>
-            </motion.div>
-          );
-        })}
-      </AnimatePresence>
+                  <span aria-label={authorLabel}>{authorLabel}</span>
+                  <time dateTime={message.createdAt} title={fullTimestamp}>
+                    {timeLabel}
+                  </time>
+                </div>
+                <p className="mt-2 whitespace-pre-wrap leading-snug text-base/[1.45] text-current">
+                  {message.content}
+                </p>
+              </article>
+            </div>
+          </div>
+        );
+      })}
       {(!isAtBottom || hasNewWhileAway) && (
         <button
           type="button"

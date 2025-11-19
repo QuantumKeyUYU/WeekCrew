@@ -5,7 +5,6 @@ import {
   KeyboardEvent,
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -72,15 +71,8 @@ export default function CirclePage() {
 
   const lastCircleIdRef = useRef<string | null>(circle?.id ?? null);
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
-  const currentDeviceId = useMemo(() => {
-    if (storeDeviceId) {
-      return storeDeviceId;
-    }
-    if (typeof window !== 'undefined') {
-      return getOrCreateDeviceId();
-    }
-    return null;
-  }, [storeDeviceId]);
+  const currentDeviceId =
+    storeDeviceId ?? (typeof window !== 'undefined' ? getOrCreateDeviceId() : null);
 
   useEffect(() => {
     const stored = loadCircleSelection();
@@ -320,8 +312,8 @@ export default function CirclePage() {
     updateCircle,
   ]);
 
-  const systemMessageLines = useMemo(() => t('circle_system_message').split('\n'), [t]);
-  const quickRules = useMemo(() => t('rules_modal_points').split('|'), [t]);
+  const systemMessageLines = t('circle_system_message').split('\n');
+  const quickRules = t('rules_modal_points').split('|');
 
   useEffect(() => {
     if (!circle) {
@@ -422,7 +414,7 @@ export default function CirclePage() {
     node.focus();
   }, [circleId, composerValue, messagesLoading]);
 
-  const timerLabel = useMemo(() => {
+  const timerLabel = (() => {
     if (!circle) {
       return null;
     }
@@ -437,13 +429,13 @@ export default function CirclePage() {
       return t('circle_timer_days_left', { count: days });
     }
     return t('circle_timer_less_than_day');
-  }, [circle, isCircleExpired, remainingMs, t]);
+  })();
 
   const membersCount = Math.max(circle?.memberCount ?? 0, 1);
   const timerChipText = timerLabel ?? t('circle_days_left_chip', { count: 7 });
   const showQuotaOneLiner = typeof dailyLimit === 'number';
 
-  const quotaResetLabel = useMemo(() => {
+  const quotaResetLabel = (() => {
     if (!quotaResetAtIso) {
       return null;
     }
@@ -452,7 +444,7 @@ export default function CirclePage() {
     const datePart = resetDate.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
     const timePart = resetDate.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
     return t('circle_quota_reset_hint', { time: `${datePart}, ${timePart}` });
-  }, [quotaResetAtIso, language, t]);
+  })();
 
   const interestConfig = circle ? INTERESTS_MAP[circle.interest as keyof typeof INTERESTS_MAP] : null;
   const fallbackInterest = interestConfig ? t(interestConfig.labelKey) : null;
@@ -463,7 +455,7 @@ export default function CirclePage() {
       ? t('circle_weekly_title', { mood: moodTitle, topic: interestTitle })
       : circle?.mood ?? t('circle_header_default_title');
 
-  const circleHostKey = useMemo(() => {
+  const circleHostKey = (() => {
     if (!circle || circle.isExpired) {
       return null;
     }
@@ -483,7 +475,7 @@ export default function CirclePage() {
       return 'circle_host_middle';
     }
     return 'circle_host_final';
-  }, [circle]);
+  })();
 
   let pageContent: JSX.Element;
 

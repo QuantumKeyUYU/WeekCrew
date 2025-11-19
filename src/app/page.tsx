@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -33,14 +33,11 @@ export default function HomePage() {
 
   const handleCloseModal = () => setShowModal(false);
 
-  const steps = useMemo(
-    () => [
-      { title: t('landing_step_one_title'), description: t('landing_step_one_description') },
-      { title: t('landing_step_two_title'), description: t('landing_step_two_description') },
-      { title: t('landing_step_three_title'), description: t('landing_step_three_description') },
-    ],
-    [t],
-  );
+  const steps = [
+    { title: t('landing_step_one_title'), description: t('landing_step_one_description') },
+    { title: t('landing_step_two_title'), description: t('landing_step_two_description') },
+    { title: t('landing_step_three_title'), description: t('landing_step_three_description') },
+  ];
 
   return (
     <>
