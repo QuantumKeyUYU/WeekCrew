@@ -1,4 +1,4 @@
-const motionTiming = 'transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]';
+const motionTiming = 'transition-all duration-200 ease-\[cubic-bezier\(0.16,1,0.3,1\)\]';
 
 export const primaryCtaClass = [
   'inline-flex items-center justify-center rounded-full px-6 py-2.5 text-sm font-semibold text-white sm:text-base',
