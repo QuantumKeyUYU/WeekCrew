@@ -44,6 +44,18 @@ export const findLatestActiveMembershipForDevice = async (
   return latest;
 };
 
+export const markMembershipLeft = (
+  membershipId: string,
+  client: PrismaClient = prisma,
+) =>
+  client.circleMembership.update({
+    where: { id: membershipId },
+    data: { status: 'left', leftAt: new Date() },
+  });
+
+export const countActiveMembers = (circleId: string, client: PrismaClient = prisma) =>
+  client.circleMembership.count({ where: { circleId, status: DEFAULT_STATUS } });
+
 export const findActiveCircleMembership = (
   circleId: string,
   deviceId: string,

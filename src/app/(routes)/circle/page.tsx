@@ -93,7 +93,9 @@ export default function CirclePage() {
   }, [messages]);
 
   useEffect(() => {
-    setNotMember(false);
+    if (circle?.id) {
+      setNotMember(false);
+    }
   }, [circle?.id]);
 
   useEffect(() => {
@@ -107,9 +109,11 @@ export default function CirclePage() {
 
   const handleAccessRevoked = useCallback(() => {
     setNotMember(true);
+    setCircle(null);
     setMessages([]);
     setQuotaFromApi(null);
-  }, [setQuotaFromApi, setMessages]);
+    clearCircleSelection();
+  }, [clearCircleSelection, setCircle, setMessages, setQuotaFromApi]);
 
   useEffect(() => {
     if (circle) {
@@ -219,6 +223,7 @@ export default function CirclePage() {
     setMessages([]);
     setQuotaFromApi(null);
     clearCircleSelection();
+    setNotMember(false);
   };
 
   const handleSendMessage = async (event: FormEvent) => {
@@ -389,7 +394,21 @@ export default function CirclePage() {
   if (!circle && !loadingCircle) {
     return (
       <>
-        <CircleEmptyState onStart={handleStartMatching} />
+        <div className="space-y-6">
+          {notMember && (
+            <div className="rounded-[2.5rem] border border-amber-200 bg-white p-6 text-center text-slate-900 shadow-sm dark:border-amber-400/40 dark:bg-slate-900/70 dark:text-slate-100">
+              <p className="text-base font-semibold">{t('circle_not_member_notice')}</p>
+              <button
+                type="button"
+                onClick={handleStartMatching}
+                className="mt-4 inline-flex items-center justify-center rounded-full border border-transparent bg-amber-500 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-sm transition hover:bg-amber-600"
+              >
+                {t('circle_not_member_cta')}
+              </button>
+            </div>
+          )}
+          <CircleEmptyState onStart={handleStartMatching} />
+        </div>
         <SafetyRulesModal open={showModal} onAccept={handleAcceptRules} onClose={handleCloseModal} />
       </>
     );
@@ -397,7 +416,7 @@ export default function CirclePage() {
 
   if (!circle) {
     return (
-      <div className="py-10 text-center text-sm text-slate-500 dark:text-slate-400">
+      <div className="py-10 text-center text-sm text-slate-700 dark:text-slate-200">
         {t('explore_starting_state')}
       </div>
     );
@@ -488,12 +507,12 @@ export default function CirclePage() {
             ))}
           </div>
           {notMember && (
-            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-50">
-              <p>{t('circle_not_member_notice')}</p>
+            <div className="mt-4 rounded-2xl border border-amber-200 bg-white p-4 text-sm text-slate-900 shadow-sm dark:border-amber-500/40 dark:bg-slate-900/70 dark:text-slate-100">
+              <p className="font-semibold">{t('circle_not_member_notice')}</p>
               <button
                 type="button"
                 onClick={handleStartMatching}
-                className="mt-3 inline-flex items-center justify-center rounded-full border border-transparent bg-amber-600/80 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-sm transition hover:bg-amber-600"
+                className="mt-3 inline-flex items-center justify-center rounded-full border border-transparent bg-amber-500 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-sm transition hover:bg-amber-600"
               >
                 {t('circle_not_member_cta')}
               </button>
