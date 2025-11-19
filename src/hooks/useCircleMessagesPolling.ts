@@ -11,6 +11,7 @@ const POLL_INTERVAL_MS = 5000;
 export const useCircleMessagesPolling = (circleId: string | null | undefined) => {
   const setMessages = useAppStore((state) => state.setMessages);
   const setQuotaFromApi = useAppStore((state) => state.setQuotaFromApi);
+  const updateCircle = useAppStore((state) => state.updateCircle);
   const [notMember, setNotMember] = useState(false);
 
   useEffect(() => {
@@ -33,13 +34,21 @@ export const useCircleMessagesPolling = (circleId: string | null | undefined) =>
       try {
         const currentMessages = useAppStore.getState().messages;
         const last = currentMessages[currentMessages.length - 1];
-        const { messages: incoming, quota } = await getCircleMessages({
+        const { messages: incoming, quota, memberCount } = await getCircleMessages({
           circleId,
           since: last?.createdAt,
         });
 
         if (!cancelled) {
           setQuotaFromApi(quota ?? null);
+          if (typeof memberCount === 'number') {
+            updateCircle((prev) => {
+              if (!prev || prev.id !== circleId) {
+                return prev;
+              }
+              return { ...prev, memberCount };
+            });
+          }
         }
 
         if (cancelled || incoming.length === 0) {
@@ -50,14 +59,17 @@ export const useCircleMessagesPolling = (circleId: string | null | undefined) =>
         setMessages(merged);
       } catch (error) {
         if (error instanceof ApiError && error.status === 403) {
-          if (!cancelled) {
-            setNotMember(true);
+          const details = (error.data as { error?: string } | null) ?? null;
+          if (details?.error === 'not_member') {
+            if (!cancelled) {
+              setNotMember(true);
+            }
+            cancelled = true;
+            if (intervalId) {
+              clearInterval(intervalId);
+            }
+            return;
           }
-          cancelled = true;
-          if (intervalId) {
-            clearInterval(intervalId);
-          }
-          return;
         }
 
         if (!cancelled) {
@@ -75,7 +87,7 @@ export const useCircleMessagesPolling = (circleId: string | null | undefined) =>
         clearInterval(intervalId);
       }
     };
-  }, [circleId, setMessages, setQuotaFromApi]);
+  }, [circleId, setMessages, setQuotaFromApi, updateCircle]);
 
   return { notMember };
 };
