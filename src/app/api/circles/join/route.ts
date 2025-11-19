@@ -3,11 +3,10 @@ import type { Circle as CircleModel, PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getOrCreateDevice } from '@/lib/server/device';
 import { toCircleMessage, toCircleSummary } from '@/lib/server/serializers';
+import { computeCircleExpiry } from '@/lib/server/circles';
 import { DEVICE_HEADER_NAME } from '@/lib/device';
 
 const DEFAULT_MAX_MEMBERS = 5;
-const CIRCLE_DURATION_DAYS = 7;
-const MS_IN_DAY = 1000 * 60 * 60 * 24;
 const MESSAGE_LIMIT = 50;
 
 const normalizeText = (value: unknown) => {
@@ -28,7 +27,7 @@ const findJoinableCircle = async (
       mood,
       interest,
       status: 'active',
-      endsAt: { gt: now },
+      expiresAt: { gt: now },
     },
     orderBy: { startsAt: 'asc' },
     select: {
@@ -38,7 +37,7 @@ const findJoinableCircle = async (
       status: true,
       maxMembers: true,
       startsAt: true,
-      endsAt: true,
+      expiresAt: true,
       createdAt: true,
       updatedAt: true,
       memberships: {
@@ -91,6 +90,7 @@ export async function POST(request: NextRequest) {
       let isNewCircle = false;
 
       if (!circle) {
+        const expiresAt = computeCircleExpiry(now);
         circle = await tx.circle.create({
           data: {
             mood,
@@ -98,7 +98,8 @@ export async function POST(request: NextRequest) {
             status: 'active',
             maxMembers: DEFAULT_MAX_MEMBERS,
             startsAt: now,
-            endsAt: new Date(now.getTime() + CIRCLE_DURATION_DAYS * MS_IN_DAY),
+            endsAt: expiresAt,
+            expiresAt,
           },
         });
         isNewCircle = true;

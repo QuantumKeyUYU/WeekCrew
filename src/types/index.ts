@@ -29,10 +29,12 @@ export interface CircleSummary {
   mood: string;
   interest: InterestId;
   startsAt: string;
-  endsAt: string;
+  expiresAt: string;
   status: CircleStatus;
   maxMembers: number;
   memberCount: number;
+  remainingMs: number;
+  isExpired: boolean;
 }
 
 export interface CircleMessage {

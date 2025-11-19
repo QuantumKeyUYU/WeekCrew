@@ -33,6 +33,7 @@ model Circle {
   maxMembers   Int
   startsAt     DateTime
   endsAt       DateTime
+  expiresAt    DateTime
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
   memberships  CircleMembership[]

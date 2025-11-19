@@ -16,6 +16,7 @@ interface AppStore {
   setUser(profile: UserProfile | null): void;
   updateUser(updater: (prev: UserProfile | null) => UserProfile | null): void;
   setCircle(circle: CircleSummary | null): void;
+  updateCircle(updater: (prev: CircleSummary | null) => CircleSummary | null): void;
   setMessages(messages: CircleMessage[]): void;
   addMessage(message: CircleMessage): void;
   replaceMessage(tempId: string, message: CircleMessage): void;
@@ -71,6 +72,7 @@ export const useAppStore = create<AppStore>()(
         setUser: (profile) => set({ user: profile }),
         updateUser: (updater) => set({ user: updater(get().user) }),
         setCircle: (circle) => set({ circle }),
+        updateCircle: (updater) => set((state) => ({ circle: updater(state.circle) })),
         setMessages: (messages) => set({ messages: sortMessages(messages) }),
         addMessage: (message) => set({ messages: sortMessages([...get().messages, message]) }),
         replaceMessage: (tempId, message) =>
