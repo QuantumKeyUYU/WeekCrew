@@ -5,7 +5,11 @@ import { getOrCreateDevice } from '@/lib/server/device';
 import { toCircleMessage, toCircleSummary } from '@/lib/server/serializers';
 import { computeCircleExpiry } from '@/lib/server/circles';
 import { DEVICE_HEADER_NAME } from '@/lib/device';
-import { findLatestActiveMembershipForDevice } from '@/lib/server/circleMembership';
+import {
+  countActiveMembers,
+  findLatestActiveMembershipForDevice,
+  markMembershipLeft,
+} from '@/lib/server/circleMembership';
 
 const DEFAULT_MAX_MEMBERS = 5;
 const MESSAGE_LIMIT = 50;
@@ -56,8 +60,20 @@ const findJoinableCircle = async (
   return circle ?? null;
 };
 
-const getCircleMemberCount = (client: PrismaClient, circleId: string) =>
-  client.circleMembership.count({ where: { circleId, status: 'active' } });
+const isJoinableMembership = (
+  membership: Awaited<ReturnType<typeof findLatestActiveMembershipForDevice>>,
+  mood: string,
+  interest: string,
+) => {
+  if (!membership?.circle) {
+    return false;
+  }
+  const now = new Date();
+  const circle = membership.circle;
+  const isActive = circle.status === 'active' && circle.expiresAt > now;
+  const matchesSelection = circle.mood === mood && circle.interest === interest;
+  return isActive && matchesSelection;
+};
 
 const listRecentMessages = async (circleId: string) => {
   const rows = await prisma.message.findMany({
@@ -84,9 +100,13 @@ export async function POST(request: NextRequest) {
     const result = await prisma.$transaction(async (tx) => {
       const existingMembership = await findLatestActiveMembershipForDevice(deviceId, tx);
 
-      if (existingMembership?.circle) {
-        const memberCount = await getCircleMemberCount(tx, existingMembership.circle.id);
+      if (isJoinableMembership(existingMembership, mood, interest) && existingMembership?.circle) {
+        const memberCount = await countActiveMembers(existingMembership.circle.id, tx);
         return { circle: existingMembership.circle, memberCount, isNewCircle: false };
+      }
+
+      if (existingMembership) {
+        await markMembershipLeft(existingMembership.id, tx);
       }
 
       let circle = await findJoinableCircle(tx, mood, interest);
@@ -118,7 +138,7 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      const memberCount = await getCircleMemberCount(tx, circle.id);
+      const memberCount = await countActiveMembers(circle.id, tx);
 
       return { circle, memberCount, isNewCircle };
     });
