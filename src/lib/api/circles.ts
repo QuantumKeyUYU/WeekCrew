@@ -1,4 +1,4 @@
-import type { CircleMessage, CircleSummary } from '@/types';
+import type { CircleMessage, CircleSummary, DailyQuotaSnapshot } from '@/types';
 import { fetchJson } from '@/lib/api-client';
 
 export interface JoinCirclePayload {
@@ -27,6 +27,7 @@ export const getCurrentCircle = () =>
 
 export interface CircleMessagesResponse {
   messages: CircleMessage[];
+  quota?: DailyQuotaSnapshot;
 }
 
 export interface FetchMessagesParams {
@@ -48,7 +49,9 @@ export interface SendMessagePayload {
 }
 
 export interface SendMessageResponse {
+  ok: true;
   message: CircleMessage;
+  quota: DailyQuotaSnapshot;
 }
 
 export const sendMessage = (payload: SendMessagePayload) =>

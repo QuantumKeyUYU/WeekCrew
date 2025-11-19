@@ -56,3 +56,10 @@ export interface DeviceInfo {
   deviceId: string;
   createdAt: string;
 }
+
+export interface DailyQuotaSnapshot {
+  dailyLimit: number;
+  usedToday: number;
+  remainingToday: number;
+  resetAtIso: string;
+}

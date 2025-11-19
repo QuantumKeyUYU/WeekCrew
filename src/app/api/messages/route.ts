@@ -5,6 +5,7 @@ import { isDeviceCircleMember } from '@/lib/server/circleMembership';
 import { toCircleMessage } from '@/lib/server/serializers';
 import { isCircleActive } from '@/lib/server/circles';
 import { DEVICE_HEADER_NAME } from '@/lib/device';
+import { applyMessageUsageToQuota, checkDailyMessageLimit } from '@/lib/server/messages';
 
 const MAX_RESULTS = 200;
 
@@ -45,7 +46,12 @@ export async function GET(request: NextRequest) {
       take: MAX_RESULTS,
     });
 
-    const response = NextResponse.json({ messages: messages.map(toCircleMessage) });
+    const quota = await checkDailyMessageLimit(prisma, { circleId, deviceId });
+
+    const response = NextResponse.json({
+      messages: messages.map(toCircleMessage),
+      quota: quota.quota,
+    });
     if (isNew) {
       response.headers.set(DEVICE_HEADER_NAME, deviceId);
     }
@@ -79,6 +85,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'circle_expired' }, { status: 403 });
     }
 
+    const quotaResult = await checkDailyMessageLimit(prisma, { circleId, deviceId });
+
+    if (!quotaResult.allowed) {
+      return NextResponse.json(
+        { ok: false, error: 'daily_limit_exceeded', quota: quotaResult.quota },
+        { status: 429 },
+      );
+    }
+
     const message = await prisma.message.create({
       data: {
         circleId,
@@ -88,7 +103,14 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const response = NextResponse.json({ message: toCircleMessage(message) }, { status: 201 });
+    const response = NextResponse.json(
+      {
+        ok: true,
+        message: toCircleMessage(message),
+        quota: applyMessageUsageToQuota(quotaResult.quota),
+      },
+      { status: 201 },
+    );
     if (isNew) {
       response.headers.set(DEVICE_HEADER_NAME, deviceId);
     }

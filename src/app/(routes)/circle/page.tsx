@@ -20,8 +20,9 @@ import {
   sendMessage as sendCircleMessage,
 } from '@/lib/api/circles';
 import { getOrCreateDeviceId } from '@/lib/device';
-import type { CircleMessage } from '@/types';
+import type { CircleMessage, DailyQuotaSnapshot } from '@/types';
 import { useCircleMessagesPolling } from '@/hooks/useCircleMessagesPolling';
+import { getCircleWeekPhase } from '@/lib/circle-week-phase';
 
 const DAY_MS = 1000 * 60 * 60 * 24;
 
@@ -38,6 +39,11 @@ export default function CirclePage() {
   const addMessage = useAppStore((state) => state.addMessage);
   const replaceMessage = useAppStore((state) => state.replaceMessage);
   const removeMessage = useAppStore((state) => state.removeMessage);
+  const dailyLimit = useAppStore((state) => state.dailyLimit);
+  const dailyRemaining = useAppStore((state) => state.dailyRemaining);
+  const quotaResetAtIso = useAppStore((state) => state.quotaResetAtIso);
+  const isLimitReached = useAppStore((state) => state.isDailyQuotaExhausted);
+  const setQuotaFromApi = useAppStore((state) => state.setQuotaFromApi);
   const storeDeviceId = useAppStore((state) => state.device?.deviceId ?? null);
 
   const [composerValue, setComposerValue] = useState('');
@@ -55,6 +61,7 @@ export default function CirclePage() {
   const [remainingMs, setRemainingMs] = useState<number | null>(circle?.remainingMs ?? null);
 
   const listRef = useRef<HTMLDivElement | null>(null);
+  const lastCircleIdRef = useRef<string | null>(circle?.id ?? null);
   const currentDeviceId = useMemo(() => {
     if (storeDeviceId) {
       return storeDeviceId;
@@ -89,10 +96,20 @@ export default function CirclePage() {
     setNotMember(false);
   }, [circle?.id]);
 
+  useEffect(() => {
+    const currentId = circle?.id ?? null;
+    if (lastCircleIdRef.current === currentId) {
+      return;
+    }
+    lastCircleIdRef.current = currentId;
+    setQuotaFromApi(null);
+  }, [circle?.id, setQuotaFromApi]);
+
   const handleAccessRevoked = useCallback(() => {
     setNotMember(true);
     setMessages([]);
-  }, [setMessages]);
+    setQuotaFromApi(null);
+  }, [setQuotaFromApi, setMessages]);
 
   useEffect(() => {
     if (circle) {
@@ -134,6 +151,7 @@ export default function CirclePage() {
       .then((response) => {
         if (!cancelled) {
           setMessages(response.messages);
+          setQuotaFromApi(response.quota ?? null);
         }
       })
       .catch((error) => {
@@ -157,7 +175,7 @@ export default function CirclePage() {
     return () => {
       cancelled = true;
     };
-  }, [circle, notMember, setMessages, handleAccessRevoked]);
+  }, [circle, notMember, setMessages, handleAccessRevoked, setQuotaFromApi]);
 
   const { notMember: pollingNotMember } = useCircleMessagesPolling(circle?.id ?? null);
 
@@ -199,12 +217,17 @@ export default function CirclePage() {
     }
     setCircle(null);
     setMessages([]);
+    setQuotaFromApi(null);
     clearCircleSelection();
   };
 
   const handleSendMessage = async (event: FormEvent) => {
     event.preventDefault();
     if (!composerValue.trim() || !circle || notMember || isCircleExpired) return;
+
+    if (isLimitReached) {
+      return;
+    }
 
     const trimmed = composerValue.trim();
     const optimisticId = `temp-${Date.now()}`;
@@ -225,20 +248,28 @@ export default function CirclePage() {
     try {
       const response = await sendCircleMessage({ circleId: circle.id, content: trimmed });
       replaceMessage(optimisticId, response.message);
+      setQuotaFromApi(response.quota);
     } catch (error) {
       console.error('Failed to send message', error);
       removeMessage(optimisticId);
-      if (error instanceof ApiError && error.status === 403) {
-        const details = (error.data as { error?: string } | null) ?? null;
-        if (details?.error === 'circle_expired') {
-          setSendError(t('circle_expired_error'));
-          updateCircle((prev) => {
-            if (!prev || !circle || prev.id !== circle.id) {
-              return prev;
-            }
-            return { ...prev, isExpired: true, remainingMs: 0 };
-          });
+      if (error instanceof ApiError) {
+        const details = (error.data as { error?: string; quota?: DailyQuotaSnapshot } | null) ?? null;
+        if (details?.error === 'daily_limit_exceeded') {
+          setQuotaFromApi(details.quota ?? null);
+          setSendError(t('circle_limit_reached'));
           return;
+        }
+        if (error.status === 403) {
+          if (details?.error === 'circle_expired') {
+            setSendError(t('circle_expired_error'));
+            updateCircle((prev) => {
+              if (!prev || !circle || prev.id !== circle.id) {
+                return prev;
+              }
+              return { ...prev, isExpired: true, remainingMs: 0 };
+            });
+            return;
+          }
         }
       }
       setSendError(t('composer_send_error'));
@@ -311,6 +342,18 @@ export default function CirclePage() {
 
   const membersCount = Math.max(circle?.memberCount ?? 0, 1);
   const timerChipText = timerLabel ?? t('circle_days_left_chip', { count: 7 });
+  const showQuotaOneLiner = typeof dailyLimit === 'number';
+
+  const quotaResetLabel = useMemo(() => {
+    if (!quotaResetAtIso) {
+      return null;
+    }
+    const locale = language === 'ru' ? 'ru-RU' : 'en-US';
+    const resetDate = new Date(quotaResetAtIso);
+    const datePart = resetDate.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+    const timePart = resetDate.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+    return t('circle_quota_reset_hint', { time: `${datePart}, ${timePart}` });
+  }, [quotaResetAtIso, language, t]);
 
   const interestConfig = circle ? INTERESTS_MAP[circle.interest as keyof typeof INTERESTS_MAP] : null;
   const fallbackInterest = interestConfig ? t(interestConfig.labelKey) : null;
@@ -320,6 +363,28 @@ export default function CirclePage() {
     moodTitle && interestTitle
       ? t('circle_weekly_title', { mood: moodTitle, topic: interestTitle })
       : circle?.mood ?? t('circle_header_default_title');
+
+  const circleHostKey = useMemo(() => {
+    if (!circle || circle.isExpired) {
+      return null;
+    }
+    if (!circle.startsAt || !circle.expiresAt) {
+      return null;
+    }
+    const startsAt = new Date(circle.startsAt);
+    const expiresAt = new Date(circle.expiresAt);
+    if (Number.isNaN(startsAt.getTime()) || Number.isNaN(expiresAt.getTime())) {
+      return null;
+    }
+    const phase = getCircleWeekPhase({ createdAt: startsAt, expiresAt });
+    if (phase === 'start') {
+      return 'circle_host_start';
+    }
+    if (phase === 'middle') {
+      return 'circle_host_middle';
+    }
+    return 'circle_host_final';
+  }, [circle]);
 
   if (!circle && !loadingCircle) {
     return (
@@ -368,6 +433,12 @@ export default function CirclePage() {
                   {t('circle_members_chip', { count: membersCount })}
                 </span>
               </div>
+              {showQuotaOneLiner && (
+                <p className="mt-1 text-xs text-slate-500 dark:text-white/60">{t('circle_quota_one_liner')}</p>
+              )}
+              {circleHostKey && (
+                <p className="mt-1 text-xs text-slate-600 dark:text-slate-100">{t(circleHostKey)}</p>
+              )}
             </div>
             <div className="flex flex-wrap gap-2">
               <button
@@ -482,17 +553,36 @@ export default function CirclePage() {
                 onChange={(event) => setComposerValue(event.target.value)}
                 placeholder={isCircleExpired ? t('circle_expired_placeholder') : t('composer_placeholder')}
                 className="flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-white/10 dark:bg-slate-900/70 dark:text-white"
-                disabled={isSending || notMember || isCircleExpired}
+                disabled={isSending || notMember || isCircleExpired || isLimitReached}
               />
               <button
                 type="submit"
                 className="rounded-2xl bg-brand px-6 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(127,90,240,0.25)] transition hover:-translate-y-0.5 disabled:opacity-50"
-                disabled={isSending || !composerValue.trim() || notMember || isCircleExpired}
+                disabled={
+                  isSending ||
+                  !composerValue.trim() ||
+                  notMember ||
+                  isCircleExpired ||
+                  isLimitReached
+                }
               >
                 {isSending ? t('composer_submitting') : t('composer_submit')}
               </button>
             </div>
             {sendError && <p className="text-sm text-red-500 dark:text-red-400">{sendError}</p>}
+            {typeof dailyRemaining === 'number' && typeof dailyLimit === 'number' && (
+              !isLimitReached ? (
+                <div className="text-xs text-slate-500 dark:text-slate-400">
+                  <p>{t('circle_quota_remaining', { count: dailyRemaining })}</p>
+                  {quotaResetLabel && <p className="mt-1">{quotaResetLabel}</p>}
+                </div>
+              ) : (
+                <div className="rounded-2xl bg-amber-50/80 p-3 text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-100">
+                  <p className="font-medium">{t('circle_quota_exhausted')}</p>
+                  {quotaResetLabel && <p className="mt-1">{quotaResetLabel}</p>}
+                </div>
+              )
+            )}
           </form>
         </section>
 

@@ -10,6 +10,7 @@ const POLL_INTERVAL_MS = 5000;
 
 export const useCircleMessagesPolling = (circleId: string | null | undefined) => {
   const setMessages = useAppStore((state) => state.setMessages);
+  const setQuotaFromApi = useAppStore((state) => state.setQuotaFromApi);
   const [notMember, setNotMember] = useState(false);
 
   useEffect(() => {
@@ -32,10 +33,14 @@ export const useCircleMessagesPolling = (circleId: string | null | undefined) =>
       try {
         const currentMessages = useAppStore.getState().messages;
         const last = currentMessages[currentMessages.length - 1];
-        const { messages: incoming } = await getCircleMessages({
+        const { messages: incoming, quota } = await getCircleMessages({
           circleId,
           since: last?.createdAt,
         });
+
+        if (!cancelled) {
+          setQuotaFromApi(quota ?? null);
+        }
 
         if (cancelled || incoming.length === 0) {
           return;
@@ -70,7 +75,7 @@ export const useCircleMessagesPolling = (circleId: string | null | undefined) =>
         clearInterval(intervalId);
       }
     };
-  }, [circleId, setMessages]);
+  }, [circleId, setMessages, setQuotaFromApi]);
 
   return { notMember };
 };

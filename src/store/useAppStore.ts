@@ -2,7 +2,14 @@
 
 import { create } from 'zustand';
 import { devtools, persist, createJSONStorage } from 'zustand/middleware';
-import type { AppSettings, CircleSummary, CircleMessage, DeviceInfo, UserProfile } from '@/types';
+import type {
+  AppSettings,
+  CircleSummary,
+  CircleMessage,
+  DailyQuotaSnapshot,
+  DeviceInfo,
+  UserProfile,
+} from '@/types';
 
 /* eslint-disable no-unused-vars */
 interface AppStore {
@@ -10,6 +17,11 @@ interface AppStore {
   user: UserProfile | null;
   circle: CircleSummary | null;
   messages: CircleMessage[];
+  dailyLimit: number | null;
+  dailyUsed: number | null;
+  dailyRemaining: number | null;
+  quotaResetAtIso: string | null;
+  isDailyQuotaExhausted: boolean;
   settings: AppSettings;
   firebaseReady: boolean;
   setDevice(device: DeviceInfo): void;
@@ -21,6 +33,7 @@ interface AppStore {
   addMessage(message: CircleMessage): void;
   replaceMessage(tempId: string, message: CircleMessage): void;
   removeMessage(id: string): void;
+  setQuotaFromApi(quota: DailyQuotaSnapshot | null): void;
   updateSettings(settings: Partial<AppSettings>): void;
   setFirebaseReady(ready: boolean): void;
   reset(): void;
@@ -66,6 +79,11 @@ export const useAppStore = create<AppStore>()(
         user: null,
         circle: null,
         messages: [],
+        dailyLimit: null,
+        dailyUsed: null,
+        dailyRemaining: null,
+        quotaResetAtIso: null,
+        isDailyQuotaExhausted: false,
         settings: defaultSettings,
         firebaseReady: false,
         setDevice: (device) => set({ device }),
@@ -85,6 +103,25 @@ export const useAppStore = create<AppStore>()(
           set((state) => ({
             messages: state.messages.filter((message) => message.id !== id),
           })),
+        setQuotaFromApi: (quota) =>
+          set(() => {
+            if (!quota) {
+              return {
+                dailyLimit: null,
+                dailyUsed: null,
+                dailyRemaining: null,
+                quotaResetAtIso: null,
+                isDailyQuotaExhausted: false,
+              };
+            }
+            return {
+              dailyLimit: quota.dailyLimit,
+              dailyUsed: quota.usedToday,
+              dailyRemaining: quota.remainingToday,
+              quotaResetAtIso: quota.resetAtIso,
+              isDailyQuotaExhausted: quota.remainingToday <= 0,
+            };
+          }),
         updateSettings: (settings) => set({ settings: { ...get().settings, ...settings } }),
         setFirebaseReady: (ready) => set({ firebaseReady: ready }),
         reset: () => set({
@@ -92,6 +129,11 @@ export const useAppStore = create<AppStore>()(
           user: null,
           circle: null,
           messages: [],
+          dailyLimit: null,
+          dailyUsed: null,
+          dailyRemaining: null,
+          quotaResetAtIso: null,
+          isDailyQuotaExhausted: false,
           settings: defaultSettings
         })
       }),
