@@ -6,6 +6,7 @@ import { toCircleMessage } from '@/lib/server/serializers';
 import { isCircleActive } from '@/lib/server/circles';
 import { DEVICE_HEADER_NAME } from '@/lib/device';
 import { applyMessageUsageToQuota, checkDailyMessageLimit } from '@/lib/server/messages';
+import { buildCircleMessagesWhere } from '@/lib/server/messageQueries';
 
 const MAX_RESULTS = 200;
 
@@ -37,12 +38,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'not_member' }, { status: 403 });
     }
 
+    const messageFilters = buildCircleMessagesWhere({ circleId, since });
+
     const [messages, memberCount, quota] = await Promise.all([
       prisma.message.findMany({
-        where: {
-          circleId,
-          ...(since ? { createdAt: { gt: since } } : {}),
-        },
+        where: messageFilters,
         orderBy: { createdAt: 'asc' },
         take: MAX_RESULTS,
       }),
