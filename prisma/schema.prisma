@@ -49,7 +49,6 @@ model CircleMembership {
 
   circle    Circle                   @relation(fields: [circleId], references: [id], onDelete: Cascade)
   device    Device                   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
-  messages  Message[]
 
   @@index([circleId, status])
   @@index([deviceId, status])
