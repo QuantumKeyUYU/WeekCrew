@@ -396,7 +396,7 @@ export default function CirclePage() {
       <>
         <div className="space-y-6">
           {notMember && (
-            <div className="rounded-[2.5rem] border border-amber-200 bg-white p-6 text-center text-slate-900 shadow-sm dark:border-amber-400/40 dark:bg-slate-900/70 dark:text-slate-100">
+            <div className="rounded-[2.5rem] border border-amber-200 bg-amber-50/90 p-6 text-center text-amber-900 shadow-sm dark:border-amber-400/40 dark:bg-amber-500/10 dark:text-amber-100">
               <p className="text-base font-semibold">{t('circle_not_member_notice')}</p>
               <button
                 type="button"
@@ -507,7 +507,7 @@ export default function CirclePage() {
             ))}
           </div>
           {notMember && (
-            <div className="mt-4 rounded-2xl border border-amber-200 bg-white p-4 text-sm text-slate-900 shadow-sm dark:border-amber-500/40 dark:bg-slate-900/70 dark:text-slate-100">
+            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50/90 p-4 text-sm text-amber-900 shadow-sm dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
               <p className="font-semibold">{t('circle_not_member_notice')}</p>
               <button
                 type="button"

@@ -19,7 +19,7 @@ const isDemoMode = PUBLIC_MODE !== 'live';
 
 export default function SettingsPage() {
   const t = useTranslation();
-  const { markAccepted } = useSafetyRules();
+  const { markAccepted, resetAccepted } = useSafetyRules();
   const themePreference = useAppStore((state) => state.settings.theme);
   const updateSettings = useAppStore((state) => state.updateSettings);
   const resetStore = useAppStore((state) => state.reset);
@@ -27,6 +27,7 @@ export default function SettingsPage() {
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [clearing, setClearing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [rulesMessage, setRulesMessage] = useState<string | null>(null);
   const [showRules, setShowRules] = useState(false);
 
   useEffect(() => {
@@ -67,6 +68,11 @@ export default function SettingsPage() {
 
   const handleThemeChange = (value: ThemePreference) => {
     updateSettings({ theme: value });
+  };
+
+  const handleResetRules = () => {
+    resetAccepted();
+    setRulesMessage(t('settings_rules_reset_notice'));
   };
 
   return (
@@ -124,13 +130,23 @@ export default function SettingsPage() {
       <section className="app-panel p-6 text-sm text-slate-700 dark:text-slate-200">
         <h2 className="text-base font-semibold text-slate-900 dark:text-white">{t('settings_rules_title')}</h2>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">{t('settings_rules_description')}</p>
-        <button
-          type="button"
-          onClick={() => setShowRules(true)}
-          className="mt-4 inline-flex items-center rounded-full border border-slate-300 px-5 py-2 text-sm font-medium text-slate-600 transition hover:-translate-y-0.5 hover:border-brand/40 hover:text-brand-foreground dark:border-white/20 dark:text-white"
-        >
-          {t('settings_rules_button')}
-        </button>
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+          <button
+            type="button"
+            onClick={() => setShowRules(true)}
+            className="inline-flex items-center rounded-full border border-slate-300 px-5 py-2 text-sm font-medium text-slate-600 transition hover:-translate-y-0.5 hover:border-brand/40 hover:text-brand-foreground dark:border-white/20 dark:text-white"
+          >
+            {t('settings_rules_button')}
+          </button>
+          <button
+            type="button"
+            onClick={handleResetRules}
+            className="inline-flex items-center rounded-full border border-dashed border-amber-300 px-5 py-2 text-sm font-medium text-amber-800 transition hover:-translate-y-0.5 hover:border-amber-400 hover:text-amber-900 dark:border-amber-400/60 dark:text-amber-200"
+          >
+            {t('settings_rules_reset_button')}
+          </button>
+        </div>
+        {rulesMessage && <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">{rulesMessage}</p>}
       </section>
 
       <details className="app-panel border border-dashed border-slate-200/70 p-6 text-sm text-slate-700 shadow-none dark:border-white/20 dark:text-slate-200">
@@ -155,6 +171,7 @@ export default function SettingsPage() {
         onAccept={() => {
           markAccepted();
           setShowRules(false);
+          setRulesMessage(null);
         }}
         onClose={() => setShowRules(false)}
       />
