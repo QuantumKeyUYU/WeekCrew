@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { getOrCreateDevice } from '@/lib/server/device';
 import { toCircleSummary } from '@/lib/server/serializers';
 import { DEVICE_HEADER_NAME } from '@/lib/device';
+import { findLatestActiveMembershipForDevice } from '@/lib/server/circleMembership';
 
 const getCircleMemberCount = (circleId: string) =>
   prisma.circleMembership.count({ where: { circleId, status: 'active' } });
@@ -13,14 +14,7 @@ const getCircleMemberCount = (circleId: string) =>
 export async function GET(request: NextRequest) {
   try {
     const { id: deviceId, isNew } = await getOrCreateDevice(request);
-    const membership = await prisma.circleMembership.findFirst({
-      where: {
-        deviceId,
-        status: 'active',
-      },
-      include: { circle: true },
-      orderBy: { joinedAt: 'desc' },
-    });
+    const membership = await findLatestActiveMembershipForDevice(deviceId);
 
     if (!membership?.circle) {
       const response = NextResponse.json({ circle: null });
