@@ -2,11 +2,11 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import clsx from 'clsx';
 import { CircleEmptyState } from '@/components/circle/empty-state';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSafetyRules } from '@/hooks/useSafetyRules';
 import { SafetyRulesModal } from '@/components/modals/safety-rules-modal';
+import { MessageList } from '@/components/circle/message-list';
 import { INTERESTS_MAP } from '@/config/interests';
 import { MOOD_OPTIONS } from '@/constants/moods';
 import { clearCircleSelection, loadCircleSelection } from '@/lib/circleSelection';
@@ -60,7 +60,6 @@ export default function CirclePage() {
   const [notMember, setNotMember] = useState(false);
   const [remainingMs, setRemainingMs] = useState<number | null>(circle?.remainingMs ?? null);
 
-  const listRef = useRef<HTMLDivElement | null>(null);
   const lastCircleIdRef = useRef<string | null>(circle?.id ?? null);
   const currentDeviceId = useMemo(() => {
     if (storeDeviceId) {
@@ -86,11 +85,6 @@ export default function CirclePage() {
       }
     }
   }, [t]);
-
-  useEffect(() => {
-    if (!listRef.current) return;
-    listRef.current.scrollTop = listRef.current.scrollHeight;
-  }, [messages]);
 
   useEffect(() => {
     if (circle?.id) {
@@ -150,12 +144,21 @@ export default function CirclePage() {
       return;
     }
     let cancelled = false;
+    const circleId = circle.id;
     setMessagesLoading(true);
-    getCircleMessages({ circleId: circle.id })
+    getCircleMessages({ circleId })
       .then((response) => {
         if (!cancelled) {
           setMessages(response.messages);
           setQuotaFromApi(response.quota ?? null);
+          if (typeof response.memberCount === 'number') {
+            updateCircle((prev) => {
+              if (!prev || prev.id !== circleId) {
+                return prev;
+              }
+              return { ...prev, memberCount: response.memberCount };
+            });
+          }
         }
       })
       .catch((error) => {
@@ -179,7 +182,7 @@ export default function CirclePage() {
     return () => {
       cancelled = true;
     };
-  }, [circle, notMember, setMessages, handleAccessRevoked, setQuotaFromApi]);
+  }, [circle, notMember, setMessages, handleAccessRevoked, setQuotaFromApi, updateCircle]);
 
   const { notMember: pollingNotMember } = useCircleMessagesPolling(circle?.id ?? null);
 
@@ -531,38 +534,12 @@ export default function CirclePage() {
               </button>
             </div>
           )}
-          <div ref={listRef} className="mt-4 flex max-h-[400px] flex-col gap-3 overflow-y-auto pr-1">
-            {messagesLoading && messages.length === 0 && (
-              <p className="text-center text-sm text-slate-400 dark:text-slate-500">{t('explore_starting_state')}</p>
-            )}
-            {messages.map((msg) => {
-              const isOwn = Boolean(currentDeviceId && msg.deviceId === currentDeviceId);
-              return (
-                <div key={msg.id} className={clsx('flex', isOwn ? 'justify-end' : 'justify-start')}>
-                  <div
-                    className={clsx(
-                      'max-w-[80%] rounded-2xl border px-4 py-3 text-sm shadow-sm',
-                      isOwn
-                        ? 'border-brand/60 bg-brand text-white'
-                        : msg.isSystem
-                        ? 'border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/70'
-                        : 'border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100',
-                    )}
-                  >
-                    <p className="whitespace-pre-wrap leading-snug text-slate-800 dark:text-white">{msg.content}</p>
-                    <span className="mt-2 block text-[11px] text-slate-400">
-                      {new Date(msg.createdAt).toLocaleTimeString(language === 'ru' ? 'ru-RU' : 'en-US', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-            {messages.length === 0 && !messagesLoading && (
-              <p className="text-center text-sm text-slate-400 dark:text-slate-500">{t('messages_empty_state')}</p>
-            )}
+          <div className="mt-4">
+            <MessageList
+              messages={messages}
+              currentDeviceId={currentDeviceId}
+              isLoading={messagesLoading}
+            />
           </div>
           <form onSubmit={handleSendMessage} className="mt-4 space-y-2">
             <div className="flex flex-col gap-2 sm:flex-row">

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getOrCreateDevice } from '@/lib/server/device';
-import { isDeviceCircleMember } from '@/lib/server/circleMembership';
+import { countActiveMembers, isDeviceCircleMember } from '@/lib/server/circleMembership';
 import { toCircleMessage } from '@/lib/server/serializers';
 import { isCircleActive } from '@/lib/server/circles';
 import { DEVICE_HEADER_NAME } from '@/lib/device';
@@ -37,20 +37,23 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'not_member' }, { status: 403 });
     }
 
-    const messages = await prisma.message.findMany({
-      where: {
-        circleId,
-        ...(since ? { createdAt: { gt: since } } : {}),
-      },
-      orderBy: { createdAt: 'asc' },
-      take: MAX_RESULTS,
-    });
-
-    const quota = await checkDailyMessageLimit(prisma, { circleId, deviceId });
+    const [messages, memberCount, quota] = await Promise.all([
+      prisma.message.findMany({
+        where: {
+          circleId,
+          ...(since ? { createdAt: { gt: since } } : {}),
+        },
+        orderBy: { createdAt: 'asc' },
+        take: MAX_RESULTS,
+      }),
+      countActiveMembers(circleId),
+      checkDailyMessageLimit(prisma, { circleId, deviceId }),
+    ]);
 
     const response = NextResponse.json({
       messages: messages.map(toCircleMessage),
       quota: quota.quota,
+      memberCount,
     });
     if (isNew) {
       response.headers.set(DEVICE_HEADER_NAME, deviceId);

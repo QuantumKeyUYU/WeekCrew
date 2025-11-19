@@ -28,6 +28,7 @@ export const getCurrentCircle = () =>
 export interface CircleMessagesResponse {
   messages: CircleMessage[];
   quota?: DailyQuotaSnapshot;
+  memberCount?: number;
 }
 
 export interface FetchMessagesParams {
