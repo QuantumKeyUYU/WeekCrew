@@ -1,5 +1,5 @@
 import type { MoodKey } from '@/constants/moods';
-import type { InterestId } from '@/lib/weekcrewStorage';
+import type { InterestId } from '@/types';
 
 const STORAGE_KEY = 'weekcrew:last-circle-selection';
 

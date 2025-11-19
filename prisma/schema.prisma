@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CircleStatus {
+  active
+  finished
+  archived
+}
+
+enum CircleMembershipStatus {
+  active
+  left
+}
+
+model Device {
+  id           String              @id
+  createdAt    DateTime            @default(now())
+  memberships  CircleMembership[]
+  messages     Message[]
+}
+
+model Circle {
+  id           String              @id @default(cuid())
+  mood         String
+  interest     String
+  status       CircleStatus        @default(active)
+  maxMembers   Int
+  startsAt     DateTime
+  endsAt       DateTime
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  memberships  CircleMembership[]
+  messages     Message[]
+}
+
+model CircleMembership {
+  id        String                   @id @default(cuid())
+  circleId  String
+  deviceId  String
+  status    CircleMembershipStatus   @default(active)
+  joinedAt  DateTime                 @default(now())
+  leftAt    DateTime?
+
+  circle    Circle                   @relation(fields: [circleId], references: [id], onDelete: Cascade)
+  device    Device                   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  messages  Message[]
+
+  @@index([circleId, status])
+  @@index([deviceId, status])
+}
+
+model Message {
+  id        String    @id @default(cuid())
+  circleId  String
+  deviceId  String?
+  content   String
+  isSystem  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+
+  circle    Circle    @relation(fields: [circleId], references: [id], onDelete: Cascade)
+  device    Device?   @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+
+  @@index([circleId, createdAt])
+}

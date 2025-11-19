@@ -7,14 +7,14 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { primaryCtaClass } from '@/styles/tokens';
 import { SafetyRulesModal } from '@/components/modals/safety-rules-modal';
 import { useSafetyRules } from '@/hooks/useSafetyRules';
-import { useWeekcrewSnapshot } from '@/lib/weekcrewStorage';
+import { useAppStore } from '@/store/useAppStore';
 import { TestModeHint } from '@/components/shared/test-mode-hint';
 
 export default function HomePage() {
   const router = useRouter();
   const t = useTranslation();
   const { accepted, markAccepted } = useSafetyRules();
-  const { currentCircle } = useWeekcrewSnapshot((snapshot) => ({ currentCircle: snapshot.currentCircle }));
+  const currentCircle = useAppStore((state) => state.circle);
   const [showModal, setShowModal] = useState(false);
 
   const handleStart = () => {

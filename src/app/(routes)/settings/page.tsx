@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import clsx from 'clsx';
-import { useWeekcrewStorage } from '@/lib/weekcrewStorage';
-import { getOrCreateDeviceId, DEVICE_ID_KEY } from '@/lib/device';
+import { getOrCreateDeviceId, DEVICE_ID_KEY, resetDeviceId } from '@/lib/device';
 import { primaryCtaClass } from '@/styles/tokens';
 import { useTranslation } from '@/i18n/useTranslation';
 import { SafetyRulesModal } from '@/components/modals/safety-rules-modal';
@@ -13,16 +12,18 @@ import { useAppStore } from '@/store/useAppStore';
 import { ThemePreference } from '@/constants/theme';
 import { TestModeHint } from '@/components/shared/test-mode-hint';
 import type { CopyKey } from '@/i18n/copy';
+import { leaveCircle } from '@/lib/api/circles';
 
 const PUBLIC_MODE = process.env.NEXT_PUBLIC_WEEKCREW_MODE ?? 'demo';
 const isDemoMode = PUBLIC_MODE !== 'live';
 
 export default function SettingsPage() {
-  const storage = useWeekcrewStorage();
   const t = useTranslation();
   const { markAccepted } = useSafetyRules();
   const themePreference = useAppStore((state) => state.settings.theme);
   const updateSettings = useAppStore((state) => state.updateSettings);
+  const resetStore = useAppStore((state) => state.reset);
+  const setDevice = useAppStore((state) => state.setDevice);
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [clearing, setClearing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -37,8 +38,15 @@ export default function SettingsPage() {
     setClearing(true);
     setMessage(null);
     try {
-      await storage.clearAllLocalData();
+      await leaveCircle().catch((error) => {
+        console.warn('Failed to leave circle during reset', error);
+      });
+      resetStore();
       clearCircleSelection();
+      resetDeviceId();
+      const newId = getOrCreateDeviceId();
+      setDevice({ deviceId: newId, createdAt: new Date().toISOString() });
+      setDeviceId(newId);
       setMessage(t('settings_reset_success'));
     } catch (error) {
       console.error('Failed to clear local data', error);

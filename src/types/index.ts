@@ -1,5 +1,3 @@
-import type { Timestamp } from 'firebase/firestore';
-
 export type InterestTag =
   | 'kpop'
   | 'anime'
@@ -12,7 +10,9 @@ export type InterestTag =
   | 'movies'
   | 'custom';
 
-export type CircleStatus = 'active' | 'archived';
+export type InterestId = InterestTag | string;
+
+export type CircleStatus = 'active' | 'finished' | 'archived';
 
 export interface UserProfile {
   id: string;
@@ -24,25 +24,24 @@ export interface UserProfile {
   notificationsEnabled: boolean;
 }
 
-export interface Circle {
+export interface CircleSummary {
   id: string;
-  interest: InterestTag;
-  title: string;
+  mood: string;
+  interest: InterestId;
+  startsAt: string;
+  endsAt: string;
   status: CircleStatus;
-  capacity: number;
-  memberIds: string[];
-  createdAt: Timestamp;
-  expiresAt: Timestamp;
-  icebreakerSeed?: string;
+  maxMembers: number;
+  memberCount: number;
 }
 
 export interface CircleMessage {
   id: string;
   circleId: string;
-  authorDeviceId: string;
-  text: string;
-  createdAt: Timestamp;
-  authorAlias?: string;
+  deviceId: string | null;
+  content: string;
+  isSystem: boolean;
+  createdAt: string;
 }
 
 export interface AppSettings {

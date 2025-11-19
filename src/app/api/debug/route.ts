@@ -1,8 +1,7 @@
-import { NextResponse } from "next/server";
-import { dbStatus } from "@/server/db";
+import { NextResponse } from 'next/server';
 
 export async function GET() {
-  const mode = process.env.NEXT_PUBLIC_WEEKCREW_MODE || "demo";
+  const mode = process.env.NEXT_PUBLIC_WEEKCREW_MODE || 'demo';
 
   return NextResponse.json({
     ok: true,
@@ -11,7 +10,7 @@ export async function GET() {
       WEEKCREW_MODE: mode,
     },
     backend: {
-      dbStatus,
+      databaseUrlConfigured: Boolean(process.env.DATABASE_URL),
     },
     timestamp: Date.now(),
   });

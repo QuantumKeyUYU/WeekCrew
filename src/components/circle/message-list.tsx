@@ -40,7 +40,7 @@ export const MessageList = ({ messages, currentDeviceId }: Props) => {
     <div ref={containerRef} className="flex flex-col gap-3">
       <AnimatePresence initial={false}>
         {messages.map((message) => {
-          const isOwn = message.authorDeviceId === currentDeviceId;
+          const isOwn = message.deviceId === currentDeviceId;
           return (
             <motion.div
               key={message.id}
@@ -60,22 +60,16 @@ export const MessageList = ({ messages, currentDeviceId }: Props) => {
                 )}
               >
                 <div className="text-xs uppercase tracking-wide text-slate-200/70">
-                  {message.authorAlias ?? t('messages_author_unknown')}
+                  {t('messages_author_unknown')}
                 </div>
-                <p className="mt-1 whitespace-pre-wrap leading-snug">{message.text}</p>
+                <p className="mt-1 whitespace-pre-wrap leading-snug">{message.content}</p>
                 <p className="mt-2 text-[11px] uppercase tracking-wide text-slate-200/60">
-                  {(() => {
-                    const date = message.createdAt?.toDate?.();
-                    if (!date) {
-                      return '—';
-                    }
-                    return date.toLocaleString(locale, {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      day: '2-digit',
-                      month: 'short'
-                    });
-                  })()}
+                  {new Date(message.createdAt).toLocaleString(locale, {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    day: '2-digit',
+                    month: 'short'
+                  })}
                 </p>
               </div>
             </motion.div>
