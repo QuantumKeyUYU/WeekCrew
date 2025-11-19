@@ -10,6 +10,7 @@ import {
   findLatestActiveMembershipForDevice,
   markMembershipLeft,
 } from '@/lib/server/circleMembership';
+import { buildCircleMessagesWhere } from '@/lib/server/messageQueries';
 
 const DEFAULT_MAX_MEMBERS = 5;
 const MESSAGE_LIMIT = 50;
@@ -76,8 +77,9 @@ const isJoinableMembership = (
 };
 
 const listRecentMessages = async (circleId: string) => {
+  const where = buildCircleMessagesWhere({ circleId });
   const rows = await prisma.message.findMany({
-    where: { circleId },
+    where,
     orderBy: { createdAt: 'desc' },
     take: MESSAGE_LIMIT,
   });
