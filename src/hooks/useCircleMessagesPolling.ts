@@ -27,7 +27,7 @@ export const useCircleMessagesPolling = (circleId: string | null | undefined) =>
     let intervalId: ReturnType<typeof setInterval> | null = null;
 
     const poll = async () => {
-      if (cancelled) {
+      if (cancelled || !circleId) {
         return;
       }
 
@@ -39,23 +39,26 @@ export const useCircleMessagesPolling = (circleId: string | null | undefined) =>
           since: last?.createdAt,
         });
 
-        if (!cancelled) {
-          setQuotaFromApi(quota ?? null);
-          if (typeof memberCount === 'number') {
-            updateCircle((prev) => {
-              if (!prev || prev.id !== circleId) {
-                return prev;
-              }
-              return { ...prev, memberCount };
-            });
-          }
-        }
-
-        if (cancelled || incoming.length === 0) {
+        const state = useAppStore.getState();
+        if (state.circle?.id !== circleId || cancelled) {
           return;
         }
 
-        const merged = mergeMessages(useAppStore.getState().messages, incoming);
+        setQuotaFromApi(quota ?? null);
+        if (typeof memberCount === 'number') {
+          updateCircle((prev) => {
+            if (!prev || prev.id !== circleId) {
+              return prev;
+            }
+            return { ...prev, memberCount };
+          });
+        }
+
+        if (incoming.length === 0) {
+          return;
+        }
+
+        const merged = mergeMessages(state.messages, incoming);
         setMessages(merged);
       } catch (error) {
         if (error instanceof ApiError && error.status === 403) {

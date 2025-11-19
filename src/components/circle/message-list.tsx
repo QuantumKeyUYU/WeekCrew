@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { CircleMessage } from '@/types';
 import clsx from 'clsx';
@@ -18,6 +18,8 @@ const DAY_IN_MS = 24 * 60 * 60 * 1000;
 export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Props) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const lastScrollLength = useRef(0);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const [hasNewWhileAway, setHasNewWhileAway] = useState(false);
   const t = useTranslation();
   const language = useAppStore((state) => state.settings.language ?? 'ru');
   const locale = language === 'ru' ? 'ru-RU' : 'en-US';
@@ -68,16 +70,46 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
   };
 
   useEffect(() => {
-    if (!containerRef.current) {
+    const prevLength = lastScrollLength.current;
+    const node = containerRef.current;
+    if (messages.length > prevLength && !isAtBottom) {
+      setHasNewWhileAway(true);
+    }
+    if (!node) {
+      lastScrollLength.current = messages.length;
       return;
     }
-    const last = containerRef.current.lastElementChild as HTMLElement | null;
-    if (last) {
-      const behavior = lastScrollLength.current > 0 ? 'smooth' : 'auto';
+    const last = node.lastElementChild as HTMLElement | null;
+    if (isAtBottom && last) {
+      const behavior = prevLength > 0 ? 'smooth' : 'auto';
       last.scrollIntoView({ behavior, block: 'end' });
     }
     lastScrollLength.current = messages.length;
-  }, [messages]);
+  }, [isAtBottom, messages]);
+
+  const handleScroll = useCallback(() => {
+    const node = containerRef.current;
+    if (!node) {
+      return;
+    }
+    const THRESHOLD = 16;
+    const atBottom = node.scrollTop + node.clientHeight >= node.scrollHeight - THRESHOLD;
+    setIsAtBottom(atBottom);
+    if (atBottom) {
+      setHasNewWhileAway(false);
+    }
+  }, []);
+
+  const handleScrollToBottom = useCallback(() => {
+    const node = containerRef.current;
+    if (!node) {
+      return;
+    }
+    node.scrollTo({ top: node.scrollHeight, behavior: 'smooth' });
+    lastScrollLength.current = messages.length;
+    setIsAtBottom(true);
+    setHasNewWhileAway(false);
+  }, [messages.length]);
 
   if (isLoading && messages.length === 0) {
     return (
@@ -107,7 +139,8 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
   return (
     <div
       ref={containerRef}
-      className="flex max-h-[420px] flex-col gap-4 overflow-y-auto pr-2"
+      onScroll={handleScroll}
+      className="flex max-h-[420px] flex-col gap-4 overflow-y-auto pr-1 sm:pr-2"
       aria-live="polite"
       aria-busy={isLoading}
     >
@@ -183,7 +216,18 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
           );
         })}
       </AnimatePresence>
-      {isLoading && (
+      {(!isAtBottom || hasNewWhileAway) && (
+        <button
+          type="button"
+          onClick={handleScrollToBottom}
+          className="sticky bottom-2 mt-2 inline-flex self-end items-center gap-1 rounded-full bg-slate-900/80 px-3 py-1.5 text-xs font-semibold text-white shadow-lg shadow-black/30 backdrop-blur transition hover:bg-slate-900 mr-1 sm:mr-2"
+          aria-label={hasNewWhileAway ? t('messages_scroll_new') : t('messages_scroll_bottom')}
+        >
+          <span>{hasNewWhileAway ? t('messages_scroll_new_short') : t('messages_scroll_bottom_short')}</span>
+          <span aria-hidden="true">↓</span>
+        </button>
+      )}
+      {isLoading && messages.length > 0 && (
         <div className="flex justify-center pb-2 text-xs text-slate-400 dark:text-slate-500">
           {t('messages_loading_state')}
         </div>
