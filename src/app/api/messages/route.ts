@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getOrCreateDevice } from '@/lib/server/device';
 import { isDeviceCircleMember } from '@/lib/server/circleMembership';
 import { toCircleMessage } from '@/lib/server/serializers';
+import { isCircleActive } from '@/lib/server/circles';
 import { DEVICE_HEADER_NAME } from '@/lib/device';
 
 const MAX_RESULTS = 200;
@@ -70,6 +71,12 @@ export async function POST(request: NextRequest) {
 
     if (!canSend) {
       return NextResponse.json({ error: 'not_member' }, { status: 403 });
+    }
+
+    const circle = await prisma.circle.findUnique({ where: { id: circleId } });
+
+    if (!circle || !isCircleActive(circle)) {
+      return NextResponse.json({ error: 'circle_expired' }, { status: 403 });
     }
 
     const message = await prisma.message.create({

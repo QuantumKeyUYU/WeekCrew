@@ -17,12 +17,9 @@ export async function GET(request: NextRequest) {
       where: {
         deviceId,
         status: 'active',
-        circle: {
-          status: 'active',
-          endsAt: { gt: new Date() },
-        },
       },
       include: { circle: true },
+      orderBy: { joinedAt: 'desc' },
     });
 
     if (!membership?.circle) {

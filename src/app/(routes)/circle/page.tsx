@@ -33,6 +33,7 @@ export default function CirclePage() {
   const circle = useAppStore((state) => state.circle);
   const messages = useAppStore((state) => state.messages);
   const setCircle = useAppStore((state) => state.setCircle);
+  const updateCircle = useAppStore((state) => state.updateCircle);
   const setMessages = useAppStore((state) => state.setMessages);
   const addMessage = useAppStore((state) => state.addMessage);
   const replaceMessage = useAppStore((state) => state.replaceMessage);
@@ -51,6 +52,7 @@ export default function CirclePage() {
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [leavePending, setLeavePending] = useState(false);
   const [notMember, setNotMember] = useState(false);
+  const [remainingMs, setRemainingMs] = useState<number | null>(circle?.remainingMs ?? null);
 
   const listRef = useRef<HTMLDivElement | null>(null);
   const currentDeviceId = useMemo(() => {
@@ -202,7 +204,7 @@ export default function CirclePage() {
 
   const handleSendMessage = async (event: FormEvent) => {
     event.preventDefault();
-    if (!composerValue.trim() || !circle || notMember) return;
+    if (!composerValue.trim() || !circle || notMember || isCircleExpired) return;
 
     const trimmed = composerValue.trim();
     const optimisticId = `temp-${Date.now()}`;
@@ -226,6 +228,19 @@ export default function CirclePage() {
     } catch (error) {
       console.error('Failed to send message', error);
       removeMessage(optimisticId);
+      if (error instanceof ApiError && error.status === 403) {
+        const details = (error.data as { error?: string } | null) ?? null;
+        if (details?.error === 'circle_expired') {
+          setSendError(t('circle_expired_error'));
+          updateCircle((prev) => {
+            if (!prev || !circle || prev.id !== circle.id) {
+              return prev;
+            }
+            return { ...prev, isExpired: true, remainingMs: 0 };
+          });
+          return;
+        }
+      }
       setSendError(t('composer_send_error'));
     } finally {
       setIsSending(false);
@@ -235,15 +250,67 @@ export default function CirclePage() {
   const systemMessageLines = useMemo(() => t('circle_system_message').split('\n'), [t]);
   const quickRules = useMemo(() => t('rules_modal_points').split('|'), [t]);
 
-  const daysLeft = useMemo(() => {
+  useEffect(() => {
     if (!circle) {
-      return 7;
+      setRemainingMs(null);
+      return;
     }
-    const diff = Math.max(new Date(circle.endsAt).getTime() - Date.now(), 0);
-    return Math.max(1, Math.ceil(diff / DAY_MS));
-  }, [circle]);
+    setRemainingMs(circle.remainingMs ?? null);
+  }, [circle?.id, circle?.remainingMs]);
+
+  useEffect(() => {
+    if (!circle?.expiresAt) {
+      return undefined;
+    }
+
+    if (circle.isExpired) {
+      setRemainingMs(0);
+      return undefined;
+    }
+
+    const expiresAtMs = new Date(circle.expiresAt).getTime();
+
+    const updateRemaining = () => {
+      const nextRemaining = Math.max(expiresAtMs - Date.now(), 0);
+      setRemainingMs(nextRemaining);
+      updateCircle((prev) => {
+        if (!prev || prev.id !== circle.id) {
+          return prev;
+        }
+        const expired = nextRemaining <= 0 || prev.isExpired;
+        return { ...prev, remainingMs: nextRemaining, isExpired: expired };
+      });
+    };
+
+    updateRemaining();
+    const intervalId = setInterval(updateRemaining, 30000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [circle?.id, circle?.expiresAt, circle?.isExpired, updateCircle]);
+
+  const isCircleExpired = Boolean(circle?.isExpired || (remainingMs !== null && remainingMs <= 0));
+
+  const timerLabel = useMemo(() => {
+    if (!circle) {
+      return null;
+    }
+    if (isCircleExpired) {
+      return t('circle_timer_expired');
+    }
+    if (remainingMs === null) {
+      return null;
+    }
+    if (remainingMs >= DAY_MS) {
+      const days = Math.max(1, Math.ceil(remainingMs / DAY_MS));
+      return t('circle_timer_days_left', { count: days });
+    }
+    return t('circle_timer_less_than_day');
+  }, [circle, isCircleExpired, remainingMs, t]);
 
   const membersCount = Math.max(circle?.memberCount ?? 0, 1);
+  const timerChipText = timerLabel ?? t('circle_days_left_chip', { count: 7 });
 
   const interestConfig = circle ? INTERESTS_MAP[circle.interest as keyof typeof INTERESTS_MAP] : null;
   const fallbackInterest = interestConfig ? t(interestConfig.labelKey) : null;
@@ -280,6 +347,9 @@ export default function CirclePage() {
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400 dark:text-slate-400">{t('circle_header_topic_label')}</p>
               <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">{circleTitle}</h1>
               <p className="text-sm text-slate-500 dark:text-slate-300">{t('circle_header_subtitle')}</p>
+              {timerLabel && (
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-200">{timerLabel}</p>
+              )}
               <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-300">
                 <span>{t('circle_member_count_label', { count: membersCount })}</span>
                 <span
@@ -292,7 +362,7 @@ export default function CirclePage() {
               </div>
               <div className="mt-3 flex flex-wrap gap-2 text-xs">
                 <span className="rounded-full border border-slate-200 px-3 py-1 text-slate-600 dark:border-white/10 dark:text-white/80">
-                  {t('circle_days_left_chip', { count: daysLeft })}
+                  {timerChipText}
                 </span>
                 <span className="rounded-full border border-slate-200 px-3 py-1 text-slate-600 dark:border-white/10 dark:text-white/80">
                   {t('circle_members_chip', { count: membersCount })}
@@ -358,6 +428,19 @@ export default function CirclePage() {
               </button>
             </div>
           )}
+          {isCircleExpired && (
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-sm text-slate-600 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200">
+              <p className="font-semibold text-slate-900 dark:text-white">{t('circle_expired_notice_title')}</p>
+              <p className="mt-1">{t('circle_expired_notice_subtitle')}</p>
+              <button
+                type="button"
+                onClick={handleStartMatching}
+                className="mt-3 inline-flex items-center justify-center rounded-full border border-transparent bg-brand px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-sm transition hover:-translate-y-0.5"
+              >
+                {t('circle_expired_start_new')}
+              </button>
+            </div>
+          )}
           <div ref={listRef} className="mt-4 flex max-h-[400px] flex-col gap-3 overflow-y-auto pr-1">
             {messagesLoading && messages.length === 0 && (
               <p className="text-center text-sm text-slate-400 dark:text-slate-500">{t('explore_starting_state')}</p>
@@ -397,14 +480,14 @@ export default function CirclePage() {
                 type="text"
                 value={composerValue}
                 onChange={(event) => setComposerValue(event.target.value)}
-                placeholder={t('composer_placeholder')}
+                placeholder={isCircleExpired ? t('circle_expired_placeholder') : t('composer_placeholder')}
                 className="flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-white/10 dark:bg-slate-900/70 dark:text-white"
-                disabled={isSending || notMember}
+                disabled={isSending || notMember || isCircleExpired}
               />
               <button
                 type="submit"
                 className="rounded-2xl bg-brand px-6 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(127,90,240,0.25)] transition hover:-translate-y-0.5 disabled:opacity-50"
-                disabled={isSending || !composerValue.trim() || notMember}
+                disabled={isSending || !composerValue.trim() || notMember || isCircleExpired}
               >
                 {isSending ? t('composer_submitting') : t('composer_submit')}
               </button>
