@@ -36,6 +36,7 @@ interface AppStore {
   setQuotaFromApi(quota: DailyQuotaSnapshot | null): void;
   updateSettings(settings: Partial<AppSettings>): void;
   setFirebaseReady(ready: boolean): void;
+  clearSession(): void;
   reset(): void;
 }
 /* eslint-enable no-unused-vars */
@@ -43,7 +44,7 @@ interface AppStore {
 const defaultSettings: AppSettings = {
   language: 'ru',
   theme: 'system',
-  animationsEnabled: true
+  animationsEnabled: true,
 };
 
 const sortMessages = (messages: CircleMessage[]) =>
@@ -124,6 +125,19 @@ export const useAppStore = create<AppStore>()(
           }),
         updateSettings: (settings) => set({ settings: { ...get().settings, ...settings } }),
         setFirebaseReady: (ready) => set({ firebaseReady: ready }),
+        clearSession: () =>
+          set({
+            device: null,
+            user: null,
+            circle: null,
+            messages: [],
+            dailyLimit: null,
+            dailyUsed: null,
+            dailyRemaining: null,
+            quotaResetAtIso: null,
+            isDailyQuotaExhausted: false,
+            firebaseReady: false,
+          }),
         reset: () => set({
           device: null,
           user: null,
@@ -140,12 +154,30 @@ export const useAppStore = create<AppStore>()(
       {
         name: 'weekcrew-store',
         storage,
+        version: 2,
+        migrate: (persistedState) => {
+          if (!persistedState || typeof persistedState !== 'object') {
+            return persistedState as AppStore;
+          }
+          const { settings = defaultSettings } = persistedState as Partial<AppStore>;
+          return {
+            ...persistedState,
+            settings,
+            circle: null,
+            device: null,
+            user: null,
+            messages: [],
+            dailyLimit: null,
+            dailyUsed: null,
+            dailyRemaining: null,
+            quotaResetAtIso: null,
+            isDailyQuotaExhausted: false,
+            firebaseReady: false,
+          } as AppStore;
+        },
         partialize: (state) => ({
-          device: state.device,
-          user: state.user,
           settings: state.settings,
-          circle: state.circle
-        })
+        }),
       }
     )
   )
