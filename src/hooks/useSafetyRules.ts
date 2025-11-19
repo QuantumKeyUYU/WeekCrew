@@ -30,24 +30,62 @@ const createStorage = () =>
     if (typeof window === 'undefined') {
       return memoryStorage as Storage;
     }
-    const storage = window.localStorage;
+
+    let useMemoryFallback = false;
+
+    const withStorage = <T>(
+      handler: (storage: Storage) => T,
+      fallback: () => T,
+    ): T => {
+      if (useMemoryFallback) {
+        return fallback();
+      }
+
+      try {
+        const storage = window.localStorage;
+        return handler(storage);
+      } catch {
+        useMemoryFallback = true;
+        return fallback();
+      }
+    };
+
     return {
-      getItem: (name: string) => {
-        const value = storage.getItem(name);
-        if (value === '1') {
-          const migrated = JSON.stringify({ state: { accepted: true }, version: 0 });
-          storage.setItem(name, migrated);
-          return migrated;
-        }
-        return value;
-      },
-      setItem: storage.setItem.bind(storage),
-      removeItem: storage.removeItem.bind(storage),
-      clear: storage.clear.bind(storage),
-      key: storage.key.bind(storage),
-      get length() {
-        return storage.length;
-      },
+      getItem: (name: string) =>
+        withStorage(
+          (storage) => {
+            const value = storage.getItem(name);
+            // миграция старого значения '1' → новый формат Zustand
+            if (value === '1') {
+              const migrated = JSON.stringify({ state: { accepted: true }, version: 0 });
+              try {
+                storage.setItem(name, migrated);
+              } catch {
+                useMemoryFallback = true;
+                memoryStorage.setItem(name, migrated);
+              }
+              return migrated;
+            }
+            return value;
+          },
+          () => memoryStorage.getItem(name),
+        ),
+
+      setItem: (name: string, value: string) =>
+        withStorage(
+          (storage) => {
+            storage.setItem(name, value);
+          },
+          () => memoryStorage.setItem(name, value),
+        ),
+
+      removeItem: (name: string) =>
+        withStorage(
+          (storage) => {
+            storage.removeItem(name);
+          },
+          () => memoryStorage.removeItem(name),
+        ),
     } as Storage;
   });
 
@@ -71,7 +109,9 @@ export const useSafetyRules = () => {
   const accepted = useSafetyRulesStore((state) => state.accepted);
   const markAccepted = useSafetyRulesStore((state) => state.markAccepted);
   const resetAccepted = useSafetyRulesStore((state) => state.resetAccepted);
-  const [hydrated, setHydrated] = useState(() => useSafetyRulesStore.persist?.hasHydrated?.() ?? false);
+  const [hydrated, setHydrated] = useState(
+    () => useSafetyRulesStore.persist?.hasHydrated?.() ?? false,
+  );
 
   useEffect(() => {
     if (useSafetyRulesStore.persist?.hasHydrated?.()) {
@@ -79,6 +119,7 @@ export const useSafetyRules = () => {
     }
     const unsubHydrate = useSafetyRulesStore.persist?.onHydrate?.(() => setHydrated(false));
     const unsubFinish = useSafetyRulesStore.persist?.onFinishHydration?.(() => setHydrated(true));
+
     return () => {
       unsubHydrate?.();
       unsubFinish?.();
