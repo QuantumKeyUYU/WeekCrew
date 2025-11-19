@@ -127,7 +127,7 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
     <div
       ref={containerRef}
       onScroll={handleScroll}
-      className="flex max-h-[420px] flex-col gap-4 overflow-y-auto pr-1 sm:pr-2"
+      className="flex max-h-[60vh] flex-col gap-4 overflow-y-auto pr-1 sm:max-h-[520px] sm:pr-2"
       aria-live="polite"
       aria-busy={isLoading}
     >

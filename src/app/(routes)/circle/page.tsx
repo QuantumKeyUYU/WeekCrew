@@ -26,7 +26,7 @@ import {
   leaveCircle as leaveCircleApi,
   sendMessage as sendCircleMessage,
 } from '@/lib/api/circles';
-import { getOrCreateDeviceId } from '@/lib/device';
+import { getOrCreateDeviceId, resetDeviceId } from '@/lib/device';
 import type { CircleMessage, DailyQuotaSnapshot } from '@/types';
 import { useCircleMessagesPolling } from '@/hooks/useCircleMessagesPolling';
 import { getCircleWeekPhase } from '@/lib/circle-week-phase';
@@ -46,6 +46,7 @@ export default function CirclePage() {
   const addMessage = useAppStore((state) => state.addMessage);
   const replaceMessage = useAppStore((state) => state.replaceMessage);
   const removeMessage = useAppStore((state) => state.removeMessage);
+  const clearSession = useAppStore((state) => state.clearSession);
   const dailyLimit = useAppStore((state) => state.dailyLimit);
   const dailyRemaining = useAppStore((state) => state.dailyRemaining);
   const quotaResetAtIso = useAppStore((state) => state.quotaResetAtIso);
@@ -110,8 +111,10 @@ export default function CirclePage() {
     setCircle(null);
     setMessages([]);
     setQuotaFromApi(null);
+    resetDeviceId();
+    clearSession();
     clearCircleSelection();
-  }, [clearCircleSelection, setCircle, setMessages, setQuotaFromApi]);
+  }, [clearCircleSelection, clearSession, setCircle, setMessages, setQuotaFromApi]);
 
   useEffect(() => {
     if (circle) {
@@ -200,6 +203,9 @@ export default function CirclePage() {
   }, [pollingNotMember, handleAccessRevoked]);
 
   const handleStartMatching = () => {
+    clearSession();
+    resetDeviceId();
+    setMessages([]);
     if (accepted) {
       router.push('/explore');
       return;
@@ -229,7 +235,8 @@ export default function CirclePage() {
     } finally {
       setLeavePending(false);
     }
-    setCircle(null);
+    clearSession();
+    resetDeviceId();
     setMessages([]);
     setQuotaFromApi(null);
     clearCircleSelection();
@@ -479,6 +486,10 @@ export default function CirclePage() {
     return 'circle_host_final';
   })();
 
+  const sessionFingerprint = currentDeviceId
+    ? `${currentDeviceId.slice(0, 4)}…${currentDeviceId.slice(-4)}`
+    : '—';
+
   let pageContent: JSX.Element;
 
   if (!circle && !loadingCircle) {
@@ -558,6 +569,25 @@ export default function CirclePage() {
               >
                 {leavePending ? t('explore_starting_state') : t('circle_leave_button')}
               </button>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-3xl border border-slate-200/70 bg-gradient-to-r from-brand/10 via-indigo-100/80 to-white/90 p-5 shadow-[0_18px_55px_rgba(15,23,42,0.08)] dark:border-white/10 dark:from-brand/20 dark:via-slate-800 dark:to-slate-900">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-2 text-sm text-slate-700 dark:text-slate-100">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">
+                {t('circle_session_principle')}
+              </p>
+              <p>{t('circle_session_details')}</p>
+            </div>
+            <div className="min-w-[220px] rounded-2xl border border-white/60 bg-white/80 px-4 py-3 text-left shadow-inner backdrop-blur dark:border-white/10 dark:bg-slate-900/60">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
+                {t('circle_session_device_hint')}
+              </p>
+              <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-white" aria-label={sessionFingerprint}>
+                {sessionFingerprint}
+              </p>
             </div>
           </div>
         </section>

@@ -238,6 +238,10 @@ export const copy = {
     circle_not_member_notice:
       'Похоже, вы больше не участвуете в этом круге. Попробуйте начать новый на странице подбора.',
     circle_not_member_cta: 'Перейти к подбору',
+    circle_session_principle: 'История очищается после выхода',
+    circle_session_details:
+      'Каждый заход использует временное устройство: после выхода или завершения недели переписка и устройства стираются.',
+    circle_session_device_hint: 'Можешь писать с телефона или ПК — каждый вход создаёт новый анонимный сеанс.',
     circle_expired_notice_title: 'Неделя этого круга завершилась 💫',
     circle_expired_notice_subtitle: 'Сообщения сохранились, можно начать новый круг.',
     circle_expired_start_new: 'Начать новый круг',
@@ -603,6 +607,10 @@ export const copy = {
     circle_not_member_notice:
       'Looks like you are no longer part of this circle. Try starting a new one on the matching page.',
     circle_not_member_cta: 'Go to matching',
+    circle_session_principle: 'History wipes itself when you leave',
+    circle_session_details:
+      'Each entry uses a temporary device: once you leave or the week ends, the chat history and devices are cleared.',
+    circle_session_device_hint: 'Write from phone or desktop — every visit spins up a new anonymous session.',
     circle_expired_notice_title: 'This circle week is over 💫',
     circle_expired_notice_subtitle: 'Messages are saved — you can start a new circle.',
     circle_expired_start_new: 'Start a new circle',
