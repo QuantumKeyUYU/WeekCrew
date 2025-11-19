@@ -66,6 +66,7 @@ export default function CirclePage() {
   const [leavePending, setLeavePending] = useState(false);
   const [notMember, setNotMember] = useState(false);
   const [remainingMs, setRemainingMs] = useState<number | null>(circle?.remainingMs ?? null);
+  const isCircleExpired = Boolean(circle?.isExpired || (remainingMs !== null && remainingMs <= 0));
 
   const circleId = circle?.id ?? null;
 
@@ -354,8 +355,6 @@ export default function CirclePage() {
       clearInterval(intervalId);
     };
   }, [circle?.id, circle?.expiresAt, circle?.isExpired, updateCircle]);
-
-  const isCircleExpired = Boolean(circle?.isExpired || (remainingMs !== null && remainingMs <= 0));
 
   const composerPlaceholder = isCircleExpired
     ? t('circle_expired_placeholder')
