@@ -190,6 +190,10 @@ export const copy = {
     circle_limit_reached:
       'Сегодня ты уже много писал. Дай слово другим — лимит обновится завтра ✨',
     circle_limit_checking: 'Проверяем, сколько сообщений осталось...',
+    circle_quota_remaining: 'Можно отправить ещё {count} сообщений сегодня.',
+    circle_quota_exhausted:
+      'Лимит сообщений на сегодня исчерпан. Попробуем продолжить завтра 💜',
+    circle_quota_reset_hint: 'Лимит обновится около {time}.',
     circle_header_topic_label: 'Тема недели',
     circle_header_default_title: 'Кружок недели',
     circle_header_default_description: 'Уютный круг по интересу',
@@ -530,6 +534,10 @@ export const copy = {
     circle_limit_reached:
       'You have posted plenty today. Give others the mic — the limit resets tomorrow ✨',
     circle_limit_checking: 'Checking how many messages you have left...',
+    circle_quota_remaining: 'You can send {count} more messages today.',
+    circle_quota_exhausted:
+      "You've reached today's message limit. Let's continue tomorrow 💜",
+    circle_quota_reset_hint: 'The limit refreshes around {time}.',
     circle_header_topic_label: 'Theme of the week',
     circle_header_default_title: 'Circle of the week',
     circle_header_default_description: 'A cozy group built around this interest',
