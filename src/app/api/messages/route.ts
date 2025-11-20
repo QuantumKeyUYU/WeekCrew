@@ -7,6 +7,7 @@ import { isCircleActive } from '@/lib/server/circles';
 import { DEVICE_HEADER_NAME } from '@/lib/device';
 import { applyMessageUsageToQuota, checkDailyMessageLimit } from '@/lib/server/messages';
 import { buildCircleMessagesWhere } from '@/lib/server/messageQueries';
+import { getUserWithBlocks } from '@/lib/server/users';
 
 const MAX_RESULTS = 200;
 
@@ -32,6 +33,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const { id: deviceId, isNew } = await getOrCreateDevice(request);
+    const user = await getUserWithBlocks(deviceId);
     const canAccess = await isDeviceCircleMember(circleId, deviceId);
 
     if (!canAccess) {
@@ -45,13 +47,19 @@ export async function GET(request: NextRequest) {
         where: messageFilters,
         orderBy: { createdAt: 'asc' },
         take: MAX_RESULTS,
+        include: { user: true },
       }),
       countActiveMembers(circleId),
       checkDailyMessageLimit(prisma, { circleId, deviceId }),
     ]);
 
+    const blockedIds = new Set(user?.blocksInitiated.map((block) => block.blockedId) ?? []);
+    const filteredMessages = blockedIds.size
+      ? messages.filter((message) => !message.userId || !blockedIds.has(message.userId))
+      : messages;
+
     const response = NextResponse.json({
-      messages: messages.map(toCircleMessage),
+      messages: filteredMessages.map(toCircleMessage),
       quota: quota.quota,
       memberCount,
     });
@@ -76,6 +84,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const { id: deviceId, isNew } = await getOrCreateDevice(request);
+    const user = await prisma.user.findUnique({ where: { deviceId } });
     const canSend = await isDeviceCircleMember(circleId, deviceId);
 
     if (!canSend) {
@@ -101,9 +110,11 @@ export async function POST(request: NextRequest) {
       data: {
         circleId,
         deviceId,
+        userId: user?.id,
         content,
         isSystem: false,
       },
+      include: { user: true },
     });
 
     const response = NextResponse.json(

@@ -1,10 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { CircleMessage } from '@/types';
 import clsx from 'clsx';
+import { AVATAR_PRESETS } from '@/constants/avatars';
 import { useTranslation } from '@/i18n/useTranslation';
+import { blockUser, sendReport } from '@/lib/api/moderation';
 import { useAppStore } from '@/store/useAppStore';
+import type { CircleMessage } from '@/types';
 
 interface Props {
   messages: CircleMessage[];
@@ -14,14 +16,22 @@ interface Props {
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
+const getAvatarEmoji = (key?: string | null) =>
+  AVATAR_PRESETS.find((preset) => preset.key === key)?.emoji ?? '🙂';
+
 export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Props) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const lastScrollLength = useRef(0);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [hasNewWhileAway, setHasNewWhileAway] = useState(false);
+  const [menuFor, setMenuFor] = useState<string | null>(null);
+  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+  const [moderationBusy, setModerationBusy] = useState(false);
   const t = useTranslation();
   const language = useAppStore((state) => state.settings.language ?? 'ru');
   const locale = language === 'ru' ? 'ru-RU' : 'en-US';
+  const removeMessagesByUser = useAppStore((state) => state.removeMessagesByUser);
+  const user = useAppStore((state) => state.user);
 
   const dayFormatter = new Intl.DateTimeFormat(locale, {
     day: 'numeric',
@@ -72,6 +82,7 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
       last.scrollIntoView({ behavior, block: 'end' });
     }
     lastScrollLength.current = messages.length;
+    setMenuFor(null);
   }, [isAtBottom, messages]);
 
   const handleScroll = useCallback(() => {
@@ -97,6 +108,47 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
     setIsAtBottom(true);
     setHasNewWhileAway(false);
   }, [messages.length]);
+
+  const handleReport = async (message: CircleMessage) => {
+    if (moderationBusy) return;
+    const targetId = message.author?.id;
+    if (!targetId || message.isSystem || user?.id === targetId) {
+      return;
+    }
+    setModerationBusy(true);
+    setActionFeedback(null);
+    try {
+      await sendReport({ targetUserId: targetId, circleId: message.circleId, messageId: message.id });
+      setActionFeedback('Жалоба отправлена');
+    } catch (error) {
+      console.error(error);
+      setActionFeedback('Не удалось отправить жалобу');
+    } finally {
+      setModerationBusy(false);
+      setMenuFor(null);
+    }
+  };
+
+  const handleBlock = async (message: CircleMessage) => {
+    if (moderationBusy) return;
+    const targetId = message.author?.id;
+    if (!targetId || message.isSystem || user?.id === targetId) {
+      return;
+    }
+    setModerationBusy(true);
+    setActionFeedback(null);
+    try {
+      await blockUser({ targetUserId: targetId });
+      removeMessagesByUser(targetId);
+      setActionFeedback('Пользователь заблокирован');
+    } catch (error) {
+      console.error(error);
+      setActionFeedback('Не удалось выполнить действие');
+    } finally {
+      setModerationBusy(false);
+      setMenuFor(null);
+    }
+  };
 
   if (isLoading && messages.length === 0) {
     return (
@@ -134,8 +186,10 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
       {messages.map((message, index) => {
         const isOwn = message.deviceId === currentDeviceId;
         const isSystem = Boolean(message.isSystem);
-        const authorLabel = isSystem
+        const authorName = isSystem
           ? t('messages_author_system')
+          : message.author?.nickname
+          ? message.author.nickname
           : isOwn
           ? t('messages_you_label')
           : t('messages_author_unknown');
@@ -146,6 +200,8 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
         const currentDayKey = createdAt.toDateString();
         const previousDayKey = previous ? new Date(previous.createdAt).toDateString() : null;
         const showDayDivider = currentDayKey !== previousDayKey;
+        const canModerate = Boolean(message.author?.id && !isOwn && !isSystem);
+        const avatarEmoji = getAvatarEmoji(message.author?.avatarKey);
 
         return (
           <div key={message.id} className="flex flex-col gap-3">
@@ -162,7 +218,7 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
             <div className={clsx('flex', isOwn ? 'justify-end' : 'justify-start')}>
               <article
                 className={clsx(
-                  'max-w-[85%] rounded-3xl border px-4 py-3 text-sm shadow-sm backdrop-blur',
+                  'relative max-w-[85%] rounded-3xl border px-4 py-3 text-sm shadow-sm backdrop-blur',
                   isSystem
                     ? 'border-slate-200 bg-slate-50/90 text-slate-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100'
                     : isOwn
@@ -170,22 +226,87 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
                     : 'border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-100',
                 )}
               >
-                <div
-                  className={clsx(
-                    'flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide',
-                    isSystem
-                      ? 'text-slate-500 dark:text-slate-200'
-                      : isOwn
-                      ? 'text-white/80'
-                      : 'text-slate-500 dark:text-slate-300',
-                  )}
-                >
-                  <span aria-label={authorLabel}>{authorLabel}</span>
-                  <time dateTime={message.createdAt} title={fullTimestamp}>
-                    {timeLabel}
-                  </time>
-                </div>
-                <p className="mt-2 whitespace-pre-wrap leading-snug text-base/[1.45] text-current">
+                {isSystem ? (
+                  <div
+                    className={clsx(
+                      'flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide',
+                      isSystem
+                        ? 'text-slate-500 dark:text-slate-200'
+                        : isOwn
+                        ? 'text-white/80'
+                        : 'text-slate-500 dark:text-slate-300',
+                    )}
+                  >
+                    <span aria-label={authorName}>{authorName}</span>
+                    <time dateTime={message.createdAt} title={fullTimestamp}>
+                      {timeLabel}
+                    </time>
+                  </div>
+                ) : (
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white/40 text-lg shadow-inner shadow-black/5 dark:bg-white/10">
+                        {avatarEmoji}
+                      </span>
+                      <div className="leading-tight">
+                        <p
+                          className={clsx(
+                            'text-sm font-semibold',
+                            isOwn ? 'text-white' : 'text-slate-700 dark:text-slate-100',
+                          )}
+                        >
+                          {authorName}
+                        </p>
+                        <time
+                          dateTime={message.createdAt}
+                          title={fullTimestamp}
+                          className={clsx(
+                            'text-xs',
+                            isOwn ? 'text-white/70' : 'text-slate-500 dark:text-slate-400',
+                          )}
+                        >
+                          {timeLabel}
+                        </time>
+                      </div>
+                    </div>
+                    {canModerate && (
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setMenuFor((prev) => (prev === message.id ? null : message.id))}
+                          className="rounded-full bg-white/50 px-2 py-1 text-xs font-semibold text-slate-600 shadow hover:bg-white/90 dark:bg-slate-800/60 dark:text-slate-200"
+                          aria-label="Действия"
+                        >
+                          ⋯
+                        </button>
+                        {menuFor === message.id && (
+                          <div className="absolute right-0 top-8 z-10 w-44 rounded-2xl border border-slate-200/80 bg-white/95 p-2 text-left text-sm shadow-xl dark:border-white/10 dark:bg-slate-900/95">
+                            <button
+                              type="button"
+                              onClick={() => handleReport(message)}
+                              className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-slate-700 transition hover:bg-slate-100 disabled:opacity-60 dark:text-slate-100 dark:hover:bg-slate-800/70"
+                              disabled={moderationBusy}
+                            >
+                              <span>Пожаловаться</span>
+                              <span aria-hidden>⚠️</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleBlock(message)}
+                              className="mt-1 flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-rose-700 transition hover:bg-rose-50 disabled:opacity-60 dark:text-rose-200 dark:hover:bg-rose-500/10"
+                              disabled={moderationBusy}
+                            >
+                              <span>Заблокировать</span>
+                              <span aria-hidden>🚫</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <p className="mt-3 whitespace-pre-wrap leading-snug text-base/[1.45] text-current">
                   {message.content}
                 </p>
               </article>
@@ -207,6 +328,11 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
       {isLoading && messages.length > 0 && (
         <div className="flex justify-center pb-2 text-xs text-slate-400 dark:text-slate-500">
           {t('messages_loading_state')}
+        </div>
+      )}
+      {actionFeedback && (
+        <div className="sticky bottom-2 flex justify-start text-xs text-slate-500 dark:text-slate-300">
+          <span className="rounded-full bg-white/80 px-3 py-1 shadow-sm dark:bg-slate-800/70">{actionFeedback}</span>
         </div>
       )}
     </div>

@@ -1,35 +1,22 @@
-import { format } from 'date-fns';
-import type { CopyKey } from '@/i18n/copy';
-
-export interface IcebreakerDefinition {
-  id: string;
-  textKey: CopyKey;
-}
-
-export const ICEBREAKERS: IcebreakerDefinition[] = [
-  { id: 'music-1', textKey: 'icebreaker_question_music' },
-  { id: 'life-1', textKey: 'icebreaker_question_life' },
-  { id: 'food-1', textKey: 'icebreaker_question_food' },
-  { id: 'dream-1', textKey: 'icebreaker_question_dream' },
-  { id: 'learn-1', textKey: 'icebreaker_question_learn' },
-  { id: 'calm-1', textKey: 'icebreaker_question_calm' },
-  { id: 'story-1', textKey: 'icebreaker_question_story' },
-  { id: 'gratitude-1', textKey: 'icebreaker_question_gratitude' },
-  { id: 'mood-1', textKey: 'icebreaker_question_mood' },
-  { id: 'idea-1', textKey: 'icebreaker_question_idea' }
-] as const;
-
-const hashString = (value: string) => {
-  let hash = 0;
-  for (let i = 0; i < value.length; i += 1) {
-    hash = (hash * 31 + value.charCodeAt(i)) % 2147483647;
-  }
-  return Math.abs(hash);
-};
-
-export const getIcebreakerForCircle = (circleId: string, date: Date | string, seed?: string) => {
-  const dayKey = typeof date === 'string' ? date : format(date, 'yyyy-MM-dd');
-  const base = `${circleId}-${seed ?? ''}-${dayKey}`;
-  const index = hashString(base) % ICEBREAKERS.length;
-  return ICEBREAKERS[index];
-};
+export const ICEBREAKERS = [
+  'Какой маленькой радостью ты сегодня себя порадовал(а)?',
+  'Что последнее заставило тебя улыбнуться без причины?',
+  'Поделись песней, которая сейчас поднимает настроение.',
+  'Какой запах мгновенно переносит тебя в приятное воспоминание?',
+  'Что из недавних мелочей вернуло тебе чувство спокойствия?',
+  'Опиши свой идеальный вечер этой недели.',
+  'Что нового о себе ты узнал(а) за последний месяц?',
+  'Какую привычку хочется мягко добавить в свой день?',
+  'Какая картинка или кадр тебя вдохновляет?',
+  'Что ты любишь делать, когда нужно переключиться?',
+  'Какой совет ты бы дал(а) себе год назад?',
+  'Что помогает тебе чувствовать себя в безопасности?',
+  'Какой комплимент тебе запомнился надолго?',
+  'Чему ты хочешь сказать «спасибо» сегодня?',
+  'Какой вопрос ты бы задал(а) будущему себе?',
+  'Что ты давно хотел(а) попробовать, но пока не решался(ась)?',
+  'Какая книга, фильм или сериал сейчас с тобой резонирует?',
+  'Где твоё любимое место, чтобы просто посидеть в тишине?',
+  'Что помогает тебе чувствовать связь с людьми рядом?',
+  'Какой жест заботы от других ты ценишь больше всего?',
+];

@@ -33,6 +33,7 @@ interface AppStore {
   addMessage(message: CircleMessage): void;
   replaceMessage(tempId: string, message: CircleMessage): void;
   removeMessage(id: string): void;
+  removeMessagesByUser(userId: string): void;
   setQuotaFromApi(quota: DailyQuotaSnapshot | null): void;
   updateSettings(settings: Partial<AppSettings>): void;
   setFirebaseReady(ready: boolean): void;
@@ -103,6 +104,10 @@ export const useAppStore = create<AppStore>()(
         removeMessage: (id) =>
           set((state) => ({
             messages: state.messages.filter((message) => message.id !== id),
+          })),
+        removeMessagesByUser: (userId) =>
+          set((state) => ({
+            messages: state.messages.filter((message) => message.author?.id !== userId),
           })),
         setQuotaFromApi: (quota) =>
           set(() => {
