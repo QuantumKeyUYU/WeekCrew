@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     }
     return response;
   } catch (error) {
-    console.error('Failed to load current circle', error);
+    console.error('current circle error', error);
     return NextResponse.json({ circle: null }, { status: 500 });
   }
 }

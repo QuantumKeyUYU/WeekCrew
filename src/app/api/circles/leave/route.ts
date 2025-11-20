@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     }
     return response;
   } catch (error) {
-    console.error('Failed to leave circle', error);
+    console.error('leave error', error);
     return NextResponse.json({ ok: false, error: 'SERVER_ERROR' }, { status: 500 });
   }
 }
