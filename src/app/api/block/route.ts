@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error('Failed to block user', error);
+    console.error('block error', error);
     return NextResponse.json({ error: 'SERVER_ERROR' }, { status: 500 });
   }
 }

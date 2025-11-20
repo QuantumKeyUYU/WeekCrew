@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
     }
     return response;
   } catch (error) {
-    console.error('Failed to list messages', error);
+    console.error('messages list error', error);
     return NextResponse.json({ messages: [] }, { status: 500 });
   }
 }
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
     }
     return response;
   } catch (error) {
-    console.error('Failed to send message', error);
+    console.error('message send error', error);
     return NextResponse.json({ error: 'SERVER_ERROR' }, { status: 500 });
   }
 }

@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('Failed to join circle', error);
+    console.error('join error', error);
     return NextResponse.json(
       { ok: false, error: 'SERVER_ERROR' },
       { status: 500 },

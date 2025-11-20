@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     }
     return response;
   } catch (error) {
-    console.error('Failed to load profile', error);
+    console.error('profile load error', error);
     return NextResponse.json({ user: null }, { status: 500 });
   }
 }
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     }
     return response;
   } catch (error) {
-    console.error('Failed to save profile', error);
+    console.error('profile save error', error);
     return NextResponse.json({ error: 'SERVER_ERROR' }, { status: 500 });
   }
 }
