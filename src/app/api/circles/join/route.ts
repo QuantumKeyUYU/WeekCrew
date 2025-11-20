@@ -157,7 +157,9 @@ export async function POST(request: NextRequest) {
       listRecentMessages(result.circle.id),
       getUserWithBlocks(deviceId),
     ]);
-    const blockedSet = new Set(userBlocks?.blocksInitiated.map((block) => block.blockedId) ?? []);
+    const blockedSet = new Set(
+      userBlocks?.blocksInitiated?.map((block) => block.blockedId) ?? [],
+    );
     const filteredMessages = blockedSet.size
       ? messages.filter((message) => !message.author?.id || !blockedSet.has(message.author.id))
       : messages;
