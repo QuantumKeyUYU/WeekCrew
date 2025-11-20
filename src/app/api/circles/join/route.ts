@@ -78,8 +78,8 @@ const isJoinableMembership = (
   return isActive && matchesSelection;
 };
 
-const listRecentMessages = async (circleId: string) => {
-  const where = buildCircleMessagesWhere({ circleId });
+const listRecentMessages = async (circleId: string, blockedUserIds: string[] = []) => {
+  const where = buildCircleMessagesWhere({ circleId, excludeUserIds: blockedUserIds });
   const rows = await prisma.message.findMany({
     where,
     orderBy: { createdAt: 'desc' },
@@ -153,19 +153,12 @@ export async function POST(request: NextRequest) {
       return { circle, memberCount, isNewCircle };
     });
 
-    const [messages, userBlocks] = await Promise.all([
-      listRecentMessages(result.circle.id),
-      getUserWithBlocks(deviceId),
-    ]);
-    const blockedSet = new Set(
-      userBlocks?.blocksInitiated?.map((block) => block.blockedId) ?? [],
-    );
-    const filteredMessages = blockedSet.size
-      ? messages.filter((message) => !message.author?.id || !blockedSet.has(message.author.id))
-      : messages;
+    const userBlocks = await getUserWithBlocks(deviceId);
+    const blockedIds = userBlocks?.blocksInitiated?.map((block) => block.blockedId) ?? [];
+    const messages = await listRecentMessages(result.circle.id, blockedIds);
     const response = NextResponse.json({
       circle: toCircleSummary(result.circle, result.memberCount),
-      messages: filteredMessages,
+      messages,
       isNewCircle: result.isNewCircle,
     });
 
