@@ -5,10 +5,20 @@ import Link from 'next/link';
 import clsx from 'clsx';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LanguageSwitch } from '@/components/layout/language-switch';
+import { useAppStore } from '@/store/useAppStore';
+import { AVATAR_PRESETS, DEFAULT_AVATAR_KEY } from '@/constants/avatars';
+import { ProfileModalManager } from '@/components/modals/profile-modal-manager';
+
+const getAvatarEmoji = (key?: string | null) =>
+  AVATAR_PRESETS.find((preset) => preset.key === key)?.emoji ?? '🙂';
 
 export const Header = () => {
   const t = useTranslation();
   const [isScrolled, setIsScrolled] = useState(false);
+  const user = useAppStore((state) => state.user);
+  const openProfileModal = useAppStore((state) => state.openProfileModal);
+
+  const avatarEmoji = getAvatarEmoji(user?.avatarKey ?? DEFAULT_AVATAR_KEY);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -38,6 +48,17 @@ export const Header = () => {
           WeekCrew
         </Link>
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => openProfileModal()}
+            className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/90 px-3 py-2 text-sm font-medium text-slate-700 shadow-[0_18px_45px_rgba(15,23,42,0.12)] transition hover:-translate-y-0.5 hover:text-brand-foreground dark:border-white/20 dark:bg-white/10 dark:text-white"
+            aria-label="Открыть профиль"
+          >
+            <span className="text-lg" aria-hidden>
+              {avatarEmoji}
+            </span>
+            <span className="hidden sm:inline">Профиль</span>
+          </button>
           <LanguageSwitch />
           <Link
             href="/settings"
@@ -47,6 +68,7 @@ export const Header = () => {
           </Link>
         </div>
       </div>
+      <ProfileModalManager />
     </header>
   );
 };

@@ -15,9 +15,7 @@ import { joinCircle } from '@/lib/api/circles';
 import { getProfile } from '@/lib/api/profile';
 import { useAppStore } from '@/store/useAppStore';
 import { SafetyRulesModal } from '@/components/modals/safety-rules-modal';
-import { ProfileModal } from '@/components/modals/profile-modal';
 import { useSafetyRules } from '@/hooks/useSafetyRules';
-import type { UserProfile } from '@/types';
 
 export default function ExplorePage() {
   const router = useRouter();
@@ -26,6 +24,7 @@ export default function ExplorePage() {
   const setMessages = useAppStore((state) => state.setMessages);
   const user = useAppStore((state) => state.user);
   const setUser = useAppStore((state) => state.setUser);
+  const openProfileModal = useAppStore((state) => state.openProfileModal);
   const { accepted, hydrated, markAccepted } = useSafetyRules();
 
   type InterestCard = { id: InterestId; label: string; emoji: string };
@@ -49,9 +48,7 @@ export default function ExplorePage() {
   const [error, setError] = useState<string | null>(null);
   const [showRulesModal, setShowRulesModal] = useState(false);
   const [autoPrompted, setAutoPrompted] = useState(false);
-  const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [profileChecked, setProfileChecked] = useState(false);
-  const [pendingAfterProfile, setPendingAfterProfile] = useState<(() => void) | null>(null);
 
   useEffect(() => {
     if (hydrated && !accepted && !autoPrompted) {
@@ -71,13 +68,13 @@ export default function ExplorePage() {
         if (response.user) {
           setUser(response.user);
         } else {
-          setProfileModalOpen(true);
+          openProfileModal();
         }
       })
       .catch((error) => {
         console.error('Failed to load profile', error);
         if (!cancelled) {
-          setProfileModalOpen(true);
+          openProfileModal();
         }
       })
       .finally(() => {
@@ -89,18 +86,11 @@ export default function ExplorePage() {
     return () => {
       cancelled = true;
     };
-  }, [profileChecked, setUser, user]);
+  }, [openProfileModal, profileChecked, setUser, user]);
 
   const moodLabel = selectedMood
     ? t(MOOD_OPTIONS.find((option) => option.key === selectedMood)?.labelKey ?? '')
     : null;
-
-  const handleProfileSaved = (profile: UserProfile) => {
-    setUser(profile);
-    setProfileModalOpen(false);
-    pendingAfterProfile?.();
-    setPendingAfterProfile(null);
-  };
 
   const isLanguageMood = selectedMood === 'languages';
   const interestsToRender = isLanguageMood ? languageInterestCards : defaultInterestCards;
@@ -172,8 +162,9 @@ export default function ExplorePage() {
       return;
     }
     if (!user) {
-      setPendingAfterProfile(() => performJoin);
-      setProfileModalOpen(true);
+      openProfileModal(async () => {
+        await performJoin();
+      });
       return;
     }
     await performJoin();
@@ -314,11 +305,6 @@ export default function ExplorePage() {
           setShowRulesModal(false);
         }}
         onClose={() => setShowRulesModal(false)}
-      />
-      <ProfileModal
-        open={profileModalOpen}
-        onClose={() => setProfileModalOpen(false)}
-        onSaved={handleProfileSaved}
       />
     </div>
   );

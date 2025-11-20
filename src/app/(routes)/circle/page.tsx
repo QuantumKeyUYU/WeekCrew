@@ -13,7 +13,6 @@ import { CircleEmptyState } from '@/components/circle/empty-state';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSafetyRules } from '@/hooks/useSafetyRules';
 import { SafetyRulesModal } from '@/components/modals/safety-rules-modal';
-import { ProfileModal } from '@/components/modals/profile-modal';
 import { MessageList } from '@/components/circle/message-list';
 import { INTERESTS_MAP } from '@/config/interests';
 import { MOOD_OPTIONS } from '@/constants/moods';
@@ -29,7 +28,7 @@ import {
 } from '@/lib/api/circles';
 import { getProfile } from '@/lib/api/profile';
 import { getOrCreateDeviceId, resetDeviceId } from '@/lib/device';
-import type { CircleMessage, DailyQuotaSnapshot, UserProfile } from '@/types';
+import type { CircleMessage, DailyQuotaSnapshot } from '@/types';
 import { useCircleMessagesPolling } from '@/hooks/useCircleMessagesPolling';
 import { getCircleWeekPhase } from '@/lib/circle-week-phase';
 
@@ -51,6 +50,7 @@ export default function CirclePage() {
   const replaceMessage = useAppStore((state) => state.replaceMessage);
   const removeMessage = useAppStore((state) => state.removeMessage);
   const clearSession = useAppStore((state) => state.clearSession);
+  const openProfileModal = useAppStore((state) => state.openProfileModal);
   const dailyLimit = useAppStore((state) => state.dailyLimit);
   const dailyRemaining = useAppStore((state) => state.dailyRemaining);
   const quotaResetAtIso = useAppStore((state) => state.quotaResetAtIso);
@@ -64,8 +64,6 @@ export default function CirclePage() {
   const [rulesExpanded, setRulesExpanded] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
-  const [profileModalOpen, setProfileModalOpen] = useState(false);
-  const [profilePendingAction, setProfilePendingAction] = useState<(() => void) | null>(null);
   const [profileChecked, setProfileChecked] = useState(false);
   const [selectionMood, setSelectionMood] = useState<string | null>(null);
   const [selectionInterest, setSelectionInterest] = useState<string | null>(null);
@@ -115,13 +113,13 @@ export default function CirclePage() {
         if (response.user) {
           setUser(response.user);
         } else {
-          setProfileModalOpen(true);
+          openProfileModal();
         }
       })
       .catch((error) => {
         console.error('Failed to load profile', error);
         if (!cancelled) {
-          setProfileModalOpen(true);
+          openProfileModal();
         }
       })
       .finally(() => {
@@ -133,7 +131,7 @@ export default function CirclePage() {
     return () => {
       cancelled = true;
     };
-  }, [profileChecked, setUser, user]);
+  }, [openProfileModal, profileChecked, setUser, user]);
 
   useEffect(() => {
     const currentId = circle?.id ?? null;
@@ -264,13 +262,6 @@ export default function CirclePage() {
     setPendingAction(null);
   };
 
-  const handleProfileSaved = (profile: UserProfile) => {
-    setUser(profile);
-    setProfileModalOpen(false);
-    profilePendingAction?.();
-    setProfilePendingAction(null);
-  };
-
   const handleLeaveCircle = async () => {
     setLeavePending(true);
     try {
@@ -297,6 +288,7 @@ export default function CirclePage() {
   }, []);
 
   const sendMessageCore = useCallback(async () => {
+    const currentUserProfile = useAppStore.getState().user;
     if (!circle || notMember || isCircleExpired || isLimitReached || isSending) {
       return;
     }
@@ -310,8 +302,12 @@ export default function CirclePage() {
       id: optimisticId,
       circleId: circle.id,
       deviceId: currentDeviceId,
-      author: user
-        ? { id: user.id, nickname: user.nickname, avatarKey: user.avatarKey }
+      author: currentUserProfile
+        ? {
+            id: currentUserProfile.id,
+            nickname: currentUserProfile.nickname,
+            avatarKey: currentUserProfile.avatarKey,
+          }
         : undefined,
       content: trimmed,
       isSystem: false,
@@ -369,17 +365,17 @@ export default function CirclePage() {
     setQuotaFromApi,
     t,
     updateCircle,
-    user,
   ]);
 
   const attemptSendMessage = useCallback(async () => {
     if (!user) {
-      setProfilePendingAction(() => sendMessageCore);
-      setProfileModalOpen(true);
+      openProfileModal(async () => {
+        await sendMessageCore();
+      });
       return;
     }
     await sendMessageCore();
-  }, [sendMessageCore, user]);
+  }, [openProfileModal, sendMessageCore, user]);
 
   const systemMessageLines = t('circle_system_message').split('\n');
   const quickRules = t('rules_modal_points').split('|');
@@ -673,12 +669,12 @@ export default function CirclePage() {
 
         <section className="rounded-3xl border border-slate-200/70 bg-white/95 p-5 shadow-[0_18px_55px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-slate-900/70">
           {circle?.icebreaker && (
-            <div className="mb-4 rounded-2xl border border-amber-200/80 bg-amber-50/80 px-4 py-3 text-amber-900 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-700/80 dark:text-amber-100/80">
+            <div className="mb-4 rounded-2xl border border-amber-200/80 bg-gradient-to-r from-amber-50 via-white to-violet-50 px-4 py-4 text-amber-900 shadow-lg shadow-amber-100/60 dark:border-amber-500/30 dark:from-amber-500/20 dark:via-slate-900 dark:to-violet-500/10 dark:text-amber-50">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-700/80 dark:text-amber-100/80">
                 {t('circle_icebreaker_title')}
               </p>
-              <p className="mt-1 text-lg font-semibold leading-snug">{circle.icebreaker}</p>
-              <p className="text-xs text-amber-700/90 dark:text-amber-100/70">{t('circle_icebreaker_hint')}</p>
+              <p className="mt-1 text-lg font-semibold leading-snug text-slate-900 dark:text-white">{circle.icebreaker}</p>
+              <p className="text-xs text-amber-700/90 dark:text-amber-100/70">{t('circle_icebreaker_hint')} ✨</p>
             </div>
           )}
           <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-4 text-sm text-slate-600 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200">
@@ -774,11 +770,6 @@ export default function CirclePage() {
     <>
       {pageContent}
       <SafetyRulesModal open={showModal} onAccept={handleAcceptRules} onClose={handleCloseModal} />
-      <ProfileModal
-        open={profileModalOpen}
-        onClose={() => setProfileModalOpen(false)}
-        onSaved={handleProfileSaved}
-      />
     </>
   );
 }

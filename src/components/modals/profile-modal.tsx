@@ -11,9 +11,10 @@ interface ProfileModalProps {
   open: boolean;
   onClose: () => void;
   onSaved: (user: UserProfile) => void;
+  initialProfile?: UserProfile | null;
 }
 
-export const ProfileModal = ({ open, onClose, onSaved }: ProfileModalProps) => {
+export const ProfileModal = ({ open, onClose, onSaved, initialProfile }: ProfileModalProps) => {
   const [mounted, setMounted] = useState(false);
   const [nickname, setNickname] = useState('');
   const [avatarKey, setAvatarKey] = useState(DEFAULT_AVATAR_KEY);
@@ -31,12 +32,15 @@ export const ProfileModal = ({ open, onClose, onSaved }: ProfileModalProps) => {
       setError(null);
       return;
     }
+    setNickname(initialProfile?.nickname ?? '');
+    setAvatarKey(initialProfile?.avatarKey ?? DEFAULT_AVATAR_KEY);
+    setError(null);
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = originalOverflow;
     };
-  }, [open]);
+  }, [initialProfile?.avatarKey, initialProfile?.nickname, open]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
