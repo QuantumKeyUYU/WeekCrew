@@ -68,6 +68,16 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
     return dayFormatter.format(date);
   };
 
+  const visibleMessages = useMemo(
+    () =>
+      messages.filter((message) => {
+        const authorId = message.author?.id;
+        if (!authorId) return true;
+        return !blockedUserIds.includes(authorId);
+      }),
+    [blockedUserIds, messages],
+  );
+
   useEffect(() => {
     const prevLength = lastScrollLength.current;
     const node = containerRef.current;
@@ -152,16 +162,6 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
       setMenuFor(null);
     }
   };
-
-  const visibleMessages = useMemo(
-    () =>
-      messages.filter((message) => {
-        const authorId = message.author?.id;
-        if (!authorId) return true;
-        return !blockedUserIds.includes(authorId);
-      }),
-    [blockedUserIds, messages],
-  );
 
   if (isLoading && visibleMessages.length === 0) {
     return (
