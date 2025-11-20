@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import clsx from 'clsx';
 import { AVATAR_PRESETS } from '@/constants/avatars';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -32,6 +32,8 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
   const locale = language === 'ru' ? 'ru-RU' : 'en-US';
   const removeMessagesByUser = useAppStore((state) => state.removeMessagesByUser);
   const user = useAppStore((state) => state.user);
+  const blockedUserIds = useAppStore((state) => state.blockedUserIds);
+  const blockUserLocally = useAppStore((state) => state.blockUserLocally);
 
   const dayFormatter = new Intl.DateTimeFormat(locale, {
     day: 'numeric',
@@ -69,11 +71,11 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
   useEffect(() => {
     const prevLength = lastScrollLength.current;
     const node = containerRef.current;
-    if (messages.length > prevLength && !isAtBottom) {
+    if (visibleMessages.length > prevLength && !isAtBottom) {
       setHasNewWhileAway(true);
     }
     if (!node) {
-      lastScrollLength.current = messages.length;
+      lastScrollLength.current = visibleMessages.length;
       return;
     }
     const last = node.lastElementChild as HTMLElement | null;
@@ -81,9 +83,9 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
       const behavior = prevLength > 0 ? 'smooth' : 'auto';
       last.scrollIntoView({ behavior, block: 'end' });
     }
-    lastScrollLength.current = messages.length;
+    lastScrollLength.current = visibleMessages.length;
     setMenuFor(null);
-  }, [isAtBottom, messages]);
+  }, [isAtBottom, visibleMessages]);
 
   const handleScroll = useCallback(() => {
     const node = containerRef.current;
@@ -104,10 +106,10 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
       return;
     }
     node.scrollTo({ top: node.scrollHeight, behavior: 'smooth' });
-    lastScrollLength.current = messages.length;
+    lastScrollLength.current = visibleMessages.length;
     setIsAtBottom(true);
     setHasNewWhileAway(false);
-  }, [messages.length]);
+  }, [visibleMessages.length]);
 
   const handleReport = async (message: CircleMessage) => {
     if (moderationBusy) return;
@@ -119,7 +121,7 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
     setActionFeedback(null);
     try {
       await sendReport({ targetUserId: targetId, circleId: message.circleId, messageId: message.id });
-      setActionFeedback('Жалоба отправлена');
+      setActionFeedback('Жалоба отправлена. Спасибо, что помогаете сохранять уют');
     } catch (error) {
       console.error(error);
       setActionFeedback('Не удалось отправить жалобу');
@@ -139,8 +141,9 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
     setActionFeedback(null);
     try {
       await blockUser({ targetUserId: targetId });
+      blockUserLocally(targetId);
       removeMessagesByUser(targetId);
-      setActionFeedback('Пользователь заблокирован');
+      setActionFeedback('Пользователь скрыт, его сообщения больше не будут показываться');
     } catch (error) {
       console.error(error);
       setActionFeedback('Не удалось выполнить действие');
@@ -150,7 +153,17 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
     }
   };
 
-  if (isLoading && messages.length === 0) {
+  const visibleMessages = useMemo(
+    () =>
+      messages.filter((message) => {
+        const authorId = message.author?.id;
+        if (!authorId) return true;
+        return !blockedUserIds.includes(authorId);
+      }),
+    [blockedUserIds, messages],
+  );
+
+  if (isLoading && visibleMessages.length === 0) {
     return (
       <div
         className="rounded-2xl border border-dashed border-slate-200/80 bg-white/70 p-6 text-center text-sm text-slate-500 shadow-sm dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-300"
@@ -167,7 +180,7 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
     );
   }
 
-  if (messages.length === 0) {
+  if (visibleMessages.length === 0) {
     return (
       <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 text-center text-sm text-slate-500 shadow-sm dark:border-white/10 dark:bg-slate-900/40 dark:text-slate-300">
         {t('messages_empty_state')}
@@ -183,7 +196,7 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
       aria-live="polite"
       aria-busy={isLoading}
     >
-      {messages.map((message, index) => {
+      {visibleMessages.map((message, index) => {
         const isOwn = message.deviceId === currentDeviceId;
         const isSystem = Boolean(message.isSystem);
         const authorName = isSystem
@@ -192,11 +205,11 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
           ? message.author.nickname
           : isOwn
           ? t('messages_you_label')
-          : t('messages_author_unknown');
+          : 'Участник';
         const createdAt = new Date(message.createdAt);
         const timeLabel = timeFormatter.format(createdAt);
         const fullTimestamp = fullTimestampFormatter.format(createdAt);
-        const previous = messages[index - 1];
+        const previous = visibleMessages[index - 1];
         const currentDayKey = createdAt.toDateString();
         const previousDayKey = previous ? new Date(previous.createdAt).toDateString() : null;
         const showDayDivider = currentDayKey !== previousDayKey;
@@ -296,7 +309,7 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
                               className="mt-1 flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-rose-700 transition hover:bg-rose-50 disabled:opacity-60 dark:text-rose-200 dark:hover:bg-rose-500/10"
                               disabled={moderationBusy}
                             >
-                              <span>Заблокировать</span>
+                              <span>Скрыть пользователя</span>
                               <span aria-hidden>🚫</span>
                             </button>
                           </div>
@@ -325,7 +338,7 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
           <span aria-hidden="true">↓</span>
         </button>
       )}
-      {isLoading && messages.length > 0 && (
+      {isLoading && visibleMessages.length > 0 && (
         <div className="flex justify-center pb-2 text-xs text-slate-400 dark:text-slate-500">
           {t('messages_loading_state')}
         </div>

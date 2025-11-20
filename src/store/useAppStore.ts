@@ -15,6 +15,7 @@ import type {
 interface AppStore {
   device: DeviceInfo | null;
   user: UserProfile | null;
+  blockedUserIds: string[];
   circle: CircleSummary | null;
   messages: CircleMessage[];
   dailyLimit: number | null;
@@ -34,9 +35,15 @@ interface AppStore {
   replaceMessage(tempId: string, message: CircleMessage): void;
   removeMessage(id: string): void;
   removeMessagesByUser(userId: string): void;
+  blockUserLocally(userId: string): void;
   setQuotaFromApi(quota: DailyQuotaSnapshot | null): void;
   updateSettings(settings: Partial<AppSettings>): void;
   setFirebaseReady(ready: boolean): void;
+  profileModalOpen: boolean;
+  profileModalCallback: (() => void | Promise<void>) | null;
+  openProfileModal(callback?: () => void | Promise<void>): void;
+  closeProfileModal(): void;
+  completeProfile(profile: UserProfile): void;
   clearSession(): void;
   reset(): void;
 }
@@ -47,6 +54,13 @@ const defaultSettings: AppSettings = {
   theme: 'system',
   animationsEnabled: true,
 };
+
+const filterBlockedMessages = (messages: CircleMessage[], blockedIds: string[]) =>
+  messages.filter((message) => {
+    const authorId = message.author?.id;
+    if (!authorId) return true;
+    return !blockedIds.includes(authorId);
+  });
 
 const sortMessages = (messages: CircleMessage[]) =>
   [...messages].sort(
@@ -79,6 +93,7 @@ export const useAppStore = create<AppStore>()(
       (set, get) => ({
         device: null,
         user: null,
+        blockedUserIds: [],
         circle: null,
         messages: [],
         dailyLimit: null,
@@ -93,8 +108,14 @@ export const useAppStore = create<AppStore>()(
         updateUser: (updater) => set({ user: updater(get().user) }),
         setCircle: (circle) => set({ circle }),
         updateCircle: (updater) => set((state) => ({ circle: updater(state.circle) })),
-        setMessages: (messages) => set({ messages: sortMessages(messages) }),
-        addMessage: (message) => set({ messages: sortMessages([...get().messages, message]) }),
+        setMessages: (messages) =>
+          set((state) => ({
+            messages: sortMessages(filterBlockedMessages(messages, state.blockedUserIds)),
+          })),
+        addMessage: (message) =>
+          set((state) => ({
+            messages: sortMessages(filterBlockedMessages([...state.messages, message], state.blockedUserIds)),
+          })),
         replaceMessage: (tempId, message) =>
           set((state) => ({
             messages: state.messages.map((existing) =>
@@ -109,6 +130,17 @@ export const useAppStore = create<AppStore>()(
           set((state) => ({
             messages: state.messages.filter((message) => message.author?.id !== userId),
           })),
+        blockUserLocally: (userId) =>
+          set((state) => {
+            if (state.blockedUserIds.includes(userId)) {
+              return state;
+            }
+            const blockedUserIds = [...state.blockedUserIds, userId];
+            return {
+              blockedUserIds,
+              messages: state.messages.filter((message) => message.author?.id !== userId),
+            };
+          }),
         setQuotaFromApi: (quota) =>
           set(() => {
             if (!quota) {
@@ -130,10 +162,20 @@ export const useAppStore = create<AppStore>()(
           }),
         updateSettings: (settings) => set({ settings: { ...get().settings, ...settings } }),
         setFirebaseReady: (ready) => set({ firebaseReady: ready }),
+        profileModalOpen: false,
+        profileModalCallback: null,
+        openProfileModal: (callback) => set({ profileModalOpen: true, profileModalCallback: callback ?? null }),
+        closeProfileModal: () => set({ profileModalOpen: false, profileModalCallback: null }),
+        completeProfile: (profile) => {
+          const callback = get().profileModalCallback;
+          set({ user: profile, profileModalOpen: false, profileModalCallback: null });
+          callback?.();
+        },
         clearSession: () =>
           set({
             device: null,
             user: null,
+            blockedUserIds: [],
             circle: null,
             messages: [],
             dailyLimit: null,
@@ -146,6 +188,7 @@ export const useAppStore = create<AppStore>()(
         reset: () => set({
           device: null,
           user: null,
+          blockedUserIds: [],
           circle: null,
           messages: [],
           dailyLimit: null,
@@ -159,7 +202,7 @@ export const useAppStore = create<AppStore>()(
       {
         name: 'weekcrew-store',
         storage,
-        version: 2,
+        version: 3,
         migrate: (persistedState) => {
           if (!persistedState || typeof persistedState !== 'object') {
             return persistedState as AppStore;
@@ -171,6 +214,7 @@ export const useAppStore = create<AppStore>()(
             circle: null,
             device: null,
             user: null,
+            blockedUserIds: [],
             messages: [],
             dailyLimit: null,
             dailyUsed: null,
@@ -182,6 +226,7 @@ export const useAppStore = create<AppStore>()(
         },
         partialize: (state) => ({
           settings: state.settings,
+          blockedUserIds: state.blockedUserIds,
         }),
       }
     )
