@@ -40,7 +40,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'not_member' }, { status: 403 });
     }
 
-    const messageFilters = buildCircleMessagesWhere({ circleId, since });
+    const blockedIds = user?.blocksInitiated?.map((block) => block.blockedId) ?? [];
+    const messageFilters = buildCircleMessagesWhere({
+      circleId,
+      since,
+      excludeUserIds: blockedIds,
+    });
 
     const [messages, memberCount, quota] = await Promise.all([
       prisma.message.findMany({
@@ -53,13 +58,8 @@ export async function GET(request: NextRequest) {
       checkDailyMessageLimit(prisma, { circleId, deviceId }),
     ]);
 
-    const blockedIds = new Set(user?.blocksInitiated?.map((block) => block.blockedId) ?? []);
-    const filteredMessages = blockedIds.size
-      ? messages.filter((message) => !message.userId || !blockedIds.has(message.userId))
-      : messages;
-
     const response = NextResponse.json({
-      messages: filteredMessages.map(toCircleMessage),
+      messages: messages.map(toCircleMessage),
       quota: quota.quota,
       memberCount,
     });
