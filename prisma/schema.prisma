@@ -70,6 +70,7 @@ model Message {
   circle    Circle    @relation(fields: [circleId], references: [id], onDelete: Cascade)
   device    Device?   @relation(fields: [deviceId], references: [id], onDelete: SetNull)
   user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  reports   Report[]
 
   @@index([circleId, createdAt])
 }
