@@ -16,12 +16,11 @@ export type CircleStatus = 'active' | 'finished' | 'archived';
 
 export interface UserProfile {
   id: string;
-  nickname?: string;
-  interests: InterestTag[];
-  currentCircleId?: string | null;
-  locale: 'ru' | 'en';
-  theme: 'light' | 'dark' | 'system';
-  notificationsEnabled: boolean;
+  deviceId: string;
+  nickname: string;
+  avatarKey: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CircleSummary {
@@ -35,12 +34,20 @@ export interface CircleSummary {
   memberCount: number;
   remainingMs: number;
   isExpired: boolean;
+  icebreaker: string;
+}
+
+export interface MessageAuthor {
+  id: string | null;
+  nickname?: string | null;
+  avatarKey?: string | null;
 }
 
 export interface CircleMessage {
   id: string;
   circleId: string;
   deviceId: string | null;
+  author?: MessageAuthor | null;
   content: string;
   isSystem: boolean;
   createdAt: string;

@@ -11,6 +11,8 @@ import {
   markMembershipLeft,
 } from '@/lib/server/circleMembership';
 import { buildCircleMessagesWhere } from '@/lib/server/messageQueries';
+import { ICEBREAKERS } from '@/data/icebreakers';
+import { getUserWithBlocks } from '@/lib/server/users';
 
 const DEFAULT_MAX_MEMBERS = 5;
 const MESSAGE_LIMIT = 50;
@@ -82,6 +84,7 @@ const listRecentMessages = async (circleId: string) => {
     where,
     orderBy: { createdAt: 'desc' },
     take: MESSAGE_LIMIT,
+    include: { user: true },
   });
   return rows.reverse().map(toCircleMessage);
 };
@@ -116,6 +119,10 @@ export async function POST(request: NextRequest) {
 
       if (!circle) {
         const expiresAt = computeCircleExpiry(now);
+        const icebreaker =
+          ICEBREAKERS[Math.floor(Math.random() * ICEBREAKERS.length)] ??
+          ICEBREAKERS[0] ??
+          'Поделись, что сегодня тебя порадовало? ✨';
         circle = await tx.circle.create({
           data: {
             mood,
@@ -125,6 +132,7 @@ export async function POST(request: NextRequest) {
             startsAt: now,
             endsAt: expiresAt,
             expiresAt,
+            icebreaker,
           },
         });
         isNewCircle = true;
@@ -145,10 +153,17 @@ export async function POST(request: NextRequest) {
       return { circle, memberCount, isNewCircle };
     });
 
-    const messages = await listRecentMessages(result.circle.id);
+    const [messages, userBlocks] = await Promise.all([
+      listRecentMessages(result.circle.id),
+      getUserWithBlocks(deviceId),
+    ]);
+    const blockedSet = new Set(userBlocks?.blocksInitiated.map((block) => block.blockedId) ?? []);
+    const filteredMessages = blockedSet.size
+      ? messages.filter((message) => !message.author?.id || !blockedSet.has(message.author.id))
+      : messages;
     const response = NextResponse.json({
       circle: toCircleSummary(result.circle, result.memberCount),
-      messages,
+      messages: filteredMessages,
       isNewCircle: result.isNewCircle,
     });
 

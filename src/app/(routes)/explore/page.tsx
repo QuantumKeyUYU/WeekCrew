@@ -12,15 +12,20 @@ import { saveCircleSelection } from '@/lib/circleSelection';
 import { LANGUAGE_INTERESTS } from '@/constants/language-interests';
 import { TestModeHint } from '@/components/shared/test-mode-hint';
 import { joinCircle } from '@/lib/api/circles';
+import { getProfile } from '@/lib/api/profile';
 import { useAppStore } from '@/store/useAppStore';
 import { SafetyRulesModal } from '@/components/modals/safety-rules-modal';
+import { ProfileModal } from '@/components/modals/profile-modal';
 import { useSafetyRules } from '@/hooks/useSafetyRules';
+import type { UserProfile } from '@/types';
 
 export default function ExplorePage() {
   const router = useRouter();
   const t = useTranslation();
   const setCircle = useAppStore((state) => state.setCircle);
   const setMessages = useAppStore((state) => state.setMessages);
+  const user = useAppStore((state) => state.user);
+  const setUser = useAppStore((state) => state.setUser);
   const { accepted, hydrated, markAccepted } = useSafetyRules();
 
   type InterestCard = { id: InterestId; label: string; emoji: string };
@@ -44,6 +49,9 @@ export default function ExplorePage() {
   const [error, setError] = useState<string | null>(null);
   const [showRulesModal, setShowRulesModal] = useState(false);
   const [autoPrompted, setAutoPrompted] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [profileChecked, setProfileChecked] = useState(false);
+  const [pendingAfterProfile, setPendingAfterProfile] = useState<(() => void) | null>(null);
 
   useEffect(() => {
     if (hydrated && !accepted && !autoPrompted) {
@@ -52,9 +60,47 @@ export default function ExplorePage() {
     }
   }, [hydrated, accepted, autoPrompted]);
 
+  useEffect(() => {
+    if (profileChecked || user) {
+      return;
+    }
+    let cancelled = false;
+    getProfile()
+      .then((response) => {
+        if (cancelled) return;
+        if (response.user) {
+          setUser(response.user);
+        } else {
+          setProfileModalOpen(true);
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to load profile', error);
+        if (!cancelled) {
+          setProfileModalOpen(true);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setProfileChecked(true);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [profileChecked, setUser, user]);
+
   const moodLabel = selectedMood
     ? t(MOOD_OPTIONS.find((option) => option.key === selectedMood)?.labelKey ?? '')
     : null;
+
+  const handleProfileSaved = (profile: UserProfile) => {
+    setUser(profile);
+    setProfileModalOpen(false);
+    pendingAfterProfile?.();
+    setPendingAfterProfile(null);
+  };
 
   const isLanguageMood = selectedMood === 'languages';
   const interestsToRender = isLanguageMood ? languageInterestCards : defaultInterestCards;
@@ -74,7 +120,7 @@ export default function ExplorePage() {
     setSelectedInterest(null);
   };
 
-  const handleStartCircle = async () => {
+  const performJoin = useCallback(async () => {
     if (!selectedMood || !selectionComplete || joining) {
       return;
     }
@@ -106,6 +152,31 @@ export default function ExplorePage() {
     } finally {
       setJoining(false);
     }
+  }, [
+    accepted,
+    effectiveInterest,
+    interestsToRender,
+    joining,
+    randomInterest,
+    router,
+    saveCircleSelection,
+    selectedMood,
+    selectionComplete,
+    setCircle,
+    setMessages,
+    t,
+  ]);
+
+  const handleStartCircle = async () => {
+    if (!selectedMood || !selectionComplete || joining) {
+      return;
+    }
+    if (!user) {
+      setPendingAfterProfile(() => performJoin);
+      setProfileModalOpen(true);
+      return;
+    }
+    await performJoin();
   };
 
   return (
@@ -243,6 +314,11 @@ export default function ExplorePage() {
           setShowRulesModal(false);
         }}
         onClose={() => setShowRulesModal(false)}
+      />
+      <ProfileModal
+        open={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        onSaved={handleProfileSaved}
       />
     </div>
   );

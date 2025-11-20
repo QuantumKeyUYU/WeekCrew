@@ -23,6 +23,7 @@ model Device {
   createdAt    DateTime            @default(now())
   memberships  CircleMembership[]
   messages     Message[]
+  user         User?
 }
 
 model Circle {
@@ -34,10 +35,12 @@ model Circle {
   startsAt     DateTime
   endsAt       DateTime
   expiresAt    DateTime
+  icebreaker   String              @default("Поделись, что сегодня тебя порадовало? ✨")
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
   memberships  CircleMembership[]
   messages     Message[]
+  reports      Report[]
 }
 
 model CircleMembership {
@@ -59,12 +62,60 @@ model Message {
   id        String    @id @default(cuid())
   circleId  String
   deviceId  String?
+  userId    String?
   content   String
   isSystem  Boolean   @default(false)
   createdAt DateTime  @default(now())
 
   circle    Circle    @relation(fields: [circleId], references: [id], onDelete: Cascade)
   device    Device?   @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([circleId, createdAt])
+}
+
+model User {
+  id        String    @id @default(cuid())
+  deviceId  String    @unique
+  nickname  String
+  avatarKey String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  device   Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  messages Message[]
+  reportsSent    Report[] @relation("reportsSent")
+  reportsReceived Report[] @relation("reportsReceived")
+  blocksInitiated Block[]  @relation("blocksInitiated")
+  blocksReceived  Block[]  @relation("blocksReceived")
+}
+
+model Report {
+  id         String   @id @default(cuid())
+  reporterId String
+  targetId   String
+  circleId   String
+  messageId  String?
+  reason     String
+  createdAt  DateTime @default(now())
+
+  reporter User   @relation("reportsSent", fields: [reporterId], references: [id], onDelete: Cascade)
+  target   User   @relation("reportsReceived", fields: [targetId], references: [id], onDelete: Cascade)
+  circle   Circle @relation(fields: [circleId], references: [id], onDelete: Cascade)
+  message  Message? @relation(fields: [messageId], references: [id], onDelete: SetNull)
+
+  @@index([circleId])
+  @@index([targetId])
+}
+
+model Block {
+  id         String   @id @default(cuid())
+  blockerId  String
+  blockedId  String
+  createdAt  DateTime @default(now())
+
+  blocker User @relation("blocksInitiated", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("blocksReceived", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
 }
