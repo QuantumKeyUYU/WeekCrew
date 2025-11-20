@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
       checkDailyMessageLimit(prisma, { circleId, deviceId }),
     ]);
 
-    const blockedIds = new Set(user?.blocksInitiated.map((block) => block.blockedId) ?? []);
+    const blockedIds = new Set(user?.blocksInitiated?.map((block) => block.blockedId) ?? []);
     const filteredMessages = blockedIds.size
       ? messages.filter((message) => !message.userId || !blockedIds.has(message.userId))
       : messages;
