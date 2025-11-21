@@ -1,12 +1,59 @@
 import type { CircleMessage, MessageReaction } from '@/types';
 
-type NoopHandler = (event: string, payload: unknown) => void;
+// --- Shared subscriber storage (server) ---
+type RealtimeSubscriber = (event: string, payload: unknown) => void;
+type SubscriberMap = Map<string, Set<RealtimeSubscriber>>;
 
-export const addRealtimeSubscriber = (_channel: string, _subscriber: NoopHandler) =>
-  () => undefined;
+type GlobalRealtimeStore = typeof globalThis & {
+  __weekcrewRealtimeSubscribers?: SubscriberMap;
+};
 
-export const broadcastRealtimeEvent = (_channel: string, _event: string, _payload: unknown) => undefined;
+const getSubscriberStore = (): SubscriberMap => {
+  const globalScope = globalThis as GlobalRealtimeStore;
+  if (!globalScope.__weekcrewRealtimeSubscribers) {
+    globalScope.__weekcrewRealtimeSubscribers = new Map();
+  }
+  return globalScope.__weekcrewRealtimeSubscribers;
+};
 
+const subscribers = getSubscriberStore();
+
+export const addRealtimeSubscriber = (channel: string, subscriber: RealtimeSubscriber) => {
+  const channelSubscribers = subscribers.get(channel) ?? new Set<RealtimeSubscriber>();
+  channelSubscribers.add(subscriber);
+  subscribers.set(channel, channelSubscribers);
+
+  return () => {
+    const current = subscribers.get(channel);
+    if (!current) return;
+
+    current.delete(subscriber);
+    if (!current.size) {
+      subscribers.delete(channel);
+    }
+  };
+};
+
+export const broadcastRealtimeEvent = (
+  channel: string,
+  event: string,
+  payload: unknown,
+) => {
+  const channelSubscribers = subscribers.get(channel);
+  if (!channelSubscribers?.size) {
+    return;
+  }
+
+  channelSubscribers.forEach((handler) => {
+    try {
+      handler(event, payload);
+    } catch (error) {
+      console.error('Realtime handler failed', error);
+    }
+  });
+};
+
+// --- Client-side EventSource wrapper ---
 type SimpleEventHandler = {
   'new-message': (data: CircleMessage) => void;
   typing: (data: { deviceId: string | null; nickname?: string | null }) => void;
@@ -14,13 +61,55 @@ type SimpleEventHandler = {
 };
 
 class SimpleChannel {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  constructor(_channel: string) {}
+  private readonly eventSource: EventSource | null;
 
-  bind<TEvent extends keyof SimpleEventHandler>(_eventName: TEvent, _handler: SimpleEventHandler[TEvent]) {}
+  private listeners: { event: keyof SimpleEventHandler; listener: EventListener }[] = [];
+
+  constructor(channel: string) {
+    if (typeof window === 'undefined') {
+      this.eventSource = null;
+      return;
+    }
+
+    const url = `/api/realtime?channel=${encodeURIComponent(channel)}`;
+    this.eventSource = new EventSource(url);
+    this.eventSource.addEventListener('error', (event) => {
+      console.warn('Realtime connection issue', event);
+    });
+  }
+
+  bind<TEvent extends keyof SimpleEventHandler>(
+    eventName: TEvent,
+    handler: SimpleEventHandler[TEvent],
+  ) {
+    if (!this.eventSource) {
+      return;
+    }
+
+    const listener: EventListener = (event) => {
+      const message = event as MessageEvent<string>;
+      const raw = message.data ?? '';
+      let payload: unknown = raw;
+      try {
+        payload = raw ? JSON.parse(raw) : null;
+      } catch (error) {
+        console.warn('Failed to parse realtime payload', error);
+      }
+      handler(payload as Parameters<SimpleEventHandler[TEvent]>[0]);
+    };
+
+    this.listeners.push({ event: eventName, listener });
+    this.eventSource.addEventListener(eventName, listener);
+  }
 
   unsubscribe() {
-    // noop
+    if (this.eventSource) {
+      this.listeners.forEach(({ event, listener }) => {
+        this.eventSource?.removeEventListener(event, listener);
+      });
+      this.eventSource.close();
+    }
+    this.listeners = [];
   }
 }
 
@@ -30,7 +119,7 @@ class SimpleRealtimeClient {
   }
 
   unsubscribe(_channel: string) {
-    // noop
+    // noop, handled by SimpleChannel.unsubscribe
   }
 }
 
