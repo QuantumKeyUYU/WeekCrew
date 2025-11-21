@@ -32,42 +32,19 @@ const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const getAvatarEmoji = (key?: string | null) =>
   AVATAR_PRESETS.find((preset) => preset.key === key)?.emoji ?? '🙂';
 
-const mergeMessagesSafely = (
-  current: CircleMessage[],
-  incoming: CircleMessage[],
-  { forceReplace = false }: { forceReplace?: boolean } = {},
+const shouldReplaceMessages = (
+  prev: CircleMessage[],
+  next: CircleMessage[],
 ) => {
-  if (forceReplace) {
-    return incoming;
-  }
+  if (prev.length !== next.length) return true;
+  if (prev.length === 0 && next.length === 0) return false;
 
-  if (current.length === 0) {
-    return incoming;
-  }
+  const prevFirst = prev[0]?.id;
+  const nextFirst = next[0]?.id;
+  const prevLast = prev[prev.length - 1]?.id;
+  const nextLast = next[next.length - 1]?.id;
 
-  if (incoming.length === 0) {
-    return current;
-  }
-
-  if (incoming.length < current.length) {
-    return incoming;
-  }
-
-  const currentLast = current[current.length - 1]?.id;
-  const incomingLast = incoming[incoming.length - 1]?.id;
-
-  if (current.length === incoming.length && currentLast === incomingLast) {
-    return current;
-  }
-
-  const currentIds = new Set(current.map((message) => message.id));
-  const additions = incoming.filter((message) => !currentIds.has(message.id));
-
-  if (additions.length === 0) {
-    return current;
-  }
-
-  return [...current, ...additions];
+  return prevFirst !== nextFirst || prevLast !== nextLast;
 };
 
 export const MessageList = ({
@@ -82,7 +59,6 @@ export const MessageList = ({
   const lastScrollLength = useRef(0);
   const lastMessageId = useRef<string | null>(null);
   const previousCircleId = useRef<string | null>(circleId ?? null);
-  const liveMessagesRef = useRef<CircleMessage[]>(messages);
 
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [hasNewWhileAway, setHasNewWhileAway] = useState(false);
@@ -98,7 +74,6 @@ export const MessageList = ({
   const blockedUserIds = useAppStore((state) => state.blockedUserIds);
   const blockUserLocally = useAppStore((state) => state.blockUserLocally);
 
-  // ✅ правильные форматтеры дат/времени
   const dayFormatter = new Intl.DateTimeFormat(locale, {
     day: 'numeric',
     month: 'long',
@@ -133,33 +108,19 @@ export const MessageList = ({
     return dayFormatter.format(date);
   };
 
-  // локальное состояние сообщений
-  const [liveMessages, setLiveMessages] = useState(messages);
+  // Локальное состояние сообщений
+  const [liveMessages, setLiveMessages] = useState<CircleMessage[]>(messages);
 
-  useEffect(() => {
-    liveMessagesRef.current = liveMessages;
-  }, [liveMessages]);
-
-  const applyIncomingMessages = useCallback(
-    (nextMessages: CircleMessage[], { reset = false } = {}) => {
-      setLiveMessages((prev) =>
-        mergeMessagesSafely(prev, nextMessages, { forceReplace: reset }),
-      );
-    },
-    [],
-  );
-
-  // ⬇️ ВАЖНО: пропсы messages используем только когда СМЕНИЛСЯ circleId.
-  // Это не будет перетираť liveMessages при каждом рендере.
+  // Обновляем список при смене круга
   useEffect(() => {
     const hasCircleChanged = previousCircleId.current !== circleId;
     if (!hasCircleChanged) return;
 
     previousCircleId.current = circleId ?? null;
-    applyIncomingMessages(messages, { reset: true });
-  }, [applyIncomingMessages, circleId, messages]);
+    setLiveMessages(messages);
+  }, [circleId, messages]);
 
-  // поллинг сообщений
+  // Поллинг: каждые 4с подтягиваем с сервера полный список
   useEffect(() => {
     if (!circleId) return;
 
@@ -178,17 +139,13 @@ export const MessageList = ({
         const data = await response.json();
         if (cancelled) return;
 
-        const nextMessages: CircleMessage[] = Array.isArray(data?.messages)
+        const next: CircleMessage[] = Array.isArray(data?.messages)
           ? data.messages
           : [];
 
-        const hasLocalMessages = liveMessagesRef.current.length > 0;
-
-        if (nextMessages.length === 0 && hasLocalMessages) {
-          return;
-        }
-
-        applyIncomingMessages(nextMessages);
+        setLiveMessages((prev) =>
+          shouldReplaceMessages(prev, next) ? next : prev,
+        );
       } catch (error) {
         console.warn('Failed to fetch circle messages', error);
       }
@@ -201,7 +158,7 @@ export const MessageList = ({
       cancelled = true;
       window.clearInterval(intervalId);
     };
-  }, [circleId, applyIncomingMessages]);
+  }, [circleId]);
 
   const visibleMessages = useMemo(
     () =>
@@ -354,14 +311,8 @@ export const MessageList = ({
         <div
           className="rounded-2xl border border-dashed border-slate-200/80 bg-white/70 p-6 text-center text-sm text-slate-500 shadow-sm dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-300"
           role="status"
-          aria-live="polite"
         >
           <p>{t('messages_loading_state')}</p>
-          <div className="mt-4 space-y-2">
-            <div className="mx-auto h-2.5 w-2/3 rounded-full bg-slate-200/80 dark:bg-slate-700/70" />
-            <div className="mx-auto h-2.5 w-1/2 rounded-full bg-slate-200/70 dark:bg-slate-700/60" />
-            <div className="mx-auto h-2.5 w-3/4 rounded-full bg-slate-200/60 dark:bg-slate-700/50" />
-          </div>
         </div>
       )}
 
