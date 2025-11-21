@@ -153,6 +153,12 @@ export const copy = {
     explore_start_button: 'Начать круг',
     explore_starting_state: 'Подбираем круг...',
     explore_error_message: 'Не удалось начать круг. Попробуй ещё раз.',
+    explore_error_recover:
+      'Мы обновили подключение, чтобы чат работал на любом устройстве. Нажми «Начать круг» ещё раз.',
+    explore_sync_title: 'Чат синхронизируется на всех устройствах',
+    explore_sync_subtitle:
+      'Можно заходить с телефона, планшета или ноутбука — сообщения появляются мгновенно и остаются в истории недели.',
+    explore_sync_hint: 'Если что-то пошло не так, мы сбросим подключение и перезапустим подбор свежего круга.',
     error_device_unavailable: 'Не удалось определить устройство. Обнови страницу и попробуй снова.',
     safety_intro_label: 'WeekCrew safety',
     safety_intro_title: 'Перед стартом — договариваемся о правилах',
@@ -536,6 +542,12 @@ export const copy = {
     explore_start_button: 'Start circle',
     explore_starting_state: 'Matching a circle...',
     explore_error_message: 'We could not start the circle. Please try again.',
+    explore_error_recover:
+      'We refreshed your connection so the chat stays synced on any device. Please tap “Start circle” again.',
+    explore_sync_title: 'Chat stays in sync across devices',
+    explore_sync_subtitle:
+      'Join from your phone, tablet, or laptop — messages land instantly and stay in the weekly history.',
+    explore_sync_hint: 'If something glitches, we reset the link and rebuild a fresh circle for you.',
     error_device_unavailable: 'We could not identify your device. Refresh the page and try again.',
     safety_intro_label: 'WeekCrew safety',
     safety_intro_title: 'Before we start — let’s agree on the basics',
