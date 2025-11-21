@@ -1,5 +1,5 @@
 import type { CircleMembership, PrismaClient } from '@prisma/client';
-import { prisma } from '@/lib/prisma';
+import { ensurePrismaClient } from '@/lib/prisma';
 
 const DEFAULT_STATUS = 'active';
 
@@ -28,7 +28,7 @@ const markMembershipsAsLeft = (
 
 export const findLatestActiveMembershipForDevice = async (
   deviceId: string,
-  client: PrismaClient = prisma,
+  client: PrismaClient = ensurePrismaClient(),
 ) => {
   const memberships = await findActiveMembershipsForDevice(deviceId, client);
 
@@ -46,20 +46,20 @@ export const findLatestActiveMembershipForDevice = async (
 
 export const markMembershipLeft = (
   membershipId: string,
-  client: PrismaClient = prisma,
+  client: PrismaClient = ensurePrismaClient(),
 ) =>
   client.circleMembership.update({
     where: { id: membershipId },
     data: { status: 'left', leftAt: new Date() },
   });
 
-export const countActiveMembers = (circleId: string, client: PrismaClient = prisma) =>
+export const countActiveMembers = (circleId: string, client: PrismaClient = ensurePrismaClient()) =>
   client.circleMembership.count({ where: { circleId, status: DEFAULT_STATUS } });
 
 export const findActiveCircleMembership = (
   circleId: string,
   deviceId: string,
-  client: PrismaClient = prisma,
+  client: PrismaClient = ensurePrismaClient(),
 ) =>
   client.circleMembership.findFirst({
     where: { circleId, deviceId, status: DEFAULT_STATUS },
@@ -68,7 +68,7 @@ export const findActiveCircleMembership = (
 export const findActiveCircleMembershipForDevice = (
   circleId: string,
   deviceId: string,
-  client: PrismaClient = prisma,
+  client: PrismaClient = ensurePrismaClient(),
   now: Date = new Date(),
 ) =>
   client.circleMembership.findFirst({
@@ -84,7 +84,7 @@ export const findActiveCircleMembershipForDevice = (
 export const isDeviceCircleMember = async (
   circleId: string,
   deviceId: string,
-  client: PrismaClient = prisma,
+  client: PrismaClient = ensurePrismaClient(),
 ) =>
   Boolean(
     await findActiveCircleMembershipForDevice(circleId, deviceId, client),

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
 import { getOrCreateDevice } from '@/lib/server/device';
 import { findActiveCircleMembershipForDevice } from '@/lib/server/circleMembership';
 import { toCircleMessage } from '@/lib/server/serializers';
@@ -21,7 +21,13 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { id: deviceId } = await getOrCreateDevice(request);
+    const prisma = getPrismaClient();
+
+    if (!prisma) {
+      return NextResponse.json({ ok: false, error: 'BACKEND_DISABLED' }, { status: 503 });
+    }
+
+    const { id: deviceId } = await getOrCreateDevice(request, prisma);
     const now = new Date();
 
     const membership = await findActiveCircleMembershipForDevice(
@@ -75,7 +81,13 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { id: deviceId } = await getOrCreateDevice(request);
+    const prisma = getPrismaClient();
+
+    if (!prisma) {
+      return NextResponse.json({ ok: false, error: 'BACKEND_DISABLED' }, { status: 503 });
+    }
+
+    const { id: deviceId } = await getOrCreateDevice(request, prisma);
 
     const now = new Date();
     const membership = await findActiveCircleMembershipForDevice(
