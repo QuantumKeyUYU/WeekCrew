@@ -10,7 +10,7 @@ import { MOOD_OPTIONS, type MoodKey } from '@/constants/moods';
 import { saveCircleSelection } from '@/lib/circleSelection';
 import { LANGUAGE_INTERESTS } from '@/constants/language-interests';
 import { TestModeHint } from '@/components/shared/test-mode-hint';
-import { joinCircle } from '@/lib/api/circles';
+import { DeviceError, joinCircle } from '@/lib/api/circles';
 import { getProfile } from '@/lib/api/profile';
 import { useAppStore } from '@/store/useAppStore';
 import { SafetyRulesModal } from '@/components/modals/safety-rules-modal';
@@ -56,6 +56,7 @@ export default function ExplorePage() {
   const [autoPrompted, setAutoPrompted] = useState(false);
   const [profileChecked, setProfileChecked] = useState(false);
   const [showAssembling, setShowAssembling] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (hydrated && !accepted && !autoPrompted) {
@@ -147,31 +148,50 @@ export default function ExplorePage() {
       setShowRulesModal(true);
       return;
     }
+
     setJoining(true);
     setError(null);
     setErrorHint(null);
-
-    const interestPool = interestsToRender.map((interest) => interest.id);
-    const randomChoice = interestPool[Math.floor(Math.random() * interestPool.length)] ?? null;
-    const interestId = randomInterest ? randomChoice : effectiveInterest;
-
-    if (!interestId) {
-      setJoining(false);
-      return;
-    }
+    setToastMessage(null);
 
     try {
-      const response = await joinCircle({ mood: selectedMood, interest: interestId });
-      setCircle(response.circle);
-      setMessages(response.messages);
-      saveCircleSelection({ mood: selectedMood, interestId });
-      router.push('/circle');
-    } catch (err) {
-      console.error(err);
-      if (err instanceof ApiError) {
+      const interestPool = interestsToRender.map((interest) => interest.id);
+      const randomChoice = interestPool[Math.floor(Math.random() * interestPool.length)] ?? null;
+      const interestId = randomInterest ? randomChoice : effectiveInterest;
+
+      if (!interestId) {
+        return;
+      }
+
+      const tryJoin = async () => {
+        const response = await joinCircle({ mood: selectedMood, interest: interestId });
+        setCircle(response.circle);
+        setMessages(response.messages);
+        saveCircleSelection({ mood: selectedMood, interestId });
+        router.push('/circle');
+      };
+
+      let lastError: unknown = null;
+
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+          await tryJoin();
+          return;
+        } catch (err) {
+          lastError = err;
+          if (attempt === 0) {
+            await new Promise((resolve) => setTimeout(resolve, 200));
+          }
+        }
+      }
+
+      console.error(lastError);
+      if (lastError instanceof DeviceError) {
         resetDeviceId();
         clearSession();
         setErrorHint(t('explore_error_recover'));
+      } else if (lastError instanceof ApiError && lastError.status >= 500) {
+        setToastMessage(t('explore_retry_toast'));
       }
       setError(t('explore_error_message'));
     } finally {
@@ -179,13 +199,13 @@ export default function ExplorePage() {
     }
   }, [
     accepted,
+    clearSession,
     effectiveInterest,
     interestsToRender,
     joining,
     randomInterest,
     router,
     saveCircleSelection,
-    clearSession,
     selectedMood,
     selectionComplete,
     setCircle,
@@ -222,8 +242,8 @@ export default function ExplorePage() {
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="relative p-8 rounded-2xl bg-gradient-to-r from-indigo-600/40 via-violet-600/30 to-fuchsia-500/20 backdrop-blur-lg border border-white/10 shadow-2xl"
           >
-            <h1 className="text-4xl font-semibold tracking-tight text-white mb-3">Собираем твой круг недели 💫</h1>
-            <p className="text-lg text-white/70">Выбери настрой и тему — и за секунду мы соберём для тебя уютный чат.</p>
+            <h1 className="text-4xl font-semibold tracking-tight text-white mb-3">{t('explore_page_title')}</h1>
+            <p className="text-lg text-white/70">{t('explore_page_subtitle')}</p>
             <div className="absolute -left-20 -top-24 h-40 w-40 rounded-full bg-fuchsia-500/30 blur-3xl" aria-hidden />
             <div className="absolute -right-16 -bottom-20 h-48 w-48 rounded-full bg-indigo-500/25 blur-3xl" aria-hidden />
           </motion.div>
@@ -308,6 +328,8 @@ export default function ExplorePage() {
             showAssembling={showAssembling}
             error={error}
             errorHint={errorHint}
+            toastMessage={toastMessage}
+            onToastDismiss={() => setToastMessage(null)}
             onStart={handleStartCircle}
           />
         </div>

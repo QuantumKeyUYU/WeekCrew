@@ -14,6 +14,8 @@ type StepStartProps = {
   showAssembling: boolean;
   error: string | null;
   errorHint: string | null;
+  toastMessage?: string | null;
+  onToastDismiss?: () => void;
   onStart: () => void;
 };
 
@@ -27,6 +29,8 @@ export default function StepStart({
   showAssembling,
   error,
   errorHint,
+  toastMessage,
+  onToastDismiss,
   onStart,
 }: StepStartProps) {
   return (
@@ -43,15 +47,61 @@ export default function StepStart({
         <div className="absolute -bottom-10 left-10 h-32 w-32 rounded-full bg-fuchsia-400/20 blur-3xl" aria-hidden />
       </div>
       <div className="relative space-y-5">
+        <AnimatePresence>
+          {toastMessage && (
+            <motion.div
+              key="toast"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.3 }}
+              className="absolute right-4 top-4 inline-flex max-w-[320px] items-center gap-3 rounded-xl bg-white/15 px-3 py-2 text-xs font-semibold text-white shadow-[0_10px_40px_rgba(124,58,237,0.35)]"
+              role="status"
+              aria-live="polite"
+            >
+              <span aria-hidden>🔄</span>
+              <span className="flex-1">{toastMessage}</span>
+              <button
+                type="button"
+                onClick={onToastDismiss}
+                className="rounded-full bg-white/20 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-white/80 transition hover:bg-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+              >
+                {t('explore_toast_close')}
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/70">{t('explore_ready_title')}</p>
             <h3 className="mt-2 text-2xl font-semibold leading-tight text-white">{t('explore_ready_description')}</h3>
           </div>
-          <span className="hidden rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/80 sm:inline-flex">Start</span>
+          <span className="hidden rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/80 sm:inline-flex">
+            {t('explore_step_start_badge')}
+          </span>
         </div>
 
         <AnimatePresence>
+          {joining && (
+            <motion.div
+              key="joining"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.35, ease: 'easeOut' }}
+              className="flex items-center gap-2 rounded-2xl bg-white/15 px-4 py-3 text-sm font-semibold text-white shadow-[0_12px_40px_rgba(124,58,237,0.35)]"
+            >
+              <motion.span
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20"
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 1.2, ease: 'linear' }}
+                aria-hidden
+              >
+                ⏳
+              </motion.span>
+              <span>{t('explore_joining_feedback')}</span>
+            </motion.div>
+          )}
           {showAssembling && (
             <motion.div
               key="assembling"
@@ -62,7 +112,7 @@ export default function StepStart({
               className="flex items-center gap-2 rounded-2xl bg-white/15 px-4 py-3 text-sm font-semibold text-white shadow-[0_12px_40px_rgba(124,58,237,0.35)]"
             >
               <span aria-hidden>✨</span>
-              <span>✨ Круг собирается... ✨</span>
+              <span>{t('explore_assembling_label')}</span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -98,7 +148,7 @@ export default function StepStart({
         {!accepted && <p className="text-xs text-amber-100">{t('explore_rules_required')}</p>}
         <p className="flex items-center gap-2 text-xs text-white/70">
           <span aria-hidden>💡</span>
-          <span>Будь готов к тёплому разговору: мы подбираем людей с похожим настроем.</span>
+          <span>{t('explore_ready_hint')}</span>
         </p>
       </div>
     </motion.section>

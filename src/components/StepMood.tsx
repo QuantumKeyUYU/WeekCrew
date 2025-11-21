@@ -30,7 +30,9 @@ export default function StepMood({ t, variants, custom, selectedMood, onSelect, 
             <h2 className="text-3xl font-semibold leading-tight text-white">{t('explore_step_one_heading')}</h2>
             <p className="mt-1 text-base text-white/70">{t('explore_step_one_description')}</p>
           </div>
-          <span className="hidden rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/80 sm:inline-flex">Step 1</span>
+          <span className="hidden rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/80 sm:inline-flex">
+            {t('explore_step_one_badge')}
+          </span>
         </div>
         <div className="mt-4 flex flex-wrap gap-3">
           {MOOD_OPTIONS.map((mood) => {
