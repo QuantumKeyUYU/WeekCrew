@@ -2,12 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
 import { getOrCreateDevice } from '@/lib/server/device';
-import { isDeviceCircleMember } from '@/lib/server/circleMembership';
+import {
+  findActiveCircleMembership,
+  isDeviceCircleMember,
+} from '@/lib/server/circleMembership';
 import { toCircleMessage } from '@/lib/server/serializers';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const circleId = searchParams.get('circleId');
+  const sinceParam = searchParams.get('since');
+  const sinceDate = sinceParam ? new Date(sinceParam) : null;
+  const hasValidSince = Boolean(sinceDate) && !Number.isNaN(sinceDate?.getTime());
 
   if (!circleId) {
     return NextResponse.json(
@@ -22,13 +28,16 @@ export async function GET(request: NextRequest) {
     const canAccess = await isDeviceCircleMember(circleId, deviceId);
     if (!canAccess) {
       return NextResponse.json(
-        { ok: false, error: 'NOT_MEMBER' },
+        { ok: false, error: 'not_member' },
         { status: 403 },
       );
     }
 
     const messages = await prisma.message.findMany({
-      where: { circleId },
+      where: {
+        circleId,
+        ...(hasValidSince ? { createdAt: { gt: sinceDate } } : {}),
+      },
       orderBy: { createdAt: 'asc' },
       include: { user: true },
     });
@@ -63,18 +72,21 @@ export async function POST(request: NextRequest) {
   try {
     const { id: deviceId } = await getOrCreateDevice(request);
 
-    const canAccess = await isDeviceCircleMember(circleId, deviceId);
-    if (!canAccess) {
+    const membership = await findActiveCircleMembership(circleId, deviceId);
+    if (!membership) {
       return NextResponse.json(
-        { ok: false, error: 'NOT_MEMBER' },
+        { ok: false, error: 'not_member' },
         { status: 403 },
       );
     }
+
+    const user = await prisma.user.findUnique({ where: { deviceId } });
 
     const message = await prisma.message.create({
       data: {
         circleId,
         deviceId,
+        userId: user?.id ?? null,
         content,
       },
       include: { user: true },
