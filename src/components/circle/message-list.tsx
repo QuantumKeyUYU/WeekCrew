@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import clsx from 'clsx';
 import { AVATAR_PRESETS } from '@/constants/avatars';
@@ -8,8 +8,10 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { blockUser, sendReport } from '@/lib/api/moderation';
 import { useAppStore } from '@/store/useAppStore';
 import type { CircleMessage } from '@/types';
+import { apiFetch } from '@/lib/api-client';
 
 interface Props {
+  circleId?: string | null;
   messages: CircleMessage[];
   currentDeviceId?: string | null;
   isLoading?: boolean;
@@ -23,6 +25,7 @@ const getAvatarEmoji = (key?: string | null) =>
   AVATAR_PRESETS.find((preset) => preset.key === key)?.emoji ?? '🙂';
 
 export const MessageList = ({
+  circleId,
   messages,
   currentDeviceId,
   isLoading = false,
@@ -78,14 +81,63 @@ export const MessageList = ({
     return dayFormatter.format(date);
   };
 
+  const [liveMessages, setLiveMessages] = useState(messages);
+
+  useEffect(() => {
+    setLiveMessages(messages);
+  }, [circleId, messages]);
+
+  useEffect(() => {
+    if (!circleId) {
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    const fetchMessages = async () => {
+      try {
+        const response = await apiFetch(`/api/messages?circleId=${circleId}`);
+        if (!response.ok || cancelled) {
+          return;
+        }
+        const data = await response.json();
+        if (cancelled) {
+          return;
+        }
+
+        const nextMessages: CircleMessage[] = Array.isArray(data?.messages) ? data.messages : [];
+
+        setLiveMessages((prev) => {
+          const lastPrev = prev[prev.length - 1]?.id;
+          const lastNext = nextMessages[nextMessages.length - 1]?.id;
+
+          if (nextMessages.length !== prev.length || lastPrev !== lastNext) {
+            return nextMessages;
+          }
+          return prev;
+        });
+      } catch (error) {
+        console.warn('Failed to fetch circle messages', error);
+      }
+    };
+
+    void fetchMessages();
+    const intervalId = window.setInterval(fetchMessages, 4000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [circleId]);
+
   const visibleMessages = useMemo(
     () =>
-      messages.filter((message) => {
+      liveMessages.filter((message) => {
         const authorId = message.author?.id;
         if (!authorId) return true;
         return !blockedUserIds.includes(authorId);
       }),
-    [blockedUserIds, messages],
+    [blockedUserIds, liveMessages],
   );
 
   const scrollToBottom = useCallback(
