@@ -517,6 +517,9 @@ export default function CirclePage() {
     moodTitle && interestTitle
       ? t('circle_weekly_title', { mood: moodTitle, topic: interestTitle })
       : circle?.mood ?? t('circle_header_default_title');
+  const circleDebugInfo = circle
+    ? `debug: circle ${circle.id}, members ${circle.memberCount ?? '—'}, messages ${messages.length}`
+    : null;
 
   const circleHostKey = (() => {
     if (!circle || circle.isExpired) {
@@ -600,6 +603,9 @@ export default function CirclePage() {
                   {t('circle_members_chip', { count: membersCount })}
                 </span>
               </div>
+              {circleDebugInfo && (
+                <p className="text-[11px] text-slate-400 dark:text-slate-500">{circleDebugInfo}</p>
+              )}
               {showQuotaOneLiner && (
                 <p className="mt-1 text-xs text-slate-500 dark:text-white/60">{t('circle_quota_one_liner')}</p>
               )}
