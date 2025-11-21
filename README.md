@@ -102,7 +102,7 @@ src/
   components/
   lib/
     device.ts
-    api-clients.ts
+    api-client.ts
     liveWeekcrewStorage.ts
     prisma.ts
   store/
