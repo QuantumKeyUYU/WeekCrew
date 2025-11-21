@@ -111,14 +111,11 @@ export async function POST(request: NextRequest) {
       include: { user: true },
     });
 
-    const response = NextResponse.json(
-      {
-        ok: true,
-        message: toCircleMessage(message),
-        quota: applyMessageUsageToQuota(quotaResult.quota),
-      },
-      { status: 201 },
-    );
+    const response = NextResponse.json({
+      ok: true,
+      message: toCircleMessage(message),
+      quota: applyMessageUsageToQuota(quotaResult.quota),
+    });
     if (isNew) {
       response.headers.set(DEVICE_HEADER_NAME, deviceId);
     }

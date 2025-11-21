@@ -6,6 +6,7 @@ import { toCircleSummary } from '@/lib/server/serializers';
 import { computeCircleExpiry } from '@/lib/server/circles';
 import { DEVICE_HEADER_NAME } from '@/lib/device';
 import { ICEBREAKERS } from '@/data/icebreakers';
+import { CircleMembershipStatus } from '@prisma/client';
 
 const DEFAULT_MAX_MEMBERS = 5;
 
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest) {
       });
 
       await tx.circleMembership.create({
-        data: { circleId: circle.id, deviceId },
+        data: { circleId: circle.id, deviceId, status: CircleMembershipStatus.active },
       });
 
       return { circle };
