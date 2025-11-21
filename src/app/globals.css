@@ -11,7 +11,7 @@
   --surface-secondary-bg: rgba(255, 255, 255, 0.96);
   --surface-secondary-border: rgba(226, 232, 240, 0.6);
   --surface-secondary-shadow: 0 18px 60px rgba(15, 23, 42, 0.08);
-  --surface-hero-bg: linear-gradient(135deg, #4338ca 0%, #6d28d9 55%, #a78bfa 100%);
+  --surface-hero-bg: linear-gradient(135deg, #7c3aed 0%, #9f7aea 50%, #c084fc 100%);
   --surface-hero-border: rgba(255, 255, 255, 0.75);
   --surface-hero-shadow: 0 24px 110px rgba(64, 55, 134, 0.3);
   --chip-bg: rgba(255, 255, 255, 0.9);
@@ -31,7 +31,7 @@
   --surface-secondary-bg: rgba(5, 8, 22, 0.75);
   --surface-secondary-border: rgba(148, 163, 184, 0.25);
   --surface-secondary-shadow: 0 28px 120px rgba(3, 5, 20, 0.75);
-  --surface-hero-bg: linear-gradient(180deg, #050816 0%, #020617 65%, rgba(2, 6, 23, 0.95));
+  --surface-hero-bg: linear-gradient(160deg, rgba(124, 58, 237, 0.9) 0%, rgba(159, 122, 234, 0.92) 55%, rgba(192, 132, 252, 0.9) 100%);
   --surface-hero-border: rgba(255, 255, 255, 0.1);
   --surface-hero-shadow: 0 24px 120px rgba(8, 7, 20, 0.9);
   --chip-bg: rgba(2, 6, 23, 0.65);
