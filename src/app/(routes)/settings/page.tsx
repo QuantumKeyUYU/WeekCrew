@@ -14,9 +14,9 @@ import { TestModeHint } from '@/components/shared/test-mode-hint';
 import type { CopyKey } from '@/i18n/copy';
 import { leaveCircle } from '@/lib/api/circles';
 import { apiFetch } from '@/lib/api-client';
+import { getAppMode } from '@/config/mode';
 
-const PUBLIC_MODE = process.env.NEXT_PUBLIC_WEEKCREW_MODE ?? 'demo';
-const isDemoMode = PUBLIC_MODE !== 'live';
+const isDemoMode = getAppMode() === 'demo';
 
 export default function SettingsPage() {
   const t = useTranslation();
