@@ -1,48 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { Circle, PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import { CircleMembershipStatus } from '@prisma/client';
 
 import { prisma } from '@/lib/prisma';
 import { getOrCreateDevice } from '@/lib/server/device';
-import { toCircleMessage, toCircleSummary } from '@/lib/server/serializers';
-import { computeCircleExpiry, isCircleActive } from '@/lib/server/circles';
+import { toCircleSummary } from '@/lib/server/serializers';
+import { computeCircleExpiry } from '@/lib/server/circles';
 import { DEVICE_HEADER_NAME } from '@/lib/device';
 import { ICEBREAKERS } from '@/data/icebreakers';
-import { countActiveMembers, findLatestActiveMembershipForDevice } from '@/lib/server/circleMembership';
-import { buildCircleMessagesWhere } from '@/lib/server/messageQueries';
-import { getUserWithBlocks } from '@/lib/server/users';
+import { countActiveMembers } from '@/lib/server/circleMembership';
 
 const DEFAULT_MAX_MEMBERS = 5;
 
-type JoinResult = {
-  circle: Circle;
-  memberCount: number;
-  isNewCircle: boolean;
-};
+const normalizeText = (value: unknown) =>
+  typeof value === 'string' ? value.trim() : '';
 
-const normalizeText = (value: unknown) => {
-  if (typeof value !== 'string') return '';
-  return value.trim();
-};
-
-const findJoinableCircle = async (
+async function findJoinableCircle(
   client: PrismaClient,
   {
     mood,
     interest,
     now,
-  }: {
-    mood: string;
-    interest: string;
-    now: Date;
-  },
-) => {
+  }: { mood: string; interest: string; now: Date },
+) {
+  // Берём несколько самых старых активных кругов по этой теме
   const candidates = await client.circle.findMany({
     where: {
-      mood,
-      interest,
       status: 'active',
       expiresAt: { gt: now },
+      mood,
+      interest,
     },
     orderBy: { createdAt: 'asc' },
     take: 5,
@@ -56,7 +43,7 @@ const findJoinableCircle = async (
   }
 
   return null;
-};
+}
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
@@ -74,49 +61,71 @@ export async function POST(request: NextRequest) {
     const { id: deviceId, isNew } = await getOrCreateDevice(request);
     const now = new Date();
 
-    const result = await prisma.$transaction<JoinResult>(async (tx) => {
-      // 1. Если девайс уже состоит в активном круге — просто возвращаем его
-      const existingMembership = await findLatestActiveMembershipForDevice(deviceId, tx);
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Если этот девайс уже состоит в активном круге с тем же mood+interest – вернём его
+      const existingMembership = await tx.circleMembership.findFirst({
+        where: {
+          deviceId,
+          status: CircleMembershipStatus.active,
+          circle: {
+            status: 'active',
+            expiresAt: { gt: now },
+            mood,
+            interest,
+          },
+        },
+        include: { circle: true },
+        orderBy: { joinedAt: 'desc' },
+      });
 
-      if (existingMembership?.circle && isCircleActive(existingMembership.circle, now)) {
-        const memberCount = await countActiveMembers(existingMembership.circle.id, tx);
-        return { circle: existingMembership.circle, memberCount, isNewCircle: false };
+      if (existingMembership?.circle) {
+        const memberCount = await countActiveMembers(
+          existingMembership.circle.id,
+          tx,
+        );
+
+        return {
+          circle: existingMembership.circle,
+          memberCount,
+          isNewCircle: false,
+        };
       }
 
-      // 2. Иначе пытаемся присоединить к уже существующему «подходящему» кругу
+      // 2. Иначе пробуем присоединиться к уже существующему кругу
       const joinable = await findJoinableCircle(tx, { mood, interest, now });
 
       if (joinable) {
-        const existingMembership = await tx.circleMembership.findFirst({
+        await tx.circleMembership.upsert({
           where: {
-            circleId: joinable.circle.id,
-            deviceId,
-          },
-          orderBy: { joinedAt: 'desc' },
-        });
-
-        if (existingMembership) {
-          if (existingMembership.status !== CircleMembershipStatus.active) {
-            await tx.circleMembership.update({
-              where: { id: existingMembership.id },
-              data: { status: CircleMembershipStatus.active, joinedAt: now, leftAt: null },
-            });
-          }
-        } else {
-          await tx.circleMembership.create({
-            data: {
+            // если уникальный индекс по circleId+deviceId
+            circleId_deviceId: {
               circleId: joinable.circle.id,
               deviceId,
-              status: CircleMembershipStatus.active,
             },
-          });
-        }
+          },
+          update: {
+            status: CircleMembershipStatus.active,
+          },
+          create: {
+            circleId: joinable.circle.id,
+            deviceId,
+            status: CircleMembershipStatus.active,
+          },
+        });
 
-        const memberCount = await countActiveMembers(joinable.circle.id, tx);
-        return { circle: joinable.circle, memberCount, isNewCircle: false };
+        const memberCount = await countActiveMembers(
+          joinable.circle.id,
+          tx,
+        );
+
+        return {
+          circle: joinable.circle,
+          memberCount,
+          isNewCircle: false,
+        };
       }
 
-      // 3. Подходящих кругов нет — создаём новый
+      // 3. Подходящего круга нет – создаём новый
       const expiresAt = computeCircleExpiry(now);
       const icebreaker =
         ICEBREAKERS[Math.floor(Math.random() * ICEBREAKERS.length)] ??
@@ -147,28 +156,21 @@ export async function POST(request: NextRequest) {
       return { circle, memberCount: 1, isNewCircle: true };
     });
 
-    const user = await getUserWithBlocks(deviceId);
-    const blockedIds = user?.blocksInitiated?.map((block) => block.blockedId) ?? [];
-
-    const messageFilters = buildCircleMessagesWhere({
-      circleId: result.circle.id,
-      blockedUserIds: blockedIds,
-    });
-
+    // Подтягиваем историю сообщений круга
     const messages = await prisma.message.findMany({
-      where: messageFilters,
+      where: { circleId: result.circle.id },
       orderBy: { createdAt: 'asc' },
-      include: { user: true },
+      include: {
+        author: true,
+      },
     });
 
-    const payload = {
+    const response = NextResponse.json({
       ok: true,
-      circle: toCircleSummary(result.circle, result.memberCount ?? 1),
-      messages: messages.map(toCircleMessage),
-      isNewCircle: result.isNewCircle ?? false,
-    };
-
-    const response = NextResponse.json(payload);
+      circle: toCircleSummary(result.circle, result.memberCount),
+      messages,
+      isNewCircle: result.isNewCircle,
+    });
 
     if (isNew) {
       response.headers.set(DEVICE_HEADER_NAME, deviceId);
