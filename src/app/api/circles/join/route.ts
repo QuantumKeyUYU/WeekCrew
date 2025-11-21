@@ -1,21 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { Circle, PrismaClient } from '@prisma/client';
+import { CircleMembershipStatus } from '@prisma/client';
+
 import { prisma } from '@/lib/prisma';
 import { getOrCreateDevice } from '@/lib/server/device';
 import { toCircleSummary } from '@/lib/server/serializers';
 import { computeCircleExpiry, isCircleActive } from '@/lib/server/circles';
 import { DEVICE_HEADER_NAME } from '@/lib/device';
 import { ICEBREAKERS } from '@/data/icebreakers';
-import { CircleMembershipStatus } from '@prisma/client';
-import { countActiveMembers } from '@/lib/server/circleMembership';
+import { countActiveMembers, findLatestActiveMembershipForDevice } from '@/lib/server/circleMembership';
 
 const DEFAULT_MAX_MEMBERS = 5;
-type JoinResult = { circle: Circle; memberCount: number; isNewCircle: boolean };
+
+type JoinResult = {
+  circle: Circle;
+  memberCount: number;
+  isNewCircle: boolean;
+};
 
 const normalizeText = (value: unknown) => {
-  if (typeof value !== 'string') {
-    return '';
-  }
+  if (typeof value !== 'string') return '';
   return value.trim();
 };
 
@@ -58,7 +62,10 @@ export async function POST(request: NextRequest) {
   const interest = normalizeText(body?.interest);
 
   if (!mood || !interest) {
-    return NextResponse.json({ ok: false, error: 'INVALID_PAYLOAD' }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: 'INVALID_PAYLOAD' },
+      { status: 400 },
+    );
   }
 
   try {
@@ -66,32 +73,41 @@ export async function POST(request: NextRequest) {
     const now = new Date();
 
     const result = await prisma.$transaction<JoinResult>(async (tx) => {
-      const existingMembership = await tx.circleMembership.findFirst({
-        where: {
-          deviceId,
-          status: CircleMembershipStatus.active,
-          circle: { status: 'active', expiresAt: { gt: now } },
-        },
-        include: { circle: true },
-        orderBy: { joinedAt: 'desc' },
-      });
+      // 1. Если девайс уже состоит в активном круге — просто возвращаем его
+      const existingMembership = await findLatestActiveMembershipForDevice(deviceId, tx);
 
       if (existingMembership?.circle && isCircleActive(existingMembership.circle, now)) {
         const memberCount = await countActiveMembers(existingMembership.circle.id, tx);
         return { circle: existingMembership.circle, memberCount, isNewCircle: false };
       }
 
+      // 2. Иначе пытаемся присоединить к уже существующему «подходящему» кругу
       const joinable = await findJoinableCircle(tx, { mood, interest, now });
 
       if (joinable) {
-        await tx.circleMembership.create({
-          data: { circleId: joinable.circle.id, deviceId, status: CircleMembershipStatus.active },
+        const activeMembership = await tx.circleMembership.findFirst({
+          where: {
+            circleId: joinable.circle.id,
+            deviceId,
+            status: CircleMembershipStatus.active,
+          },
         });
+
+        if (!activeMembership) {
+          await tx.circleMembership.create({
+            data: {
+              circleId: joinable.circle.id,
+              deviceId,
+              status: CircleMembershipStatus.active,
+            },
+          });
+        }
 
         const memberCount = await countActiveMembers(joinable.circle.id, tx);
         return { circle: joinable.circle, memberCount, isNewCircle: false };
       }
 
+      // 3. Подходящих кругов нет — создаём новый
       const expiresAt = computeCircleExpiry(now);
       const icebreaker =
         ICEBREAKERS[Math.floor(Math.random() * ICEBREAKERS.length)] ??
@@ -112,11 +128,16 @@ export async function POST(request: NextRequest) {
       });
 
       await tx.circleMembership.create({
-        data: { circleId: circle.id, deviceId, status: CircleMembershipStatus.active },
+        data: {
+          circleId: circle.id,
+          deviceId,
+          status: CircleMembershipStatus.active,
+        },
       });
 
       return { circle, memberCount: 1, isNewCircle: true };
     });
+
     const response = NextResponse.json({
       circle: toCircleSummary(result.circle, result.memberCount ?? 1),
       messages: [],
