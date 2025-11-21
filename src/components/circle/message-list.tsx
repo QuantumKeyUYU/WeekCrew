@@ -71,7 +71,7 @@ export const MessageList = ({
   const blockedUserIds = useAppStore((state) => state.blockedUserIds);
   const blockUserLocally = useAppStore((state) => state.blockUserLocally);
 
-  // ✅ тут был баг: Intl.DateFormat → Intl.DateTimeFormat
+  // ✅ правильные форматтеры дат/времени
   const dayFormatter = new Intl.DateTimeFormat(locale, {
     day: 'numeric',
     month: 'long',
@@ -106,6 +106,7 @@ export const MessageList = ({
     return dayFormatter.format(date);
   };
 
+  // локальное состояние сообщений
   const [liveMessages, setLiveMessages] = useState(messages);
 
   const applyIncomingMessages = useCallback((nextMessages: CircleMessage[]) => {
@@ -115,18 +116,15 @@ export const MessageList = ({
     });
   }, []);
 
-  // синхронизация с пропсами + смена круга
+  // ⬇️ ВАЖНО: пропсы messages используем только когда СМЕНИЛСЯ circleId.
+  // Это не будет перетираť liveMessages при каждом рендере.
   useEffect(() => {
     const hasCircleChanged = previousCircleId.current !== circleId;
+    if (!hasCircleChanged) return;
+
     previousCircleId.current = circleId ?? null;
-
-    if (hasCircleChanged) {
-      setLiveMessages(messages);
-      return;
-    }
-
-    applyIncomingMessages(messages);
-  }, [applyIncomingMessages, circleId, messages]);
+    setLiveMessages(messages);
+  }, [circleId, messages]);
 
   // поллинг сообщений
   useEffect(() => {
@@ -365,7 +363,7 @@ export const MessageList = ({
         return (
           <div key={message.id} className="flex flex-col gap-3">
             {showDayDivider && (
-              <div className="flex items:center gap-3 text-xs text-slate-400 dark:text-slate-500">
+              <div className="flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500">
                 <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
                 <div className="rounded-full border border-slate-200/80 bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600 shadow-sm dark:border-white/10 dark:bg-slate-800/70 dark:text-slate-100">
                   {getDayChipLabel(createdAt)}
