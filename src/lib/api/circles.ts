@@ -49,6 +49,7 @@ export const getCircleMessages = ({ circleId, since }: FetchMessagesParams) => {
 export interface SendMessagePayload {
   circleId: string;
   content: string;
+  deviceId?: string;
 }
 
 export interface SendMessageResponse {
@@ -60,6 +61,18 @@ export const sendMessage = (payload: SendMessagePayload) =>
   fetchJson<SendMessageResponse>('/api/messages', {
     method: 'POST',
     json: payload,
+  });
+
+export const sendTyping = (circleId: string) =>
+  fetchJson<{ ok: boolean }>('/api/messages/typing', {
+    method: 'POST',
+    json: { circleId },
+  });
+
+export const addReaction = (messageId: string, emoji: string) =>
+  fetchJson('/api/messages/reactions', {
+    method: 'POST',
+    json: { messageId, emoji },
   });
 
 export const leaveCircle = () =>
