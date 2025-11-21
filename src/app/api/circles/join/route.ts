@@ -62,6 +62,8 @@ export async function POST(request: NextRequest) {
     const now = new Date();
 
     const result = await prisma.$transaction(async (tx) => {
+      let recovered = false;
+
       // 1. Если этот девайс уже состоит в активном круге с тем же mood+interest – вернём его
       const existingMembership = await tx.circleMembership.findFirst({
         where: {
@@ -79,6 +81,7 @@ export async function POST(request: NextRequest) {
       });
 
       if (existingMembership?.circle) {
+        recovered = true;
         const memberCount = await countActiveMembers(
           existingMembership.circle.id,
           tx,
@@ -88,6 +91,7 @@ export async function POST(request: NextRequest) {
           circle: existingMembership.circle,
           memberCount,
           isNewCircle: false,
+          recovered,
         };
       }
 
@@ -103,6 +107,7 @@ export async function POST(request: NextRequest) {
         const [latestMembership, ...olderMemberships] = memberships;
 
         if (latestMembership) {
+          recovered = recovered || latestMembership.status !== CircleMembershipStatus.active;
           if (latestMembership.status !== CircleMembershipStatus.active) {
             await tx.circleMembership.update({
               where: { id: latestMembership.id },
@@ -135,6 +140,7 @@ export async function POST(request: NextRequest) {
           circle: joinable.circle,
           memberCount,
           isNewCircle: false,
+          recovered,
         };
       }
 
@@ -166,7 +172,7 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      return { circle, memberCount: 1, isNewCircle: true };
+      return { circle, memberCount: 1, isNewCircle: true, recovered: false };
     });
 
     // Подтягиваем историю сообщений круга
@@ -183,6 +189,9 @@ export async function POST(request: NextRequest) {
       circle: toCircleSummary(result.circle, result.memberCount),
       messages,
       isNewCircle: result.isNewCircle,
+      circleId: result.circle.id,
+      created: result.isNewCircle,
+      recovered: result.recovered,
     });
 
     if (isNew) {

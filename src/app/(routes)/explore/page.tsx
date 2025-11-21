@@ -57,6 +57,21 @@ export default function ExplorePage() {
   const [profileChecked, setProfileChecked] = useState(false);
   const [showAssembling, setShowAssembling] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [joinFailures, setJoinFailures] = useState(0);
+  const [lastJoinError, setLastJoinError] = useState<unknown>(null);
+
+  const joinDebugMessage = useMemo(() => {
+    if (!lastJoinError) return null;
+    if (lastJoinError instanceof Error) {
+      return `${lastJoinError.name}: ${lastJoinError.message}`;
+    }
+    try {
+      return JSON.stringify(lastJoinError);
+    } catch (error) {
+      console.warn('Unable to stringify join error', error);
+      return String(lastJoinError);
+    }
+  }, [lastJoinError]);
 
   useEffect(() => {
     if (hydrated && !accepted && !autoPrompted) {
@@ -163,11 +178,21 @@ export default function ExplorePage() {
         return;
       }
 
+      const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+      let attemptedRecovery = false;
+
       const tryJoin = async () => {
         const response = await joinCircle({ mood: selectedMood, interest: interestId });
         setCircle(response.circle);
         setMessages(response.messages);
         saveCircleSelection({ mood: selectedMood, interestId });
+
+        if (attemptedRecovery) {
+          setToastMessage(t('explore_reconnected'));
+        }
+
+        setJoinFailures(0);
+        setLastJoinError(null);
         router.push('/circle');
       };
 
@@ -179,8 +204,23 @@ export default function ExplorePage() {
           return;
         } catch (err) {
           lastError = err;
+          if (err instanceof DeviceError && !attemptedRecovery) {
+            attemptedRecovery = true;
+            setToastMessage(t('explore_reconnecting'));
+            resetDeviceId();
+            clearSession();
+            await delay(500);
+
+            try {
+              await tryJoin();
+              return;
+            } catch (retryError) {
+              lastError = retryError;
+            }
+          }
+
           if (attempt === 0) {
-            await new Promise((resolve) => setTimeout(resolve, 200));
+            await delay(200);
           }
         }
       }
@@ -198,6 +238,8 @@ export default function ExplorePage() {
       } else if (lastError instanceof ApiError && lastError.status >= 500) {
         setToastMessage(t('explore_retry_toast'));
       }
+      setJoinFailures((count) => count + 1);
+      setLastJoinError(lastError);
       setError(t('explore_error_message'));
     } finally {
       setJoining(false);
@@ -351,6 +393,12 @@ export default function ExplorePage() {
           }}
           onClose={() => setShowRulesModal(false)}
         />
+
+        {process.env.NODE_ENV === 'development' && joinFailures >= 3 && joinDebugMessage && (
+          <div className="fixed bottom-2 right-2 rounded-md bg-red-900/80 p-2 text-xs text-white">
+            JOIN LOOP: {joinDebugMessage}
+          </div>
+        )}
       </div>
     </div>
   );
