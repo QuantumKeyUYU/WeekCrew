@@ -759,6 +759,7 @@ export default function CirclePage() {
         <section className="flex flex-1 min-h-0 flex-col gap-3 rounded-3xl border border-slate-200/70 bg-white/95 p-4 shadow-[0_18px_55px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-slate-900/70">
           <div className="flex-1 min-h-0 overflow-hidden rounded-2xl bg-white/50 shadow-inner shadow-white/80 dark:bg-slate-900/40 dark:shadow-black/20">
             <MessageList
+              circleId={circleId}
               messages={messages}
               currentDeviceId={currentDeviceId}
               isLoading={Boolean(circle && messagesLoading)}
