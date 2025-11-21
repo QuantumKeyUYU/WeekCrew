@@ -1,6 +1,7 @@
--- Remove duplicate circle/device pairs, keeping the most recent membership
-DELETE FROM "CircleMembership" cm
-USING (
+-- Remove duplicate circle/device pairs, keeping the most recent (latest joinedAt) membership
+-- before enforcing uniqueness on (circleId, deviceId).
+
+WITH duplicates AS (
   SELECT id
   FROM (
     SELECT
@@ -12,5 +13,12 @@ USING (
     FROM "CircleMembership"
   ) ranked
   WHERE ranked.rn > 1
-) duplicates
+)
+
+DELETE FROM "CircleMembership" cm
+USING duplicates
 WHERE cm.id = duplicates.id;
+
+-- Enforce uniqueness of circle/device pairs (idempotent if already applied)
+CREATE UNIQUE INDEX IF NOT EXISTS "CircleMembership_circleId_deviceId_key"
+  ON "CircleMembership"("circleId", "deviceId");
