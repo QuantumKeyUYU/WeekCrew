@@ -86,6 +86,7 @@ export default function HomePage() {
           <div className="pointer-events-none absolute inset-0 opacity-70">
             <div className="absolute -left-10 top-10 h-64 w-64 rounded-full bg-white/10 blur-3xl sm:h-80 sm:w-80" />
             <div className="absolute bottom-0 right-0 h-72 w-72 rounded-full bg-fuchsia-400/30 blur-3xl sm:h-96 sm:w-96" />
+            <div className="absolute inset-y-10 left-1/2 hidden w-px -translate-x-1/2 bg-gradient-to-b from-white/5 via-white/30 to-white/5 md:block" />
           </div>
 
           <div className="relative grid items-center gap-10 lg:grid-cols-[1.1fr_0.95fr]">
@@ -132,20 +133,37 @@ export default function HomePage() {
               )}
             </motion.div>
 
-            <div className="app-panel-muted grid gap-4 rounded-[28px] border border-white/15 bg-white/10 p-6 backdrop-blur-xl sm:p-8">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-white/70">{t('hero_story_title')}</p>
-                  <p className="text-base text-white/85">{t('hero_story_description')}</p>
+            <div className="space-y-4">
+              <div className="app-panel-muted grid gap-4 rounded-[28px] border border-white/15 bg-white/10 p-6 backdrop-blur-xl sm:p-8">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-[0.15em] text-white/70">{t('hero_story_title')}</p>
+                    <p className="text-base text-white/85">{t('hero_story_description')}</p>
+                  </div>
+                  <div className="app-chip bg-white/15 px-4 py-2 text-xs font-semibold text-white/85">{t('hero_stat_circle_label')}</div>
                 </div>
-                <div className="app-chip bg-white/15 px-4 py-2 text-xs font-semibold text-white/85">{t('hero_stat_circle_label')}</div>
+
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {highlights.map((item) => (
+                    <div key={item.label} className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-left shadow-[0_16px_40px_rgba(3,5,20,0.35)]">
+                      <p className="text-xs font-semibold uppercase tracking-[0.1em] text-white/70">{item.label}</p>
+                      <p className="mt-2 text-sm text-white">{item.description}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-3">
-                {highlights.map((item) => (
-                  <div key={item.label} className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-left shadow-[0_16px_40px_rgba(3,5,20,0.35)]">
-                    <p className="text-xs font-semibold uppercase tracking-[0.1em] text-white/70">{item.label}</p>
-                    <p className="mt-2 text-sm text-white">{item.description}</p>
+              <div className="grid gap-3 rounded-[24px] border border-white/10 bg-white/5 p-4 shadow-[0_18px_65px_rgba(3,5,20,0.35)] backdrop-blur-lg sm:grid-cols-3">
+                {steps.map((step) => (
+                  <div key={`${step.badge}-${step.title}`} className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 p-3 shadow-inner shadow-white/5">
+                    <div className="inline-flex w-fit items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-white/80">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-400/80 to-indigo-400/80 text-xs font-semibold text-white shadow-[0_12px_30px_rgba(124,58,237,0.4)]">
+                        {step.badge}
+                      </span>
+                      {t('home_how_it_works_label')}
+                    </div>
+                    <p className="text-sm font-semibold text-white">{step.title}</p>
+                    <p className="text-xs text-white/80">{step.description}</p>
                   </div>
                 ))}
               </div>
@@ -169,16 +187,26 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
-            {essentials.map((item) => (
-              <div key={item.title} className="app-panel-muted flex h-full flex-col gap-3 rounded-3xl p-5 shadow-[0_16px_60px_rgba(15,23,42,0.08)] dark:border-slate-800/70 dark:bg-slate-900/60">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-lg shadow-[0_12px_30px_rgba(15,23,42,0.16)] dark:bg-slate-800">{item.icon}</span>
-                  <h3 className="text-base font-semibold text-slate-900 dark:text-white">{item.title}</h3>
+          <div className="mt-8 grid gap-4 rounded-[28px] border border-slate-200/70 bg-gradient-to-br from-white via-slate-50 to-purple-50/50 p-4 shadow-[0_18px_70px_rgba(15,23,42,0.06)] dark:border-slate-800/70 dark:from-slate-900/50 dark:via-slate-900 dark:to-indigo-950/40">
+            <div className="hidden items-center justify-between rounded-2xl border border-slate-200/80 bg-white/70 px-5 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 shadow-[0_12px_40px_rgba(15,23,42,0.07)] md:flex dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-300">
+              <span>{t('home_step_select_interest_title')}</span>
+              <span className="h-px w-16 rounded-full bg-gradient-to-r from-indigo-400 to-fuchsia-400" />
+              <span>{t('home_step_join_circle_title')}</span>
+              <span className="h-px w-16 rounded-full bg-gradient-to-r from-indigo-400 to-fuchsia-400" />
+              <span>{t('home_step_week_of_warmth_title')}</span>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              {essentials.map((item) => (
+                <div key={item.title} className="app-panel-muted flex h-full flex-col gap-3 rounded-3xl p-5 shadow-[0_16px_60px_rgba(15,23,42,0.08)] dark:border-slate-800/70 dark:bg-slate-900/60">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-lg shadow-[0_12px_30px_rgba(15,23,42,0.16)] dark:bg-slate-800">{item.icon}</span>
+                    <h3 className="text-base font-semibold text-slate-900 dark:text-white">{item.title}</h3>
+                  </div>
+                  <p className="text-sm text-slate-600 dark:text-slate-300">{item.description}</p>
                 </div>
-                <p className="text-sm text-slate-600 dark:text-slate-300">{item.description}</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </section>
 
@@ -235,6 +263,13 @@ export default function HomePage() {
             >
               {t('landing_more_link')}
             </button>
+            <div className="flex flex-wrap justify-center gap-2 rounded-full border border-slate-200/70 bg-white/70 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-600 shadow-[0_16px_50px_rgba(15,23,42,0.05)] dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-200">
+              {vibes.slice(0, 3).map((vibe) => (
+                <span key={`cta-${vibe}`} className="rounded-full bg-gradient-to-r from-indigo-500/15 to-fuchsia-500/15 px-3 py-1 text-xs font-semibold text-slate-700 dark:text-white">
+                  {vibe}
+                </span>
+              ))}
+            </div>
           </div>
         </section>
         <TestModeHint />
