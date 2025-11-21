@@ -4,11 +4,13 @@ import { CircleMembershipStatus } from '@prisma/client';
 
 import { prisma } from '@/lib/prisma';
 import { getOrCreateDevice } from '@/lib/server/device';
-import { toCircleSummary } from '@/lib/server/serializers';
+import { toCircleMessage, toCircleSummary } from '@/lib/server/serializers';
 import { computeCircleExpiry, isCircleActive } from '@/lib/server/circles';
 import { DEVICE_HEADER_NAME } from '@/lib/device';
 import { ICEBREAKERS } from '@/data/icebreakers';
 import { countActiveMembers, findLatestActiveMembershipForDevice } from '@/lib/server/circleMembership';
+import { buildCircleMessagesWhere } from '@/lib/server/messageQueries';
+import { getUserWithBlocks } from '@/lib/server/users';
 
 const DEFAULT_MAX_MEMBERS = 5;
 
@@ -85,15 +87,22 @@ export async function POST(request: NextRequest) {
       const joinable = await findJoinableCircle(tx, { mood, interest, now });
 
       if (joinable) {
-        const activeMembership = await tx.circleMembership.findFirst({
+        const existingMembership = await tx.circleMembership.findFirst({
           where: {
             circleId: joinable.circle.id,
             deviceId,
-            status: CircleMembershipStatus.active,
           },
+          orderBy: { joinedAt: 'desc' },
         });
 
-        if (!activeMembership) {
+        if (existingMembership) {
+          if (existingMembership.status !== CircleMembershipStatus.active) {
+            await tx.circleMembership.update({
+              where: { id: existingMembership.id },
+              data: { status: CircleMembershipStatus.active, joinedAt: now, leftAt: null },
+            });
+          }
+        } else {
           await tx.circleMembership.create({
             data: {
               circleId: joinable.circle.id,
@@ -138,11 +147,28 @@ export async function POST(request: NextRequest) {
       return { circle, memberCount: 1, isNewCircle: true };
     });
 
-    const response = NextResponse.json({
-      circle: toCircleSummary(result.circle, result.memberCount ?? 1),
-      messages: [],
-      isNewCircle: result.isNewCircle ?? false,
+    const user = await getUserWithBlocks(deviceId);
+    const blockedIds = user?.blocksInitiated?.map((block) => block.blockedId) ?? [];
+
+    const messageFilters = buildCircleMessagesWhere({
+      circleId: result.circle.id,
+      blockedUserIds: blockedIds,
     });
+
+    const messages = await prisma.message.findMany({
+      where: messageFilters,
+      orderBy: { createdAt: 'asc' },
+      include: { user: true },
+    });
+
+    const payload = {
+      ok: true,
+      circle: toCircleSummary(result.circle, result.memberCount ?? 1),
+      messages: messages.map(toCircleMessage),
+      isNewCircle: result.isNewCircle ?? false,
+    };
+
+    const response = NextResponse.json(payload);
 
     if (isNew) {
       response.headers.set(DEVICE_HEADER_NAME, deviceId);
