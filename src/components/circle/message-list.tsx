@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import clsx from 'clsx';
 import { AVATAR_PRESETS } from '@/constants/avatars';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -12,6 +13,8 @@ interface Props {
   messages: CircleMessage[];
   currentDeviceId?: string | null;
   isLoading?: boolean;
+  preamble?: ReactNode;
+  className?: string;
 }
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
@@ -19,9 +22,16 @@ const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const getAvatarEmoji = (key?: string | null) =>
   AVATAR_PRESETS.find((preset) => preset.key === key)?.emoji ?? '🙂';
 
-export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Props) => {
+export const MessageList = ({
+  messages,
+  currentDeviceId,
+  isLoading = false,
+  preamble,
+  className,
+}: Props) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const lastScrollLength = useRef(0);
+  const lastMessageId = useRef<string | null>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [hasNewWhileAway, setHasNewWhileAway] = useState(false);
   const [menuFor, setMenuFor] = useState<string | null>(null);
@@ -78,32 +88,67 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
     [blockedUserIds, messages],
   );
 
-  useEffect(() => {
+  const scrollToBottom = useCallback(
+    (behavior: ScrollBehavior = 'auto') => {
+      const node = containerRef.current;
+      if (!node) {
+        return;
+      }
+      node.scrollTo({ top: node.scrollHeight, behavior });
+    },
+    [],
+  );
+
+  useLayoutEffect(() => {
     const prevLength = lastScrollLength.current;
+    const prevLastId = lastMessageId.current;
+    const nextLength = visibleMessages.length;
     const node = containerRef.current;
-    if (visibleMessages.length > prevLength && !isAtBottom) {
-      setHasNewWhileAway(true);
-    }
+
     if (!node) {
-      lastScrollLength.current = visibleMessages.length;
+      lastScrollLength.current = nextLength;
+      lastMessageId.current = visibleMessages[nextLength - 1]?.id ?? null;
       return;
     }
-    const last = node.lastElementChild as HTMLElement | null;
-    if (isAtBottom && last) {
-      const behavior = prevLength > 0 ? 'smooth' : 'auto';
-      last.scrollIntoView({ behavior, block: 'end' });
+
+    const newestMessage = visibleMessages[nextLength - 1];
+    const isInitialLoad = prevLength === 0 && nextLength > 0;
+    const hasNewMessage = newestMessage && newestMessage.id !== prevLastId;
+
+    if (isInitialLoad) {
+      scrollToBottom('auto');
+      setIsAtBottom(true);
+      setHasNewWhileAway(false);
+    } else if (hasNewMessage && newestMessage) {
+      const isFromCurrentDevice =
+        newestMessage.deviceId && currentDeviceId
+          ? newestMessage.deviceId === currentDeviceId
+          : false;
+
+      if (isFromCurrentDevice) {
+        scrollToBottom('smooth');
+        setHasNewWhileAway(false);
+      } else if (isAtBottom) {
+        scrollToBottom('smooth');
+        setHasNewWhileAway(false);
+      } else {
+        setHasNewWhileAway(true);
+      }
     }
-    lastScrollLength.current = visibleMessages.length;
+
+    lastScrollLength.current = nextLength;
+    lastMessageId.current = newestMessage?.id ?? null;
     setMenuFor(null);
-  }, [isAtBottom, visibleMessages]);
+  }, [currentDeviceId, isAtBottom, scrollToBottom, visibleMessages]);
 
   const handleScroll = useCallback(() => {
     const node = containerRef.current;
     if (!node) {
       return;
     }
-    const THRESHOLD = 16;
-    const atBottom = node.scrollTop + node.clientHeight >= node.scrollHeight - THRESHOLD;
+    const threshold = 96;
+    const distanceFromBottom = node.scrollHeight - (node.scrollTop + node.clientHeight);
+    const atBottom = distanceFromBottom <= threshold;
     setIsAtBottom(atBottom);
     if (atBottom) {
       setHasNewWhileAway(false);
@@ -163,39 +208,37 @@ export const MessageList = ({ messages, currentDeviceId, isLoading = false }: Pr
     }
   };
 
-  if (isLoading && visibleMessages.length === 0) {
-    return (
-      <div
-        className="rounded-2xl border border-dashed border-slate-200/80 bg-white/70 p-6 text-center text-sm text-slate-500 shadow-sm dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-300"
-        role="status"
-        aria-live="polite"
-      >
-        <p>{t('messages_loading_state')}</p>
-        <div className="mt-4 space-y-2">
-          <div className="mx-auto h-2.5 w-2/3 rounded-full bg-slate-200/80 dark:bg-slate-700/70" />
-          <div className="mx-auto h-2.5 w-1/2 rounded-full bg-slate-200/70 dark:bg-slate-700/60" />
-          <div className="mx-auto h-2.5 w-3/4 rounded-full bg-slate-200/60 dark:bg-slate-700/50" />
-        </div>
-      </div>
-    );
-  }
-
-  if (visibleMessages.length === 0) {
-    return (
-      <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 text-center text-sm text-slate-500 shadow-sm dark:border-white/10 dark:bg-slate-900/40 dark:text-slate-300">
-        {t('messages_empty_state')}
-      </div>
-    );
-  }
-
   return (
     <div
       ref={containerRef}
       onScroll={handleScroll}
-      className="flex max-h-[60vh] flex-col gap-4 overflow-y-auto pr-1 sm:max-h-[520px] sm:pr-2"
+      className={clsx(
+        'flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1 sm:pr-2',
+        className,
+      )}
       aria-live="polite"
       aria-busy={isLoading}
     >
+      {preamble}
+      {isLoading && visibleMessages.length === 0 && (
+        <div
+          className="rounded-2xl border border-dashed border-slate-200/80 bg-white/70 p-6 text-center text-sm text-slate-500 shadow-sm dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-300"
+          role="status"
+          aria-live="polite"
+        >
+          <p>{t('messages_loading_state')}</p>
+          <div className="mt-4 space-y-2">
+            <div className="mx-auto h-2.5 w-2/3 rounded-full bg-slate-200/80 dark:bg-slate-700/70" />
+            <div className="mx-auto h-2.5 w-1/2 rounded-full bg-slate-200/70 dark:bg-slate-700/60" />
+            <div className="mx-auto h-2.5 w-3/4 rounded-full bg-slate-200/60 dark:bg-slate-700/50" />
+          </div>
+        </div>
+      )}
+      {!isLoading && visibleMessages.length === 0 && (
+        <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 text-center text-sm text-slate-500 shadow-sm dark:border-white/10 dark:bg-slate-900/40 dark:text-slate-300">
+          {t('messages_empty_state')}
+        </div>
+      )}
       {visibleMessages.map((message, index) => {
         const isOwn = message.deviceId === currentDeviceId;
         const isSystem = Boolean(message.isSystem);

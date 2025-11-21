@@ -13,11 +13,22 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    await prisma.$transaction([
-      prisma.message.deleteMany({ where: { deviceId } }),
-      prisma.circleMembership.deleteMany({ where: { deviceId } }),
-      prisma.device.deleteMany({ where: { id: deviceId } }),
-    ]);
+    const memberships = await prisma.circleMembership.findMany({
+      where: { deviceId },
+      select: { circleId: true },
+    });
+
+    const circleIds = [...new Set(memberships.map((membership) => membership.circleId))];
+
+    await prisma.$transaction(async (tx) => {
+      if (circleIds.length > 0) {
+        await tx.message.deleteMany({ where: { circleId: { in: circleIds } } });
+        await tx.circleMembership.deleteMany({ where: { circleId: { in: circleIds } } });
+        await tx.circle.deleteMany({ where: { id: { in: circleIds } } });
+      }
+
+      await tx.device.deleteMany({ where: { id: deviceId } });
+    });
 
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (error) {
