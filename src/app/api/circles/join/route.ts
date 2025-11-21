@@ -3,7 +3,7 @@ import { CircleMembershipStatus, Prisma } from '@prisma/client';
 
 import { prisma } from '@/lib/prisma';
 import { getOrCreateDevice } from '@/lib/server/device';
-import { toCircleSummary } from '@/lib/server/serializers';
+import { toCircleMessage, toCircleSummary } from '@/lib/server/serializers';
 import { computeCircleExpiry } from '@/lib/server/circles';
 import { DEVICE_HEADER_NAME } from '@/lib/device';
 import { ICEBREAKERS } from '@/data/icebreakers';
@@ -142,13 +142,13 @@ export async function POST(request: NextRequest) {
     const messages = await prisma.message.findMany({
       where: { circleId: result.circle.id },
       orderBy: { createdAt: 'asc' },
-      include: { author: true },
+      include: { user: true },
     });
 
     const response = NextResponse.json({
       ok: true,
       circle: toCircleSummary(result.circle, result.memberCount),
-      messages,
+      messages: messages.map(toCircleMessage),
       isNewCircle: result.isNewCircle,
     });
 

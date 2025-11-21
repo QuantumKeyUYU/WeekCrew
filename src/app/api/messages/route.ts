@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getOrCreateDevice } from '@/lib/server/device';
 import { isDeviceCircleMember } from '@/lib/server/circleMembership';
+import { toCircleMessage } from '@/lib/server/serializers';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -29,10 +30,13 @@ export async function GET(request: NextRequest) {
     const messages = await prisma.message.findMany({
       where: { circleId },
       orderBy: { createdAt: 'asc' },
-      include: { author: true },
+      include: { user: true },
     });
 
-    return NextResponse.json({ ok: true, messages }, { status: 200 });
+    return NextResponse.json(
+      { ok: true, messages: messages.map(toCircleMessage) },
+      { status: 200 },
+    );
   } catch (error) {
     console.error('messages GET error', error);
     return NextResponse.json(
@@ -73,10 +77,13 @@ export async function POST(request: NextRequest) {
         deviceId,
         content,
       },
-      include: { author: true },
+      include: { user: true },
     });
 
-    return NextResponse.json({ ok: true, message }, { status: 200 });
+    return NextResponse.json(
+      { ok: true, message: toCircleMessage(message) },
+      { status: 200 },
+    );
   } catch (error) {
     console.error('messages POST error', error);
     return NextResponse.json(
