@@ -11,14 +11,20 @@ import { getUserWithBlocks } from '@/lib/server/users';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const circleId = searchParams.get('circleId');
+  const circleId = searchParams.get('circleId')?.trim();
 
   if (!circleId) {
-    return NextResponse.json({ messages: [] }, { status: 400 });
+    return NextResponse.json({ error: 'circle_required' }, { status: 400 });
   }
 
   try {
     const { id: deviceId, isNew } = await getOrCreateDevice(request);
+    const canAccess = await isDeviceCircleMember(circleId, deviceId);
+
+    if (!canAccess) {
+      return NextResponse.json({ error: 'not_member' }, { status: 403 });
+    }
+
     const user = await getUserWithBlocks(deviceId);
 
     const blockedIds = user?.blocksInitiated?.map((block) => block.blockedId) ?? [];
@@ -59,22 +65,26 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
-  const circleId = typeof body?.circleId === 'string' ? body.circleId : '';
+  const circleId = typeof body?.circleId === 'string' ? body.circleId.trim() : '';
   const content = typeof body?.content === 'string' ? body.content.trim() : '';
 
-  if (!circleId || !content) {
+  if (!circleId) {
+    return NextResponse.json({ error: 'circle_required' }, { status: 400 });
+  }
+
+  if (!content) {
     return NextResponse.json({ error: 'INVALID_PAYLOAD' }, { status: 400 });
   }
 
   try {
     const { id: deviceId, isNew } = await getOrCreateDevice(request);
-    const user = await prisma.user.findUnique({ where: { deviceId } });
     const canSend = await isDeviceCircleMember(circleId, deviceId);
 
     if (!canSend) {
       return NextResponse.json({ error: 'not_member' }, { status: 403 });
     }
 
+    const user = await prisma.user.findUnique({ where: { deviceId } });
     const circle = await prisma.circle.findUnique({ where: { id: circleId } });
 
     if (!circle || !isCircleActive(circle)) {

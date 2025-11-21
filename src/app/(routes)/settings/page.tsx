@@ -27,6 +27,8 @@ export default function SettingsPage() {
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [clearing, setClearing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [resettingDevice, setResettingDevice] = useState(false);
+  const [deviceResetMessage, setDeviceResetMessage] = useState<string | null>(null);
   const [rulesMessage, setRulesMessage] = useState<string | null>(null);
   const [showRules, setShowRules] = useState(false);
 
@@ -57,8 +59,43 @@ export default function SettingsPage() {
     }
   };
 
+  const handleResetDevice = async () => {
+    setResettingDevice(true);
+    setDeviceResetMessage(null);
+    try {
+      const response = await fetch('/api/device', { method: 'DELETE' });
+
+      if (!response.ok) {
+        throw new Error('Failed to reset device');
+      }
+
+      resetStore();
+      clearCircleSelection();
+      resetDeviceId();
+
+      if (typeof window !== 'undefined') {
+        try {
+          window.localStorage?.clear();
+          window.sessionStorage?.clear();
+        } catch (error) {
+          console.warn('Failed to clear browser storage during device reset', error);
+        }
+      }
+
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Failed to reset device on the server', error);
+      setDeviceResetMessage(t('settings_device_reset_error'));
+    } finally {
+      setResettingDevice(false);
+    }
+  };
+
   const modeDescription = isDemoMode ? t('settings_mode_description_demo') : t('settings_mode_description_live');
   const resetButtonLabel = clearing ? t('settings_reset_pending') : t('settings_reset_button');
+  const deviceResetButtonLabel = resettingDevice
+    ? t('settings_device_reset_pending')
+    : t('settings_device_reset_button');
   const themeOptions: ThemePreference[] = ['system', 'light', 'dark'];
   const themeLabelKey: Record<ThemePreference, CopyKey> = {
     system: 'settings_theme_system',
@@ -125,6 +162,20 @@ export default function SettingsPage() {
           </button>
         </div>
         {message && <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">{message}</p>}
+        <div className="mt-6 rounded-2xl border border-dashed border-slate-200/80 bg-white/60 p-4 text-sm text-slate-700 dark:border-white/10 dark:bg-slate-900/40 dark:text-slate-200">
+          <p className="text-sm text-slate-600 dark:text-slate-200">{t('settings_device_reset_description')}</p>
+          <button
+            type="button"
+            onClick={handleResetDevice}
+            disabled={resettingDevice}
+            className={`${primaryCtaClass} mt-3 px-7 py-2.5 text-sm`}
+          >
+            {deviceResetButtonLabel}
+          </button>
+          {deviceResetMessage && (
+            <p className="mt-3 text-xs text-amber-700 dark:text-amber-300">{deviceResetMessage}</p>
+          )}
+        </div>
       </section>
 
       <section className="app-panel p-6 text-sm text-slate-700 dark:text-slate-200">
