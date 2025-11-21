@@ -48,28 +48,71 @@ const getDeviceStorage = (): Storage => {
   return memoryStorage;
 };
 
-export const getOrCreateDeviceId = (): string => {
+const persistDeviceId = (id: string) => {
   const storage = getDeviceStorage();
-  const existing = storage.getItem(DEVICE_ID_KEY);
-  if (existing) {
-    return existing;
-  }
-  const id = generateDeviceId();
   storage.setItem(DEVICE_ID_KEY, id);
-  return id;
-};
-
-export const resetDeviceId = () => {
-  const storage = getDeviceStorage();
-  storage.removeItem(DEVICE_ID_KEY);
 
   if (typeof window === 'undefined') {
     return;
   }
 
   try {
-    window.localStorage.removeItem(DEVICE_ID_KEY);
+    window.localStorage.setItem(DEVICE_ID_KEY, id);
   } catch (error) {
-    console.warn('Failed to clear device id from localStorage', error);
+    console.warn('Failed to write device id to localStorage', error);
   }
+
+  try {
+    document.cookie = `${DEVICE_ID_KEY}=${id}; path=/; max-age=31536000; SameSite=Lax`;
+  } catch (error) {
+    console.warn('Failed to persist device id cookie', error);
+  }
+};
+
+export const getOrCreateDeviceId = (): string => {
+  const storage = getDeviceStorage();
+  const existing = (() => {
+    try {
+      const fromStorage = storage.getItem(DEVICE_ID_KEY);
+      if (fromStorage) return fromStorage;
+    } catch (error) {
+      console.warn('Device storage unavailable', error);
+    }
+
+    if (typeof window === 'undefined') return null;
+
+    try {
+      return window.localStorage.getItem(DEVICE_ID_KEY);
+    } catch (error) {
+      console.warn('LocalStorage unavailable when reading device id', error);
+      return null;
+    }
+  })();
+
+  if (existing) {
+    return existing;
+  }
+  const id = generateDeviceId();
+  persistDeviceId(id);
+  console.info('[Device] Generated ID:', id);
+  return id;
+};
+
+export const resetDeviceId = () => {
+  const newId = generateDeviceId();
+  persistDeviceId(newId);
+
+  if (typeof window === 'undefined') {
+    return newId;
+  }
+
+  try {
+    document.cookie = `${DEVICE_ID_KEY}=; path=/; max-age=0; SameSite=Lax`;
+    document.cookie = `${DEVICE_ID_KEY}=${newId}; path=/; max-age=31536000; SameSite=Lax`;
+  } catch (error) {
+    console.warn('Failed to refresh device id cookie', error);
+  }
+
+  console.info('[Device] New ID:', newId);
+  return newId;
 };

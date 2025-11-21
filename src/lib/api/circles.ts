@@ -11,6 +11,9 @@ export interface JoinCircleResponse {
   circle: CircleSummary;
   messages: CircleMessage[];
   isNewCircle: boolean;
+  circleId: string;
+  created: boolean;
+  recovered: boolean;
 }
 
 export class AuthError extends Error {
