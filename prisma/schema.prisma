@@ -54,6 +54,7 @@ model CircleMembership {
   circle    Circle                   @relation(fields: [circleId], references: [id], onDelete: Cascade)
   device    Device                   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
 
+  @@unique([circleId, deviceId])
   @@index([circleId, status])
   @@index([deviceId, status])
 }
