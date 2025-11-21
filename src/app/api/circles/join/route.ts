@@ -79,7 +79,7 @@ const isJoinableMembership = (
 };
 
 const listRecentMessages = async (circleId: string, blockedUserIds: string[] = []) => {
-  const where = buildCircleMessagesWhere({ circleId, excludeUserIds: blockedUserIds });
+  const where = buildCircleMessagesWhere({ circleId, blockedUserIds });
   const rows = await prisma.message.findMany({
     where,
     orderBy: { createdAt: 'desc' },

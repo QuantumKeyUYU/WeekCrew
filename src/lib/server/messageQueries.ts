@@ -3,13 +3,13 @@ import type { Prisma } from '@prisma/client';
 interface CircleMessageFilters {
   circleId: string;
   since?: Date | null;
-  excludeUserIds?: string[];
+  blockedUserIds?: string[];
 }
 
 export const buildCircleMessagesWhere = ({
   circleId,
   since,
-  excludeUserIds,
+  blockedUserIds,
 }: CircleMessageFilters): Prisma.MessageWhereInput => {
   const where: Prisma.MessageWhereInput = { circleId };
 
@@ -17,8 +17,8 @@ export const buildCircleMessagesWhere = ({
     where.createdAt = { gt: since };
   }
 
-  if (excludeUserIds?.length) {
-    where.userId = { notIn: excludeUserIds };
+  if (blockedUserIds?.length) {
+    where.userId = { notIn: blockedUserIds };
   }
 
   return where;
