@@ -16,6 +16,8 @@ import { getProfile } from '@/lib/api/profile';
 import { useAppStore } from '@/store/useAppStore';
 import { SafetyRulesModal } from '@/components/modals/safety-rules-modal';
 import { useSafetyRules } from '@/hooks/useSafetyRules';
+import { resetDeviceId } from '@/lib/device';
+import { ApiError } from '@/lib/api-client';
 
 export default function ExplorePage() {
   const router = useRouter();
@@ -25,6 +27,7 @@ export default function ExplorePage() {
   const user = useAppStore((state) => state.user);
   const setUser = useAppStore((state) => state.setUser);
   const openProfileModal = useAppStore((state) => state.openProfileModal);
+  const clearSession = useAppStore((state) => state.clearSession);
   const { accepted, hydrated, markAccepted } = useSafetyRules();
 
   type InterestCard = { id: InterestId; label: string; emoji: string };
@@ -46,6 +49,7 @@ export default function ExplorePage() {
   const [randomInterest, setRandomInterest] = useState(false);
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorHint, setErrorHint] = useState<string | null>(null);
   const [showRulesModal, setShowRulesModal] = useState(false);
   const [autoPrompted, setAutoPrompted] = useState(false);
   const [profileChecked, setProfileChecked] = useState(false);
@@ -120,6 +124,7 @@ export default function ExplorePage() {
     }
     setJoining(true);
     setError(null);
+    setErrorHint(null);
 
     const interestPool = interestsToRender.map((interest) => interest.id);
     const randomChoice = interestPool[Math.floor(Math.random() * interestPool.length)] ?? null;
@@ -138,6 +143,11 @@ export default function ExplorePage() {
       router.push('/circle');
     } catch (err) {
       console.error(err);
+      if (err instanceof ApiError) {
+        resetDeviceId();
+        clearSession();
+        setErrorHint(t('explore_error_recover'));
+      }
       setError(t('explore_error_message'));
     } finally {
       setJoining(false);
@@ -150,6 +160,7 @@ export default function ExplorePage() {
     randomInterest,
     router,
     saveCircleSelection,
+    clearSession,
     selectedMood,
     selectionComplete,
     setCircle,
@@ -176,6 +187,24 @@ export default function ExplorePage() {
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/70">{t('explore_intro_label')}</p>
         <h1 className="mt-3 text-3xl font-semibold sm:text-[2.25rem]">{t('explore_page_title')}</h1>
         <p className="mt-3 text-base text-white/80">{t('explore_page_subtitle')}</p>
+      </section>
+
+      <section className="app-panel flex flex-col gap-3 border border-white/10 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-[0_20px_60px_rgba(15,23,42,0.35)]">
+        <div className="flex items-start gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 text-xl shadow-inner shadow-black/40">
+            📡
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-semibold">{t('explore_sync_title')}</p>
+            <p className="text-sm text-white/80">{t('explore_sync_subtitle')}</p>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-white/10 p-3 text-xs text-white/80 shadow-inner shadow-black/25">
+          <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 font-semibold uppercase tracking-[0.18em] text-white/90">
+            🛰️ {t('messages_author_system')}
+          </span>
+          <span>{t('explore_sync_hint')}</span>
+        </div>
       </section>
 
       {!accepted && (
@@ -277,23 +306,46 @@ export default function ExplorePage() {
         </button>
       </section>
 
-      <section className="app-panel p-6 text-center">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{t('explore_ready_title')}</h3>
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{t('explore_ready_description')}</p>
-        <div className="mt-4 flex justify-center">
+      <section className="app-panel space-y-4 p-6">
+        <div className="flex flex-col gap-3 rounded-3xl border border-slate-200/80 bg-white/80 p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur-sm dark:border-white/10 dark:bg-slate-900/80">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 via-brand to-sky-500 text-lg text-white shadow-lg">
+              {joining ? '⌛' : '💬'}
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">{t('explore_ready_title')}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-300">{t('explore_ready_description')}</p>
+            </div>
+          </div>
+          {error && (
+            <div className="rounded-2xl bg-gradient-to-r from-red-50 via-white to-orange-50 p-3 text-xs text-red-800 shadow-inner shadow-red-100 dark:from-red-500/10 dark:via-slate-900 dark:to-orange-500/10 dark:text-red-100">
+              <p className="font-semibold">{error}</p>
+              {errorHint && <p className="mt-1 text-red-700/80 dark:text-red-50/80">{errorHint}</p>}
+            </div>
+          )}
           <button
             type="button"
-            className={clsx(primaryCtaClass, 'disabled:opacity-60')}
             disabled={!canStart || joining}
             onClick={handleStartCircle}
+            className={clsx(
+              primaryCtaClass,
+              'group flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-base font-semibold shadow-[0_20px_60px_rgba(99,102,241,0.45)] disabled:shadow-none',
+              joining && 'cursor-wait',
+            )}
           >
-            {joining ? t('explore_starting_state') : t('explore_start_button')}
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/25 text-lg text-white shadow-inner shadow-white/40">
+              {joining ? '⏳' : '🚀'}
+            </span>
+            <span className="grow text-left">
+              {joining ? t('explore_starting_state') : t('explore_start_button')}
+              <span className="block text-xs font-normal text-white/80">{t('explore_ready_description')}</span>
+            </span>
+            <span aria-hidden className="text-lg transition-transform group-hover:translate-x-1">→</span>
           </button>
+          {!accepted && (
+            <p className="text-xs text-amber-700 dark:text-amber-200">{t('explore_rules_required')}</p>
+          )}
         </div>
-        {!accepted && (
-          <p className="mt-2 text-xs text-amber-700 dark:text-amber-200">{t('explore_rules_required')}</p>
-        )}
-        {error && <p className="mt-3 text-sm text-red-500 dark:text-red-400">{error}</p>}
       </section>
 
       <TestModeHint />
