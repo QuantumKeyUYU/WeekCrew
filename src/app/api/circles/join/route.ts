@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { CircleMembershipStatus, Prisma } from '@prisma/client';
+import { CircleMembershipStatus } from '@prisma/client';
 
 import { prisma } from '@/lib/prisma';
 import { getOrCreateDevice } from '@/lib/server/device';
@@ -7,12 +7,20 @@ import { toCircleMessage, toCircleSummary } from '@/lib/server/serializers';
 import { computeCircleExpiry } from '@/lib/server/circles';
 import { DEVICE_HEADER_NAME } from '@/lib/device';
 import { ICEBREAKERS } from '@/data/icebreakers';
-import { countActiveMembers } from '@/lib/server/circleMembership';
+import {
+  countActiveMembers,
+  findActiveCircleMembershipForDevice,
+} from '@/lib/server/circleMembership';
 
 const DEFAULT_MAX_MEMBERS = 5;
 
 const normalizeText = (value: unknown) =>
-  typeof value === 'string' ? value.trim() : '';
+  typeof value === 'string'
+    ? value
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+    : '';
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
@@ -74,33 +82,34 @@ export async function POST(request: NextRequest) {
 
       for (const circle of candidates) {
         const memberCount = await countActiveMembers(circle.id, tx);
-        if (memberCount < circle.maxMembers) {
-          // upsert на случай уникального индекса circleId+deviceId
-          await tx.circleMembership.upsert({
-            where: {
-              circleId_deviceId: {
-                circleId: circle.id,
-                deviceId,
-              },
-            },
-            update: {
-              status: CircleMembershipStatus.active,
-            },
-            create: {
+        if (memberCount >= circle.maxMembers) {
+          continue;
+        }
+
+        await tx.circleMembership.upsert({
+          where: {
+            circleId_deviceId: {
               circleId: circle.id,
               deviceId,
-              status: CircleMembershipStatus.active,
             },
-          });
+          },
+          update: {
+            status: CircleMembershipStatus.active,
+          },
+          create: {
+            circleId: circle.id,
+            deviceId,
+            status: CircleMembershipStatus.active,
+          },
+        });
 
-          const newCount = await countActiveMembers(circle.id, tx);
+        const newCount = await countActiveMembers(circle.id, tx);
 
-          return {
-            circle,
-            memberCount: newCount,
-            isNewCircle: false,
-          };
-        }
+        return {
+          circle,
+          memberCount: newCount,
+          isNewCircle: false,
+        };
       }
 
       // 3. Подходящего круга нет — создаём новый
@@ -138,6 +147,20 @@ export async function POST(request: NextRequest) {
       };
     });
 
+    const membership = await findActiveCircleMembershipForDevice(
+      result.circle.id,
+      deviceId,
+      prisma,
+      now,
+    );
+
+    if (!membership) {
+      return NextResponse.json(
+        { ok: false, error: 'NOT_MEMBER' },
+        { status: 403 },
+      );
+    }
+
     // Полная история сообщений круга
     const messages = await prisma.message.findMany({
       where: { circleId: result.circle.id },
@@ -150,6 +173,7 @@ export async function POST(request: NextRequest) {
       circle: toCircleSummary(result.circle, result.memberCount),
       messages: messages.map(toCircleMessage),
       isNewCircle: result.isNewCircle,
+      joined: true,
     });
 
     if (isNew) {

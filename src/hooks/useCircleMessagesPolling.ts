@@ -8,42 +8,29 @@ import type { CircleMessage } from '@/types';
 
 const POLL_INTERVAL_MS = 5000;
 
+const mergeMessages = (
+  existing: CircleMessage[],
+  incoming: CircleMessage[],
+) => {
+  if (!incoming.length) {
+    return existing;
+  }
+
+  const byId = new Map(existing.map((message) => [message.id, message]));
+  incoming.forEach((message) => {
+    byId.set(message.id, message);
+  });
+
+  return Array.from(byId.values()).sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  );
+};
+
 export const useCircleMessagesPolling = (circleId: string | null | undefined) => {
   const setMessages = useAppStore((state) => state.setMessages);
   const setQuotaFromApi = useAppStore((state) => state.setQuotaFromApi);
   const updateCircle = useAppStore((state) => state.updateCircle);
   const [notMember, setNotMember] = useState(false);
-
-  const haveMessagesChanged = (
-    prev: CircleMessage[],
-    next: CircleMessage[],
-  ) => {
-    if (prev.length !== next.length) return true;
-    if (prev.length === 0 && next.length === 0) return false;
-
-    for (let index = 0; index < next.length; index += 1) {
-      const current = next[index];
-      const previous = prev[index];
-
-      if (current.id !== previous.id) return true;
-      if (current.content !== previous.content) return true;
-      if (current.createdAt !== previous.createdAt) return true;
-      if (current.isSystem !== previous.isSystem) return true;
-      if (current.deviceId !== previous.deviceId) return true;
-
-      const currentAuthor = current.author ?? null;
-      const previousAuthor = previous.author ?? null;
-
-      if (Boolean(currentAuthor) !== Boolean(previousAuthor)) return true;
-      if (currentAuthor && previousAuthor) {
-        if (currentAuthor.id !== previousAuthor.id) return true;
-        if (currentAuthor.nickname !== previousAuthor.nickname) return true;
-        if (currentAuthor.avatarKey !== previousAuthor.avatarKey) return true;
-      }
-    }
-
-    return false;
-  };
 
   useEffect(() => {
     setNotMember(false);
@@ -51,20 +38,33 @@ export const useCircleMessagesPolling = (circleId: string | null | undefined) =>
 
   useEffect(() => {
     if (!circleId) {
+      setMessages([]);
       return undefined;
     }
 
+    setMessages([]);
     let cancelled = false;
     let intervalId: ReturnType<typeof setInterval> | null = null;
 
-    const poll = async () => {
+    const poll = async (reset = false) => {
       if (cancelled || !circleId) {
         return;
       }
 
+      const state = useAppStore.getState();
+      if (state.circle?.id !== circleId) {
+        return;
+      }
+
+      const previousMessages = reset ? [] : state.messages;
+      const lastTimestamp = reset
+        ? undefined
+        : previousMessages[previousMessages.length - 1]?.createdAt;
+
       try {
         const response = await getCircleMessages({
           circleId,
+          ...(lastTimestamp ? { since: lastTimestamp } : {}),
         });
         console.debug('Fetched circle messages', response);
 
@@ -74,8 +74,7 @@ export const useCircleMessagesPolling = (circleId: string | null | undefined) =>
 
         const { messages: incoming, quota, memberCount } = response;
 
-        const state = useAppStore.getState();
-        if (state.circle?.id !== circleId || cancelled) {
+        if (cancelled) {
           return;
         }
 
@@ -89,15 +88,15 @@ export const useCircleMessagesPolling = (circleId: string | null | undefined) =>
           });
         }
 
-        const prevMessages = state.messages;
+        const nextMessages = reset
+          ? incoming
+          : mergeMessages(previousMessages, incoming);
 
-        if (haveMessagesChanged(prevMessages, incoming)) {
-          setMessages(incoming);
-        }
+        setMessages(nextMessages);
       } catch (error) {
         if (error instanceof ApiError && error.status === 403) {
           const details = (error.data as { error?: string } | null) ?? null;
-          if (details?.error === 'not_member') {
+          if (details?.error === 'NOT_MEMBER' || details?.error === 'not_member') {
             if (!cancelled) {
               setNotMember(true);
             }
@@ -115,8 +114,8 @@ export const useCircleMessagesPolling = (circleId: string | null | undefined) =>
       }
     };
 
-    intervalId = setInterval(poll, POLL_INTERVAL_MS);
-    poll();
+    intervalId = setInterval(() => poll(false), POLL_INTERVAL_MS);
+    void poll(true);
 
     return () => {
       cancelled = true;
