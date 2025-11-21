@@ -32,19 +32,32 @@ const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const getAvatarEmoji = (key?: string | null) =>
   AVATAR_PRESETS.find((preset) => preset.key === key)?.emoji ?? '🙂';
 
-const shouldReplaceMessages = (
-  prev: CircleMessage[],
-  next: CircleMessage[],
-) => {
+const haveMessagesChanged = (prev: CircleMessage[], next: CircleMessage[]) => {
   if (prev.length !== next.length) return true;
   if (prev.length === 0 && next.length === 0) return false;
 
-  const prevFirst = prev[0]?.id;
-  const nextFirst = next[0]?.id;
-  const prevLast = prev[prev.length - 1]?.id;
-  const nextLast = next[next.length - 1]?.id;
+  for (let index = 0; index < next.length; index += 1) {
+    const current = next[index];
+    const previous = prev[index];
 
-  return prevFirst !== nextFirst || prevLast !== nextLast;
+    if (!previous || current.id !== previous.id) return true;
+    if (current.content !== previous.content) return true;
+    if (current.createdAt !== previous.createdAt) return true;
+    if (current.isSystem !== previous.isSystem) return true;
+    if (current.deviceId !== previous.deviceId) return true;
+
+    const currentAuthor = current.author ?? null;
+    const previousAuthor = previous.author ?? null;
+
+    if (Boolean(currentAuthor) !== Boolean(previousAuthor)) return true;
+    if (currentAuthor && previousAuthor) {
+      if (currentAuthor.id !== previousAuthor.id) return true;
+      if (currentAuthor.nickname !== previousAuthor.nickname) return true;
+      if (currentAuthor.avatarKey !== previousAuthor.avatarKey) return true;
+    }
+  }
+
+  return false;
 };
 
 export const MessageList = ({
@@ -144,7 +157,7 @@ export const MessageList = ({
           : [];
 
         setLiveMessages((prev) =>
-          shouldReplaceMessages(prev, next) ? next : prev,
+          haveMessagesChanged(prev, next) ? next : prev,
         );
       } catch (error) {
         console.warn('Failed to fetch circle messages', error);

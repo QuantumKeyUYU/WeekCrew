@@ -2,12 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
 import { getOrCreateDevice } from '@/lib/server/device';
-import { isDeviceCircleMember } from '@/lib/server/circleMembership';
 import { toCircleMessage } from '@/lib/server/serializers';
+
+const findMembershipWithUser = async (circleId: string, deviceId: string) =>
+  prisma.circleMembership.findFirst({
+    where: { circleId, deviceId, status: 'active' },
+    include: { device: { include: { user: true } } },
+  });
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const circleId = searchParams.get('circleId');
+  const sinceRaw = searchParams.get('since');
+  const since = sinceRaw ? new Date(sinceRaw) : null;
 
   if (!circleId) {
     return NextResponse.json(
@@ -18,17 +25,22 @@ export async function GET(request: NextRequest) {
 
   try {
     const { id: deviceId } = await getOrCreateDevice(request);
+    const membership = await findMembershipWithUser(circleId, deviceId);
 
-    const canAccess = await isDeviceCircleMember(circleId, deviceId);
-    if (!canAccess) {
+    if (!membership) {
       return NextResponse.json(
-        { ok: false, error: 'NOT_MEMBER' },
+        { ok: false, error: 'not_member' },
         { status: 403 },
       );
     }
 
     const messages = await prisma.message.findMany({
-      where: { circleId },
+      where: {
+        circleId,
+        ...(since && !Number.isNaN(since.getTime())
+          ? { createdAt: { gt: since } }
+          : {}),
+      },
       orderBy: { createdAt: 'asc' },
       include: { user: true },
     });
@@ -62,11 +74,11 @@ export async function POST(request: NextRequest) {
 
   try {
     const { id: deviceId } = await getOrCreateDevice(request);
+    const membership = await findMembershipWithUser(circleId, deviceId);
 
-    const canAccess = await isDeviceCircleMember(circleId, deviceId);
-    if (!canAccess) {
+    if (!membership) {
       return NextResponse.json(
-        { ok: false, error: 'NOT_MEMBER' },
+        { ok: false, error: 'not_member' },
         { status: 403 },
       );
     }
@@ -75,6 +87,7 @@ export async function POST(request: NextRequest) {
       data: {
         circleId,
         deviceId,
+        userId: membership.device.user?.id,
         content,
       },
       include: { user: true },
