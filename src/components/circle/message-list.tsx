@@ -31,31 +31,18 @@ const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const getAvatarEmoji = (key?: string | null) =>
   AVATAR_PRESETS.find((preset) => preset.key === key)?.emoji ?? '🙂';
 
-const haveMessagesChanged = (
+const shouldReplaceMessages = (
   prev: CircleMessage[],
   next: CircleMessage[],
 ) => {
   if (prev.length !== next.length) return true;
-  if (prev.length === 0 && next.length === 0) return false;
+  const prevFirst = prev[0]?.id ?? null;
+  const nextFirst = next[0]?.id ?? null;
+  const prevLast = prev[prev.length - 1]?.id ?? null;
+  const nextLast = next[next.length - 1]?.id ?? null;
 
-  const prevMap = new Map(prev.map((message) => [message.id, message] as const));
-
-  for (const message of next) {
-    const matching = prevMap.get(message.id);
-    if (!matching) return true;
-
-    if (
-      matching.content !== message.content ||
-      matching.createdAt !== message.createdAt ||
-      matching.isSystem !== message.isSystem ||
-      matching.deviceId !== message.deviceId ||
-      matching.author?.id !== message.author?.id ||
-      matching.author?.nickname !== message.author?.nickname ||
-      matching.author?.avatarKey !== message.author?.avatarKey
-    ) {
-      return true;
-    }
-  }
+  if (prevFirst !== nextFirst) return true;
+  if (prevLast !== nextLast) return true;
 
   return false;
 };
@@ -133,11 +120,9 @@ export const MessageList = ({
     setLiveMessages(messages);
   }, [circleId, messages]);
 
-  // Синхронизируем локальные сообщения с данными из стора, чтобы обновления
-  // с других устройств появлялись сразу без дополнительного поллинга
   useEffect(() => {
     setLiveMessages((prev) =>
-      haveMessagesChanged(prev, messages) ? messages : prev,
+      shouldReplaceMessages(prev, messages) ? messages : prev,
     );
   }, [messages]);
 

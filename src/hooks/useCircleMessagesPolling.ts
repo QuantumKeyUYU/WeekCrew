@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { ApiError } from '@/lib/api-client';
 import { getCircleMessages } from '@/lib/api/circles';
-import { mergeMessages } from '@/lib/messages';
 import { useAppStore } from '@/store/useAppStore';
 import type { CircleMessage } from '@/types';
 
@@ -64,11 +63,8 @@ export const useCircleMessagesPolling = (circleId: string | null | undefined) =>
       }
 
       try {
-        const currentMessages = useAppStore.getState().messages;
-        const last = currentMessages[currentMessages.length - 1];
         const { messages: incoming, quota, memberCount } = await getCircleMessages({
           circleId,
-          since: last?.createdAt,
         });
 
         const state = useAppStore.getState();
@@ -86,15 +82,10 @@ export const useCircleMessagesPolling = (circleId: string | null | undefined) =>
           });
         }
 
-        if (incoming.length === 0) {
-          return;
-        }
-
-        const merged = mergeMessages(state.messages, incoming);
         const prevMessages = state.messages;
 
-        if (haveMessagesChanged(prevMessages, merged)) {
-          setMessages(merged);
+        if (haveMessagesChanged(prevMessages, incoming)) {
+          setMessages(incoming);
         }
       } catch (error) {
         if (error instanceof ApiError && error.status === 403) {
