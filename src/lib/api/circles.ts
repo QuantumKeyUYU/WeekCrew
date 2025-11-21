@@ -98,6 +98,7 @@ export interface SendMessagePayload {
 export interface SendMessageResponse {
   ok: true;
   message: CircleMessage;
+  quota?: DailyQuotaSnapshot;
 }
 
 export const sendMessage = (payload: SendMessagePayload) =>

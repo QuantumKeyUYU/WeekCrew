@@ -398,6 +398,7 @@ export default function CirclePage() {
         deviceId: currentDeviceId ?? undefined,
       });
       replaceMessage(optimisticId, response.message);
+      setQuotaFromApi(response.quota ?? null);
     } catch (error) {
       if (error instanceof ApiError) {
         const details = (error.data as { error?: string; quota?: DailyQuotaSnapshot } | null) ?? null;
