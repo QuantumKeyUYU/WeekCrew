@@ -333,6 +333,11 @@ export const copy = {
     settings_reset_button: 'Сбросить всё локально',
     settings_reset_pending: 'Очищаем…',
     settings_reset_secondary_hint: 'После сброса WeekCrew встретит как в первый раз: новый deviceId, пустой чат и экран с правилами.',
+    settings_device_reset_description:
+      'Удаляет все ваши сообщения и участие в кругах. После сброса будет создан новый анонимный сеанс.',
+    settings_device_reset_button: 'Сбросить устройство',
+    settings_device_reset_pending: 'Сбрасываем устройство…',
+    settings_device_reset_error: 'Не получилось удалить данные устройства. Попробуй позже.',
     settings_reset_rules_button: 'Показать правила ещё раз',
     settings_reset_success: 'Готово. Новый deviceId создан, настройки обновлены.',
     settings_reset_error: 'Не получилось очистить данные. Попробуй ещё раз чуть позже.',
@@ -704,6 +709,11 @@ export const copy = {
     settings_reset_button: 'Reset everything locally',
     settings_reset_pending: 'Clearing…',
     settings_reset_secondary_hint: 'After a reset WeekCrew behaves like the first launch: new deviceId, empty chat, safety screen.',
+    settings_device_reset_description:
+      'Deletes all your messages and circle memberships. A fresh anonymous session will be created after the reset.',
+    settings_device_reset_button: 'Reset device',
+    settings_device_reset_pending: 'Resetting device…',
+    settings_device_reset_error: 'Could not wipe device data. Please try again later.',
     settings_reset_success: 'Done. A new deviceId is ready and preferences were refreshed.',
     settings_reset_error: 'We could not clear the data. Please try again a bit later.',
     settings_reset_rules_success: 'The safety screen will appear again next time.',
