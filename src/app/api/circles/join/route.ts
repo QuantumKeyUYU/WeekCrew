@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { PrismaClient } from '@prisma/client';
+import type { Circle, PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getOrCreateDevice } from '@/lib/server/device';
 import { toCircleSummary } from '@/lib/server/serializers';
-import { computeCircleExpiry } from '@/lib/server/circles';
+import { computeCircleExpiry, isCircleActive } from '@/lib/server/circles';
 import { DEVICE_HEADER_NAME } from '@/lib/device';
 import { ICEBREAKERS } from '@/data/icebreakers';
 import { CircleMembershipStatus } from '@prisma/client';
+import { countActiveMembers } from '@/lib/server/circleMembership';
 
 const DEFAULT_MAX_MEMBERS = 5;
+type JoinResult = { circle: Circle; memberCount: number; isNewCircle: boolean };
 
 const normalizeText = (value: unknown) => {
   if (typeof value !== 'string') {
@@ -17,24 +19,37 @@ const normalizeText = (value: unknown) => {
   return value.trim();
 };
 
-const deleteExistingCirclesForDevice = async (
+const findJoinableCircle = async (
   client: PrismaClient,
-  deviceId: string,
+  {
+    mood,
+    interest,
+    now,
+  }: {
+    mood: string;
+    interest: string;
+    now: Date;
+  },
 ) => {
-  const memberships = await client.circleMembership.findMany({
-    where: { deviceId },
-    select: { circleId: true },
+  const candidates = await client.circle.findMany({
+    where: {
+      mood,
+      interest,
+      status: 'active',
+      expiresAt: { gt: now },
+    },
+    orderBy: { createdAt: 'asc' },
+    take: 5,
   });
 
-  const circleIds = [...new Set(memberships.map((membership) => membership.circleId))];
-
-  if (!circleIds.length) {
-    return;
+  for (const circle of candidates) {
+    const memberCount = await countActiveMembers(circle.id, client);
+    if (memberCount < circle.maxMembers) {
+      return { circle, memberCount };
+    }
   }
 
-  await client.message.deleteMany({ where: { circleId: { in: circleIds } } });
-  await client.circleMembership.deleteMany({ where: { circleId: { in: circleIds } } });
-  await client.circle.deleteMany({ where: { id: { in: circleIds } } });
+  return null;
 };
 
 export async function POST(request: NextRequest) {
@@ -50,8 +65,32 @@ export async function POST(request: NextRequest) {
     const { id: deviceId, isNew } = await getOrCreateDevice(request);
     const now = new Date();
 
-    const result = await prisma.$transaction(async (tx) => {
-      await deleteExistingCirclesForDevice(tx, deviceId);
+    const result = await prisma.$transaction<JoinResult>(async (tx) => {
+      const existingMembership = await tx.circleMembership.findFirst({
+        where: {
+          deviceId,
+          status: CircleMembershipStatus.active,
+          circle: { status: 'active', expiresAt: { gt: now } },
+        },
+        include: { circle: true },
+        orderBy: { joinedAt: 'desc' },
+      });
+
+      if (existingMembership?.circle && isCircleActive(existingMembership.circle, now)) {
+        const memberCount = await countActiveMembers(existingMembership.circle.id, tx);
+        return { circle: existingMembership.circle, memberCount, isNewCircle: false };
+      }
+
+      const joinable = await findJoinableCircle(tx, { mood, interest, now });
+
+      if (joinable) {
+        await tx.circleMembership.create({
+          data: { circleId: joinable.circle.id, deviceId, status: CircleMembershipStatus.active },
+        });
+
+        const memberCount = await countActiveMembers(joinable.circle.id, tx);
+        return { circle: joinable.circle, memberCount, isNewCircle: false };
+      }
 
       const expiresAt = computeCircleExpiry(now);
       const icebreaker =
@@ -76,12 +115,12 @@ export async function POST(request: NextRequest) {
         data: { circleId: circle.id, deviceId, status: CircleMembershipStatus.active },
       });
 
-      return { circle };
+      return { circle, memberCount: 1, isNewCircle: true };
     });
     const response = NextResponse.json({
-      circle: toCircleSummary(result.circle, 1),
+      circle: toCircleSummary(result.circle, result.memberCount ?? 1),
       messages: [],
-      isNewCircle: true,
+      isNewCircle: result.isNewCircle ?? false,
     });
 
     if (isNew) {

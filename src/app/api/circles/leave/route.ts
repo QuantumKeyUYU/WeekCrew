@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getOrCreateDevice } from '@/lib/server/device';
 import { DEVICE_HEADER_NAME } from '@/lib/device';
-import { findLatestActiveMembershipForDevice } from '@/lib/server/circleMembership';
+import { countActiveMembers, findLatestActiveMembershipForDevice } from '@/lib/server/circleMembership';
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,17 +17,17 @@ export async function POST(request: NextRequest) {
       return response;
     }
 
-    await prisma.$transaction(async (tx) => {
-      await tx.message.deleteMany({ where: { circleId: membership.circleId } });
-      await tx.circleMembership.deleteMany({ where: { circleId: membership.circleId } });
-      await tx.circle.deleteMany({ where: { id: membership.circleId } });
+    await prisma.circleMembership.deleteMany({
+      where: { circleId: membership.circleId, deviceId },
     });
+
+    const memberCount = await countActiveMembers(membership.circleId);
 
     const response = NextResponse.json({
       ok: true,
       circle: null,
       prevCircleId: membership.circleId,
-      memberCount: 0,
+      memberCount,
     });
     if (isNew) {
       response.headers.set(DEVICE_HEADER_NAME, deviceId);

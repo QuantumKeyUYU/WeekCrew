@@ -24,6 +24,21 @@ const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const getAvatarEmoji = (key?: string | null) =>
   AVATAR_PRESETS.find((preset) => preset.key === key)?.emoji ?? '🙂';
 
+const shouldUpdateMessages = (prev: CircleMessage[], next: CircleMessage[]) => {
+  if (prev.length !== next.length) {
+    return true;
+  }
+
+  if (prev.length === 0 && next.length === 0) {
+    return false;
+  }
+
+  const prevLast = prev[prev.length - 1]?.id;
+  const nextLast = next[next.length - 1]?.id;
+
+  return prevLast !== nextLast;
+};
+
 export const MessageList = ({
   circleId,
   messages,
@@ -40,6 +55,7 @@ export const MessageList = ({
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
   const [moderationBusy, setModerationBusy] = useState(false);
+  const previousCircleId = useRef<string | null>(circleId ?? null);
   const t = useTranslation();
   const language = useAppStore((state) => state.settings.language ?? 'ru');
   const locale = language === 'ru' ? 'ru-RU' : 'en-US';
@@ -83,9 +99,26 @@ export const MessageList = ({
 
   const [liveMessages, setLiveMessages] = useState(messages);
 
+  const applyIncomingMessages = useCallback((nextMessages: CircleMessage[]) => {
+    setLiveMessages((prev) => {
+      if (!shouldUpdateMessages(prev, nextMessages)) {
+        return prev;
+      }
+      return nextMessages;
+    });
+  }, []);
+
   useEffect(() => {
-    setLiveMessages(messages);
-  }, [circleId, messages]);
+    const hasCircleChanged = previousCircleId.current !== circleId;
+    previousCircleId.current = circleId ?? null;
+
+    if (hasCircleChanged) {
+      setLiveMessages(messages);
+      return;
+    }
+
+    applyIncomingMessages(messages);
+  }, [applyIncomingMessages, circleId, messages]);
 
   useEffect(() => {
     if (!circleId) {
@@ -110,15 +143,7 @@ export const MessageList = ({
 
         const nextMessages: CircleMessage[] = Array.isArray(data?.messages) ? data.messages : [];
 
-        setLiveMessages((prev) => {
-          const lastPrev = prev[prev.length - 1]?.id;
-          const lastNext = nextMessages[nextMessages.length - 1]?.id;
-
-          if (nextMessages.length !== prev.length || lastPrev !== lastNext) {
-            return nextMessages;
-          }
-          return prev;
-        });
+        applyIncomingMessages(nextMessages);
       } catch (error) {
         console.warn('Failed to fetch circle messages', error);
       }

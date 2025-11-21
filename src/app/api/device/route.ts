@@ -22,11 +22,25 @@ export async function DELETE(request: NextRequest) {
 
     await prisma.$transaction(async (tx) => {
       await tx.message.deleteMany({ where: { deviceId } });
+      await tx.circleMembership.deleteMany({ where: { deviceId } });
 
       if (circleIds.length > 0) {
-        await tx.message.deleteMany({ where: { circleId: { in: circleIds } } });
-        await tx.circleMembership.deleteMany({ where: { circleId: { in: circleIds } } });
-        await tx.circle.deleteMany({ where: { id: { in: circleIds } } });
+        const circlesWithMembers = await Promise.all(
+          circleIds.map(async (circleId) => ({
+            circleId,
+            memberCount: await tx.circleMembership.count({
+              where: { circleId, status: 'active' },
+            }),
+          })),
+        );
+
+        const emptyCircleIds = circlesWithMembers
+          .filter((entry) => entry.memberCount === 0)
+          .map((entry) => entry.circleId);
+
+        if (emptyCircleIds.length > 0) {
+          await tx.circle.deleteMany({ where: { id: { in: emptyCircleIds } } });
+        }
       }
 
       await tx.device.deleteMany({ where: { id: deviceId } });
