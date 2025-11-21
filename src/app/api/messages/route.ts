@@ -9,23 +9,9 @@ import { applyMessageUsageToQuota, checkDailyMessageLimit } from '@/lib/server/m
 import { buildCircleMessagesWhere } from '@/lib/server/messageQueries';
 import { getUserWithBlocks } from '@/lib/server/users';
 
-const MAX_RESULTS = 200;
-
-const parseSinceParam = (value: string | null) => {
-  if (!value) {
-    return null;
-  }
-  const timestamp = Date.parse(value);
-  if (Number.isNaN(timestamp)) {
-    return null;
-  }
-  return new Date(timestamp);
-};
-
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const circleId = searchParams.get('circleId');
-  const since = parseSinceParam(searchParams.get('since'));
 
   if (!circleId) {
     return NextResponse.json({ messages: [] }, { status: 400 });
@@ -34,16 +20,10 @@ export async function GET(request: NextRequest) {
   try {
     const { id: deviceId, isNew } = await getOrCreateDevice(request);
     const user = await getUserWithBlocks(deviceId);
-    const canAccess = await isDeviceCircleMember(circleId, deviceId);
-
-    if (!canAccess) {
-      return NextResponse.json({ error: 'not_member' }, { status: 403 });
-    }
 
     const blockedIds = user?.blocksInitiated?.map((block) => block.blockedId) ?? [];
     const messageFilters = buildCircleMessagesWhere({
       circleId,
-      since,
       blockedUserIds: blockedIds,
     });
 
@@ -51,7 +31,6 @@ export async function GET(request: NextRequest) {
       prisma.message.findMany({
         where: messageFilters,
         orderBy: { createdAt: 'asc' },
-        take: MAX_RESULTS,
         include: { user: true },
       }),
       countActiveMembers(circleId),
@@ -62,6 +41,11 @@ export async function GET(request: NextRequest) {
       messages: messages.map(toCircleMessage),
       quota: quota.quota,
       memberCount,
+      debug: {
+        circleId,
+        messagesCount: messages.length,
+        membersCount: memberCount,
+      },
     });
     if (isNew) {
       response.headers.set(DEVICE_HEADER_NAME, deviceId);
