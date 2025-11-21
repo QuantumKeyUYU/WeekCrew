@@ -21,6 +21,8 @@ export async function DELETE(request: NextRequest) {
     const circleIds = [...new Set(memberships.map((membership) => membership.circleId))];
 
     await prisma.$transaction(async (tx) => {
+      await tx.message.deleteMany({ where: { deviceId } });
+
       if (circleIds.length > 0) {
         await tx.message.deleteMany({ where: { circleId: { in: circleIds } } });
         await tx.circleMembership.deleteMany({ where: { circleId: { in: circleIds } } });

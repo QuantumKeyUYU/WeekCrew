@@ -20,12 +20,7 @@ import { clearCircleSelection, loadCircleSelection } from '@/lib/circleSelection
 import { ApiError } from '@/lib/api-client';
 import { useAppStore } from '@/store/useAppStore';
 import { LANGUAGE_INTERESTS } from '@/constants/language-interests';
-import {
-  getCurrentCircle,
-  getCircleMessages,
-  leaveCircle as leaveCircleApi,
-  sendMessage as sendCircleMessage,
-} from '@/lib/api/circles';
+import { getCircleMessages, joinCircle, leaveCircle as leaveCircleApi, sendMessage as sendCircleMessage } from '@/lib/api/circles';
 import { getProfile } from '@/lib/api/profile';
 import { getOrCreateDeviceId, resetDeviceId } from '@/lib/device';
 import type { CircleMessage, DailyQuotaSnapshot } from '@/types';
@@ -143,6 +138,9 @@ export default function CirclePage() {
   }, [circle?.id, setQuotaFromApi]);
 
   const handleAccessRevoked = useCallback(() => {
+    void leaveCircleApi().catch((error) => {
+      console.warn('Failed to cleanup circle after access revoked', error);
+    });
     setNotMember(true);
     setCircle(null);
     setMessages([]);
@@ -153,34 +151,52 @@ export default function CirclePage() {
   }, [clearCircleSelection, clearSession, setCircle, setMessages, setQuotaFromApi]);
 
   useEffect(() => {
-    if (circle) {
-      return;
-    }
     let cancelled = false;
-    setLoadingCircle(true);
-    getCurrentCircle()
-      .then((response) => {
+
+    const startFreshCircle = async () => {
+      setLoadingCircle(true);
+      setMessages([]);
+
+      try {
+        const storedSelection = loadCircleSelection();
+        const fallbackMood = MOOD_OPTIONS[0]?.key ?? 'default';
+        const fallbackInterest =
+          LANGUAGE_INTERESTS[0]?.id ?? Object.keys(INTERESTS_MAP)[0] ?? 'default';
+
+        const response = await joinCircle({
+          mood: storedSelection?.mood ?? fallbackMood,
+          interest: storedSelection?.interestId ?? fallbackInterest,
+        });
+
         if (cancelled) return;
+
         setCircle(response.circle);
-        if (!response.circle) {
+        setMessages(response.messages);
+        setQuotaFromApi(null);
+        setNotMember(false);
+        lastCircleIdRef.current = response.circle.id;
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Failed to start a fresh circle', error);
+          setCircle(null);
           setMessages([]);
         }
-      })
-      .catch((error) => {
-        if (!cancelled) {
-          console.error('Failed to load current circle', error);
-        }
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) {
           setLoadingCircle(false);
         }
-      });
+      }
+    };
+
+    void startFreshCircle();
 
     return () => {
       cancelled = true;
+      void leaveCircleApi().catch((err) => {
+        console.warn('Failed to delete circle on exit', err);
+      });
     };
-  }, [circle, setCircle, setMessages]);
+  }, [joinCircle, leaveCircleApi, setCircle, setLoadingCircle, setMessages, setNotMember, setQuotaFromApi]);
 
   useEffect(() => {
     if (!circle || notMember) {
@@ -238,7 +254,13 @@ export default function CirclePage() {
     }
   }, [pollingNotMember, handleAccessRevoked]);
 
-  const handleStartMatching = () => {
+  const handleStartMatching = async () => {
+    try {
+      await leaveCircleApi();
+    } catch (error) {
+      console.warn('Failed to leave circle before matching', error);
+    }
+    lastCircleIdRef.current = null;
     clearSession();
     resetDeviceId();
     setMessages([]);
@@ -271,6 +293,7 @@ export default function CirclePage() {
     } finally {
       setLeavePending(false);
     }
+    lastCircleIdRef.current = null;
     clearSession();
     resetDeviceId();
     setMessages([]);
