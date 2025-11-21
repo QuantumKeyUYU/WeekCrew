@@ -347,10 +347,9 @@ export default function CirclePage() {
       replaceMessage(optimisticId, response.message);
       setQuotaFromApi(response.quota);
     } catch (error) {
-      console.error('Failed to send message', error);
-      removeMessage(optimisticId);
       if (error instanceof ApiError) {
         const details = (error.data as { error?: string; quota?: DailyQuotaSnapshot } | null) ?? null;
+        console.error('Failed to send message', error.status, details?.error);
         if (details?.error === 'daily_limit_exceeded') {
           setQuotaFromApi(details.quota ?? null);
           setSendError(t('circle_limit_reached'));
@@ -368,7 +367,10 @@ export default function CirclePage() {
             return;
           }
         }
+      } else {
+        console.error('Failed to send message', error);
       }
+      removeMessage(optimisticId);
       setSendError(t('composer_send_error'));
     } finally {
       setIsSending(false);

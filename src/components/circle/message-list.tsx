@@ -24,6 +24,23 @@ const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const getAvatarEmoji = (key?: string | null) =>
   AVATAR_PRESETS.find((preset) => preset.key === key)?.emoji ?? '🙂';
 
+const shouldUpdateMessages = (prev: CircleMessage[], next: CircleMessage[]) => {
+  if (prev.length !== next.length) {
+    return true;
+  }
+
+  if (prev.length === 0 && next.length === 0) {
+    return false;
+  }
+
+  const prevFirst = prev[0]?.id;
+  const nextFirst = next[0]?.id;
+  const prevLast = prev[prev.length - 1]?.id;
+  const nextLast = next[next.length - 1]?.id;
+
+  return prevFirst !== nextFirst || prevLast !== nextLast;
+};
+
 export const MessageList = ({
   circleId,
   messages,
@@ -40,6 +57,7 @@ export const MessageList = ({
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
   const [moderationBusy, setModerationBusy] = useState(false);
+  const previousCircleId = useRef<string | null>(circleId ?? null);
   const t = useTranslation();
   const language = useAppStore((state) => state.settings.language ?? 'ru');
   const locale = language === 'ru' ? 'ru-RU' : 'en-US';
@@ -84,7 +102,20 @@ export const MessageList = ({
   const [liveMessages, setLiveMessages] = useState(messages);
 
   useEffect(() => {
-    setLiveMessages(messages);
+    const hasCircleChanged = previousCircleId.current !== circleId;
+    previousCircleId.current = circleId ?? null;
+
+    setLiveMessages((prev) => {
+      if (hasCircleChanged) {
+        return messages;
+      }
+
+      if (!shouldUpdateMessages(prev, messages)) {
+        return prev;
+      }
+
+      return messages;
+    });
   }, [circleId, messages]);
 
   useEffect(() => {
@@ -111,10 +142,7 @@ export const MessageList = ({
         const nextMessages: CircleMessage[] = Array.isArray(data?.messages) ? data.messages : [];
 
         setLiveMessages((prev) => {
-          const lastPrev = prev[prev.length - 1]?.id;
-          const lastNext = nextMessages[nextMessages.length - 1]?.id;
-
-          if (nextMessages.length !== prev.length || lastPrev !== lastNext) {
+          if (shouldUpdateMessages(prev, nextMessages)) {
             return nextMessages;
           }
           return prev;

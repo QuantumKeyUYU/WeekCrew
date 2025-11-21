@@ -69,11 +69,11 @@ export async function POST(request: NextRequest) {
   const content = typeof body?.content === 'string' ? body.content.trim() : '';
 
   if (!circleId) {
-    return NextResponse.json({ error: 'circle_required' }, { status: 400 });
+    return NextResponse.json({ ok: false, error: 'circle_required' }, { status: 400 });
   }
 
   if (!content) {
-    return NextResponse.json({ error: 'INVALID_PAYLOAD' }, { status: 400 });
+    return NextResponse.json({ ok: false, error: 'INVALID_PAYLOAD' }, { status: 400 });
   }
 
   try {
@@ -81,14 +81,14 @@ export async function POST(request: NextRequest) {
     const canSend = await isDeviceCircleMember(circleId, deviceId);
 
     if (!canSend) {
-      return NextResponse.json({ error: 'not_member' }, { status: 403 });
+      return NextResponse.json({ ok: false, error: 'not_member' }, { status: 403 });
     }
 
     const user = await prisma.user.findUnique({ where: { deviceId } });
     const circle = await prisma.circle.findUnique({ where: { id: circleId } });
 
     if (!circle || !isCircleActive(circle)) {
-      return NextResponse.json({ error: 'circle_expired' }, { status: 403 });
+      return NextResponse.json({ ok: false, error: 'circle_expired' }, { status: 403 });
     }
 
     const quotaResult = await checkDailyMessageLimit(prisma, { circleId, deviceId });
@@ -122,6 +122,6 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     console.error('message send error', error);
-    return NextResponse.json({ error: 'SERVER_ERROR' }, { status: 500 });
+    return NextResponse.json({ ok: false, error: 'SERVER_ERROR' }, { status: 500 });
   }
 }
