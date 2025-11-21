@@ -71,6 +71,7 @@ model Message {
   device    Device?   @relation(fields: [deviceId], references: [id], onDelete: SetNull)
   user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
   reports   Report[]
+  reactions MessageReaction[]
 
   @@index([circleId, createdAt])
 }
@@ -89,6 +90,19 @@ model User {
   reportsReceived Report[] @relation("reportsReceived")
   blocksInitiated Block[]  @relation("blocksInitiated")
   blocksReceived  Block[]  @relation("blocksReceived")
+}
+
+model MessageReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  emoji     String
+  authorId  String
+  createdAt DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  author  User    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
 }
 
 model Report {

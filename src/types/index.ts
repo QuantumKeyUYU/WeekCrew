@@ -53,6 +53,14 @@ export interface CircleMessage {
   createdAt: string;
 }
 
+export interface MessageReaction {
+  id: string;
+  messageId: string;
+  emoji: string;
+  authorId: string;
+  createdAt: string;
+}
+
 export interface AppSettings {
   language: 'ru' | 'en';
   theme: 'light' | 'dark' | 'system';
