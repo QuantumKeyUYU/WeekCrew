@@ -3,7 +3,7 @@ import type { Circle as CircleModel, PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getOrCreateDevice } from '@/lib/server/device';
 import { toCircleMessage, toCircleSummary } from '@/lib/server/serializers';
-import { computeCircleExpiry } from '@/lib/server/circles';
+import { computeCircleExpiry, isCircleActive } from '@/lib/server/circles';
 import { DEVICE_HEADER_NAME } from '@/lib/device';
 import {
   countActiveMembers,
@@ -24,13 +24,15 @@ const normalizeText = (value: unknown) => {
   return value.trim();
 };
 
+type JoinableCircle = CircleModel & { memberships: { id: string }[] };
+
 const findJoinableCircle = async (
   client: PrismaClient,
   mood: string,
   interest: string,
-): Promise<CircleModel | null> => {
+): Promise<{ circle: CircleModel; memberCount: number } | null> => {
   const now = new Date();
-  const candidates = await client.circle.findMany({
+  const candidates = (await client.circle.findMany({
     where: {
       mood,
       interest,
@@ -38,29 +40,23 @@ const findJoinableCircle = async (
       expiresAt: { gt: now },
     },
     orderBy: { startsAt: 'asc' },
-    select: {
-      id: true,
-      mood: true,
-      interest: true,
-      status: true,
-      maxMembers: true,
-      startsAt: true,
-      expiresAt: true,
-      createdAt: true,
-      updatedAt: true,
+    include: {
       memberships: {
         where: { status: 'active' },
         select: { id: true },
       },
     },
-  });
+  })) as JoinableCircle[];
 
   const available = candidates.find((candidate) => candidate.memberships.length < candidate.maxMembers);
   if (!available) {
     return null;
   }
   const circle = await client.circle.findUnique({ where: { id: available.id } });
-  return circle ?? null;
+  if (!circle) {
+    return null;
+  }
+  return { circle, memberCount: available.memberships.length };
 };
 
 const isJoinableMembership = (
@@ -68,12 +64,11 @@ const isJoinableMembership = (
   mood: string,
   interest: string,
 ) => {
-  if (!membership?.circle) {
+  const circle = membership?.circle;
+  if (!circle) {
     return false;
   }
-  const now = new Date();
-  const circle = membership.circle;
-  const isActive = circle.status === 'active' && circle.expiresAt > now;
+  const isActive = isCircleActive(circle);
   const matchesSelection = circle.mood === mood && circle.interest === interest;
   return isActive && matchesSelection;
 };
@@ -114,10 +109,13 @@ export async function POST(request: NextRequest) {
         await markMembershipLeft(existingMembership.id, tx);
       }
 
-      let circle = await findJoinableCircle(tx, mood, interest);
+      const joinTarget = await findJoinableCircle(tx, mood, interest);
+      let circle: CircleModel;
       let isNewCircle = false;
 
-      if (!circle) {
+      if (joinTarget) {
+        circle = joinTarget.circle;
+      } else {
         const expiresAt = computeCircleExpiry(now);
         const icebreaker =
           ICEBREAKERS[Math.floor(Math.random() * ICEBREAKERS.length)] ??
