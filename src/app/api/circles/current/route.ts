@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
 import { getOrCreateDevice } from '@/lib/server/device';
 import { toCircleSummary } from '@/lib/server/serializers';
 import { DEVICE_HEADER_NAME } from '@/lib/device';
@@ -13,8 +13,14 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
-    const { id: deviceId, isNew } = await getOrCreateDevice(request);
-    const membership = await findLatestActiveMembershipForDevice(deviceId);
+    const prisma = getPrismaClient();
+
+    if (!prisma) {
+      return NextResponse.json({ circle: null, error: 'BACKEND_DISABLED' }, { status: 503 });
+    }
+
+    const { id: deviceId, isNew } = await getOrCreateDevice(request, prisma);
+    const membership = await findLatestActiveMembershipForDevice(deviceId, prisma);
 
     if (!membership?.circle) {
       const response = NextResponse.json({ circle: null });
@@ -24,7 +30,7 @@ export async function GET(request: NextRequest) {
       return response;
     }
 
-    const memberCount = await countActiveMembers(membership.circle.id);
+    const memberCount = await countActiveMembers(membership.circle.id, prisma);
     const response = NextResponse.json({
       circle: toCircleSummary(membership.circle, memberCount),
     });

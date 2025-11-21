@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CircleMembershipStatus } from '@prisma/client';
 
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
 import { getOrCreateDevice } from '@/lib/server/device';
 import { toCircleMessage, toCircleSummary } from '@/lib/server/serializers';
 import { computeCircleExpiry } from '@/lib/server/circles';
@@ -35,7 +35,13 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { id: deviceId, isNew } = await getOrCreateDevice(request);
+    const prisma = getPrismaClient();
+
+    if (!prisma) {
+      return NextResponse.json({ ok: false, error: 'BACKEND_DISABLED' }, { status: 503 });
+    }
+
+    const { id: deviceId, isNew } = await getOrCreateDevice(request, prisma);
     const now = new Date();
 
     const result = await prisma.$transaction(async (tx) => {
@@ -56,10 +62,7 @@ export async function POST(request: NextRequest) {
       });
 
       if (existingMembership?.circle) {
-        const memberCount = await countActiveMembers(
-          existingMembership.circle.id,
-          tx,
-        );
+        const memberCount = await countActiveMembers(existingMembership.circle.id, tx);
 
         return {
           circle: existingMembership.circle,

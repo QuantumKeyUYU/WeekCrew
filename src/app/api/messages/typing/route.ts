@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getPrismaClient } from '@/lib/prisma';
 import { broadcastRealtimeEvent, getCircleChannelName } from '@/lib/realtime';
 import { getOrCreateDevice } from '@/lib/server/device';
 import { isDeviceCircleMember } from '@/lib/server/circleMembership';
@@ -13,9 +14,15 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { id: deviceId } = await getOrCreateDevice(request);
+    const prisma = getPrismaClient();
 
-    const canAccess = await isDeviceCircleMember(circleId, deviceId);
+    if (!prisma) {
+      return NextResponse.json({ ok: false, error: 'BACKEND_DISABLED' }, { status: 503 });
+    }
+
+    const { id: deviceId } = await getOrCreateDevice(request, prisma);
+
+    const canAccess = await isDeviceCircleMember(circleId, deviceId, prisma);
     if (!canAccess) {
       return NextResponse.json({ ok: false, error: 'NOT_MEMBER' }, { status: 403 });
     }

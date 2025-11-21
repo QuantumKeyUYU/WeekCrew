@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
 import { getOrCreateDevice } from '@/lib/server/device';
 
 export async function DELETE(request: NextRequest) {
-  const { device, id: deviceId, isNew } = await getOrCreateDevice(request);
+  const prisma = getPrismaClient();
+
+  if (!prisma) {
+    return NextResponse.json({ ok: false, error: 'BACKEND_DISABLED' }, { status: 503 });
+  }
+
+  const { device, id: deviceId, isNew } = await getOrCreateDevice(request, prisma);
 
   if (isNew) {
     if (device) {

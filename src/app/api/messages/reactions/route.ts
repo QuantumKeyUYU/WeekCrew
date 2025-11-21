@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
 import { getOrCreateDevice } from '@/lib/server/device';
 import { isDeviceCircleMember } from '@/lib/server/circleMembership';
 import { findUserByDeviceId } from '@/lib/server/users';
@@ -15,7 +15,13 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { id: deviceId } = await getOrCreateDevice(request);
+    const prisma = getPrismaClient();
+
+    if (!prisma) {
+      return NextResponse.json({ ok: false, error: 'BACKEND_DISABLED' }, { status: 503 });
+    }
+
+    const { id: deviceId } = await getOrCreateDevice(request, prisma);
     const user = await findUserByDeviceId(deviceId);
 
     const message = await prisma.message.findUnique({ where: { id: messageId } });
@@ -23,7 +29,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: 'NOT_FOUND' }, { status: 404 });
     }
 
-    const canAccess = await isDeviceCircleMember(message.circleId, deviceId);
+    const canAccess = await isDeviceCircleMember(message.circleId, deviceId, prisma);
     if (!canAccess || !user) {
       return NextResponse.json({ ok: false, error: 'NOT_MEMBER' }, { status: 403 });
     }

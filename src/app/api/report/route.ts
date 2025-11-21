@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
 import { getOrCreateDevice } from '@/lib/server/device';
 import { findUserByDeviceId } from '@/lib/server/users';
 import { isDeviceCircleMember } from '@/lib/server/circleMembership';
@@ -16,14 +16,20 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { id: deviceId } = await getOrCreateDevice(request);
+    const prisma = getPrismaClient();
+
+    if (!prisma) {
+      return NextResponse.json({ error: 'BACKEND_DISABLED' }, { status: 503 });
+    }
+
+    const { id: deviceId } = await getOrCreateDevice(request, prisma);
     const reporter = await findUserByDeviceId(deviceId);
 
     if (!reporter) {
       return NextResponse.json({ error: 'PROFILE_REQUIRED' }, { status: 400 });
     }
 
-    const canReport = await isDeviceCircleMember(circleId, deviceId);
+    const canReport = await isDeviceCircleMember(circleId, deviceId, prisma);
     if (!canReport) {
       return NextResponse.json({ error: 'NOT_ALLOWED' }, { status: 403 });
     }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
 import { getOrCreateDevice } from '@/lib/server/device';
 import { DEVICE_HEADER_NAME } from '@/lib/device';
 import { AVATAR_PRESETS, DEFAULT_AVATAR_KEY } from '@/constants/avatars';
@@ -9,7 +9,13 @@ const isValidAvatar = (key: string) => AVATAR_PRESETS.some((preset) => preset.ke
 
 export async function GET(request: NextRequest) {
   try {
-    const { id: deviceId, isNew } = await getOrCreateDevice(request);
+    const prisma = getPrismaClient();
+
+    if (!prisma) {
+      return NextResponse.json({ user: null, error: 'BACKEND_DISABLED' }, { status: 503 });
+    }
+
+    const { id: deviceId, isNew } = await getOrCreateDevice(request, prisma);
     const user = await prisma.user.findUnique({ where: { deviceId } });
     const response = NextResponse.json({ user: user ? toUserProfile(user) : null });
     if (isNew) {
@@ -34,7 +40,13 @@ export async function POST(request: NextRequest) {
   const normalizedAvatar = isValidAvatar(avatarKey) ? avatarKey : DEFAULT_AVATAR_KEY;
 
   try {
-    const { id: deviceId, isNew } = await getOrCreateDevice(request);
+    const prisma = getPrismaClient();
+
+    if (!prisma) {
+      return NextResponse.json({ error: 'BACKEND_DISABLED' }, { status: 503 });
+    }
+
+    const { id: deviceId, isNew } = await getOrCreateDevice(request, prisma);
 
     const user = await prisma.user.upsert({
       where: { deviceId },
