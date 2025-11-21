@@ -5,13 +5,15 @@ import { countActiveMembers, isDeviceCircleMember } from '@/lib/server/circleMem
 import { toCircleMessage } from '@/lib/server/serializers';
 import { isCircleActive } from '@/lib/server/circles';
 import { DEVICE_HEADER_NAME } from '@/lib/device';
-import { applyMessageUsageToQuota, checkDailyMessageLimit } from '@/lib/server/messages';
+import { checkDailyMessageLimit } from '@/lib/server/messages';
 import { buildCircleMessagesWhere } from '@/lib/server/messageQueries';
 import { getUserWithBlocks } from '@/lib/server/users';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const circleId = searchParams.get('circleId')?.trim();
+  const sinceIso = searchParams.get('since');
+  const since = sinceIso ? new Date(sinceIso) : null;
 
   if (!circleId) {
     return NextResponse.json({ error: 'circle_required' }, { status: 400 });
@@ -31,6 +33,7 @@ export async function GET(request: NextRequest) {
     const messageFilters = buildCircleMessagesWhere({
       circleId,
       blockedUserIds: blockedIds,
+      since,
     });
 
     const [messages, memberCount, quota] = await Promise.all([
@@ -44,14 +47,10 @@ export async function GET(request: NextRequest) {
     ]);
 
     const response = NextResponse.json({
+      ok: true,
       messages: messages.map(toCircleMessage),
       quota: quota.quota,
       memberCount,
-      debug: {
-        circleId,
-        messagesCount: messages.length,
-        membersCount: memberCount,
-      },
     });
     if (isNew) {
       response.headers.set(DEVICE_HEADER_NAME, deviceId);
@@ -114,7 +113,6 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({
       ok: true,
       message: toCircleMessage(message),
-      quota: applyMessageUsageToQuota(quotaResult.quota),
     });
     if (isNew) {
       response.headers.set(DEVICE_HEADER_NAME, deviceId);

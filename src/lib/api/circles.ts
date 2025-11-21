@@ -7,6 +7,7 @@ export interface JoinCirclePayload {
 }
 
 export interface JoinCircleResponse {
+  ok: true;
   circle: CircleSummary;
   messages: CircleMessage[];
   isNewCircle: boolean;
@@ -26,6 +27,7 @@ export const getCurrentCircle = () =>
   fetchJson<CurrentCircleResponse>('/api/circles/current');
 
 export interface CircleMessagesResponse {
+  ok?: boolean;
   messages: CircleMessage[];
   quota?: DailyQuotaSnapshot;
   memberCount?: number;
@@ -52,7 +54,6 @@ export interface SendMessagePayload {
 export interface SendMessageResponse {
   ok: true;
   message: CircleMessage;
-  quota: DailyQuotaSnapshot;
 }
 
 export const sendMessage = (payload: SendMessagePayload) =>

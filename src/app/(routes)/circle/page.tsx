@@ -345,7 +345,6 @@ export default function CirclePage() {
     try {
       const response = await sendCircleMessage({ circleId: circle.id, content: trimmed });
       replaceMessage(optimisticId, response.message);
-      setQuotaFromApi(response.quota);
     } catch (error) {
       if (error instanceof ApiError) {
         const details = (error.data as { error?: string; quota?: DailyQuotaSnapshot } | null) ?? null;
