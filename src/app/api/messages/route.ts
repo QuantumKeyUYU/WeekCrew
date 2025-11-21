@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
     const messageFilters = buildCircleMessagesWhere({
       circleId,
       since,
-      excludeUserIds: blockedIds,
+      blockedUserIds: blockedIds,
     });
 
     const [messages, memberCount, quota] = await Promise.all([
