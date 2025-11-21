@@ -13,7 +13,18 @@ export interface JoinCircleResponse {
   isNewCircle: boolean;
 }
 
-export class AuthError extends ApiError {}
+export class AuthError extends Error {
+  status?: number;
+
+  data?: unknown;
+
+  constructor(message: string, status?: number, data?: unknown) {
+    super(message);
+    this.name = 'AuthError';
+    this.status = status;
+    this.data = data;
+  }
+}
 export class DeviceError extends ApiError {}
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -30,7 +41,7 @@ export const joinCircle = async (payload: JoinCirclePayload) => {
     } catch (error) {
       if (error instanceof ApiError) {
         if (error.status === 401 || error.status === 403) {
-          throw new AuthError(error.status, error.message, error.data);
+          throw new AuthError('unauthorized', error.status, error.data);
         }
         if ([400, 409, 428].includes(error.status)) {
           throw new DeviceError(error.status, error.message, error.data);

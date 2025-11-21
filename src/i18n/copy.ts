@@ -162,6 +162,7 @@ export const copy = {
     explore_toast_close: 'Закрыть',
     explore_retry_toast: 'Видим временную ошибку. Перепробуем подключение и скоро продолжим.',
     explore_error_message: 'Не удалось начать круг. Попробуй ещё раз.',
+    explore_error_reauth: 'Сессия устарела. Подключаемся заново...',
     explore_error_recover:
       'Мы обновили подключение, чтобы чат работал на любом устройстве. Нажми «Начать круг» ещё раз.',
     explore_sync_title: 'Чат синхронизируется на всех устройствах',
@@ -560,6 +561,7 @@ export const copy = {
     explore_toast_close: 'Close',
     explore_retry_toast: 'Temporary hiccup. Retrying the connection.',
     explore_error_message: 'We could not start the circle. Please try again.',
+    explore_error_reauth: 'Your session has expired. Reconnecting...',
     explore_error_recover:
       'We refreshed your connection so the chat stays synced on any device. Please tap “Start circle” again.',
     explore_sync_title: 'Chat stays in sync across devices',

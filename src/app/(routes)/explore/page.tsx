@@ -10,7 +10,7 @@ import { MOOD_OPTIONS, type MoodKey } from '@/constants/moods';
 import { saveCircleSelection } from '@/lib/circleSelection';
 import { LANGUAGE_INTERESTS } from '@/constants/language-interests';
 import { TestModeHint } from '@/components/shared/test-mode-hint';
-import { DeviceError, joinCircle } from '@/lib/api/circles';
+import { AuthError, DeviceError, joinCircle } from '@/lib/api/circles';
 import { getProfile } from '@/lib/api/profile';
 import { useAppStore } from '@/store/useAppStore';
 import { SafetyRulesModal } from '@/components/modals/safety-rules-modal';
@@ -186,9 +186,14 @@ export default function ExplorePage() {
       }
 
       console.error(lastError);
-      if (lastError instanceof DeviceError) {
-        resetDeviceId();
+      if (lastError instanceof AuthError) {
         clearSession();
+        resetDeviceId();
+        setErrorHint(t('explore_error_reauth'));
+        openProfileModal();
+        return;
+      }
+      if (lastError instanceof DeviceError) {
         setErrorHint(t('explore_error_recover'));
       } else if (lastError instanceof ApiError && lastError.status >= 500) {
         setToastMessage(t('explore_retry_toast'));
@@ -203,11 +208,13 @@ export default function ExplorePage() {
     effectiveInterest,
     interestsToRender,
     joining,
+    openProfileModal,
     randomInterest,
     router,
     saveCircleSelection,
     selectedMood,
     selectionComplete,
+    resetDeviceId,
     setCircle,
     setMessages,
     t,
