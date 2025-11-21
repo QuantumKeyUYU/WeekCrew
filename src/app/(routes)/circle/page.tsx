@@ -573,9 +573,52 @@ export default function CirclePage() {
         {t('explore_starting_state')}
       </div>
     );
+
   } else {
+    const messagePreamble = (
+      <div className="space-y-4">
+        {circle.icebreaker && (
+          <div className="rounded-2xl border border-amber-200/80 bg-gradient-to-r from-amber-50 via-white to-violet-50 px-4 py-4 text-amber-900 shadow-lg shadow-amber-100/60 dark:border-amber-500/30 dark:from-amber-500/20 dark:via-slate-900 dark:to-violet-500/10 dark:text-amber-50">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-700/80 dark:text-amber-100/80">{t('circle_icebreaker_title')}</p>
+            <p className="mt-1 text-lg font-semibold leading-snug text-slate-900 dark:text-white">{circle.icebreaker}</p>
+            <p className="text-xs text-amber-700/90 dark:text-amber-100/70">{t('circle_icebreaker_hint')} ✨</p>
+          </div>
+        )}
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-4 text-sm text-slate-600 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200">
+          {systemMessageLines.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+        </div>
+        {notMember && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50/90 p-4 text-sm text-amber-900 shadow-sm dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
+            <p className="font-semibold">{t('circle_not_member_notice')}</p>
+            <button
+              type="button"
+              onClick={handleStartMatching}
+              className="mt-3 inline-flex items-center justify-center rounded-full border border-transparent bg-amber-500 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-sm transition hover:bg-amber-600"
+            >
+              {t('circle_not_member_cta')}
+            </button>
+          </div>
+        )}
+        {isCircleExpired && (
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-sm text-slate-600 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200">
+            <p className="font-semibold text-slate-900 dark:text-white">{t('circle_expired_notice_title')}</p>
+            <p className="mt-1">{t('circle_expired_notice_subtitle')}</p>
+            <button
+              type="button"
+              onClick={handleStartMatching}
+              className="mt-3 inline-flex items-center justify-center rounded-full border border-transparent bg-brand px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-sm transition hover:-translate-y-0.5"
+            >
+              {t('circle_expired_start_new')}
+            </button>
+          </div>
+        )}
+      </div>
+    );
+
     pageContent = (
-      <div className="space-y-6 py-4">
+      <div className="flex min-h-screen flex-col gap-4 py-4">
         <section className="rounded-[2.5rem] border border-slate-200/70 bg-white/95 p-6 shadow-[0_28px_80px_rgba(15,23,42,0.12)] dark:border-white/10 dark:bg-slate-900/70">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-2">
@@ -619,35 +662,75 @@ export default function CirclePage() {
                 onClick={() => router.push('/explore')}
                 className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:-translate-y-0.5 hover:border-brand/40 hover:text-brand-foreground dark:border-white/10 dark:text-white"
               >
-                {t('circle_change_button')}
+                {t('circle_change_topic_button')}
               </button>
               <button
                 type="button"
                 onClick={handleLeaveCircle}
                 disabled={leavePending}
-                className="rounded-full border border-transparent px-4 py-2 text-sm font-medium text-slate-500 transition hover:-translate-y-0.5 hover:text-slate-900 disabled:opacity-60 dark:text-slate-300 dark:hover:text-white"
+                className="rounded-full border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 transition hover:-translate-y-0.5 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-500/50 dark:text-rose-200 dark:hover:bg-rose-500/10"
               >
-                {leavePending ? t('explore_starting_state') : t('circle_leave_button')}
+                {leavePending ? t('circle_leave_pending') : t('circle_leave_button')}
               </button>
             </div>
           </div>
-        </section>
-
-        <section className="rounded-3xl border border-slate-200/70 bg-gradient-to-r from-brand/10 via-indigo-100/80 to-white/90 p-5 shadow-[0_18px_55px_rgba(15,23,42,0.08)] dark:border-white/10 dark:from-brand/20 dark:via-slate-800 dark:to-slate-900">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="space-y-2 text-sm text-slate-700 dark:text-slate-100">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">
-                {t('circle_session_principle')}
-              </p>
-              <p>{t('circle_session_details')}</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="flex items-center gap-3 rounded-2xl bg-slate-50/70 px-4 py-3 text-sm text-slate-700 shadow-inner shadow-slate-200/70 dark:bg-slate-800/70 dark:text-slate-100 dark:shadow-black/20">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-lg shadow-sm dark:bg-slate-900">⏳</div>
+              <div>
+                <p className="text-xs uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500">{t('circle_timer_label')}</p>
+                <p className="text-sm font-semibold text-slate-800 dark:text-white">{timerChipText}</p>
+              </div>
             </div>
-            <div className="min-w-[220px] rounded-2xl border border-white/60 bg-white/80 px-4 py-3 text-left shadow-inner backdrop-blur dark:border-white/10 dark:bg-slate-900/60">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
-                {t('circle_session_device_hint')}
-              </p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-white" aria-label={sessionFingerprint}>
-                {sessionFingerprint}
-              </p>
+            <div className="flex items-center gap-3 rounded-2xl bg-slate-50/70 px-4 py-3 text-sm text-slate-700 shadow-inner shadow-slate-200/70 dark:bg-slate-800/70 dark:text-slate-100 dark:shadow-black/20">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-lg shadow-sm dark:bg-slate-900">🔒</div>
+              <div>
+                <p className="text-xs uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500">{t('circle_rules_label')}</p>
+                <p className="text-sm font-semibold text-slate-800 dark:text-white">{t('circle_rules_summary')}</p>
+              </div>
+            </div>
+          </div>
+          <div className="mt-6 grid gap-3 rounded-3xl bg-slate-50/70 p-4 text-slate-700 shadow-inner shadow-slate-200/70 dark:bg-slate-800/60 dark:text-slate-100 dark:shadow-black/30 md:grid-cols-2">
+            <div className="space-y-2">
+              <p className="text-[13px] font-semibold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">{t('circle_rules_quick')}</p>
+              <ul className="grid gap-2 text-sm text-slate-600 dark:text-slate-200">
+                {quickRules.map((rule, index) => (
+                  <li key={rule} className="flex gap-3">
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-xs font-semibold text-slate-500 shadow-sm dark:bg-slate-900">{index + 1}</span>
+                    <span>{rule}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="flex flex-col justify-between gap-3 rounded-2xl bg-white/70 p-4 shadow-sm dark:bg-slate-900/50">
+              <div className="space-y-1">
+                <p className="text-[13px] font-semibold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">{t('circle_quota_label')}</p>
+                {typeof dailyRemaining === 'number' && typeof dailyLimit === 'number' ? (
+                  <>
+                    <p className="text-sm font-semibold text-slate-800 dark:text-white">{t('circle_quota_remaining', { count: dailyRemaining })}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-300">{t('circle_quota_total', { count: dailyLimit })}</p>
+                  </>
+                ) : (
+                  <p className="text-sm text-slate-500 dark:text-slate-300">{t('circle_quota_unknown')}</p>
+                )}
+              </div>
+              <div className="rounded-2xl bg-gradient-to-r from-brand/10 via-white to-slate-50 px-4 py-3 text-xs text-slate-600 shadow-inner shadow-white/70 dark:from-brand/30 dark:via-slate-900 dark:to-slate-800 dark:text-slate-200">
+                <p className="font-semibold">{t('circle_pace_tip_title')}</p>
+                <p className="mt-1 leading-relaxed">{t('circle_pace_tip_body')}</p>
+              </div>
+            </div>
+          </div>
+          {circleHostKey && (
+            <div className="mt-4 rounded-2xl bg-gradient-to-r from-brand/10 via-white to-slate-50 px-4 py-3 text-sm text-slate-700 shadow-inner shadow-white/70 dark:from-brand/30 dark:via-slate-900 dark:to-slate-800 dark:text-slate-200">
+              <p className="font-semibold">{t('circle_host_label')}</p>
+              <p className="leading-relaxed">{t(circleHostKey)}</p>
+            </div>
+          )}
+          <div className="mt-4 flex items-start gap-3 rounded-2xl bg-white/70 p-4 text-sm text-slate-700 shadow-inner shadow-white/70 dark:bg-slate-900/60 dark:text-slate-100">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-lg text-white shadow-inner shadow-black/30">🔐</div>
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-slate-800 dark:text-white">{t('circle_privacy_title')}</p>
+              <p className="leading-relaxed text-slate-600 dark:text-slate-200">{t('circle_privacy_body')}</p>
             </div>
           </div>
         </section>
@@ -673,54 +756,20 @@ export default function CirclePage() {
           )}
         </section>
 
-        <section className="rounded-3xl border border-slate-200/70 bg-white/95 p-5 shadow-[0_18px_55px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-slate-900/70">
-          {circle?.icebreaker && (
-            <div className="mb-4 rounded-2xl border border-amber-200/80 bg-gradient-to-r from-amber-50 via-white to-violet-50 px-4 py-4 text-amber-900 shadow-lg shadow-amber-100/60 dark:border-amber-500/30 dark:from-amber-500/20 dark:via-slate-900 dark:to-violet-500/10 dark:text-amber-50">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-700/80 dark:text-amber-100/80">
-                {t('circle_icebreaker_title')}
-              </p>
-              <p className="mt-1 text-lg font-semibold leading-snug text-slate-900 dark:text-white">{circle.icebreaker}</p>
-              <p className="text-xs text-amber-700/90 dark:text-amber-100/70">{t('circle_icebreaker_hint')} ✨</p>
-            </div>
-          )}
-          <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-4 text-sm text-slate-600 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200">
-            {systemMessageLines.map((line) => (
-              <p key={line}>{line}</p>
-            ))}
-          </div>
-          {notMember && (
-            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50/90 p-4 text-sm text-amber-900 shadow-sm dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
-              <p className="font-semibold">{t('circle_not_member_notice')}</p>
-              <button
-                type="button"
-                onClick={handleStartMatching}
-                className="mt-3 inline-flex items-center justify-center rounded-full border border-transparent bg-amber-500 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-sm transition hover:bg-amber-600"
-              >
-                {t('circle_not_member_cta')}
-              </button>
-            </div>
-          )}
-          {isCircleExpired && (
-            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-sm text-slate-600 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200">
-              <p className="font-semibold text-slate-900 dark:text-white">{t('circle_expired_notice_title')}</p>
-              <p className="mt-1">{t('circle_expired_notice_subtitle')}</p>
-              <button
-                type="button"
-                onClick={handleStartMatching}
-                className="mt-3 inline-flex items-center justify-center rounded-full border border-transparent bg-brand px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-sm transition hover:-translate-y-0.5"
-              >
-                {t('circle_expired_start_new')}
-              </button>
-            </div>
-          )}
-          <div className="mt-4">
+        <section className="flex flex-1 min-h-0 flex-col gap-3 rounded-3xl border border-slate-200/70 bg-white/95 p-4 shadow-[0_18px_55px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-slate-900/70">
+          <div className="flex-1 min-h-0 overflow-hidden rounded-2xl bg-white/50 shadow-inner shadow-white/80 dark:bg-slate-900/40 dark:shadow-black/20">
             <MessageList
               messages={messages}
               currentDeviceId={currentDeviceId}
               isLoading={Boolean(circle && messagesLoading)}
+              preamble={messagePreamble}
+              className="p-4 sm:p-6"
             />
           </div>
-          <form onSubmit={handleSendMessage} className="mt-4 space-y-2">
+          <form
+            onSubmit={handleSendMessage}
+            className="sticky bottom-0 space-y-2 rounded-2xl border border-slate-200/70 bg-white/95 p-3 shadow-[0_10px_30px_rgba(15,23,42,0.08)] backdrop-blur dark:border-white/10 dark:bg-slate-900/70"
+          >
             <div className="flex flex-col gap-2 sm:flex-row">
               <textarea
                 ref={composerRef}
@@ -771,7 +820,6 @@ export default function CirclePage() {
       </div>
     );
   }
-
   return (
     <>
       {pageContent}
