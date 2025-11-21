@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getOrCreateDevice } from '@/lib/server/device';
 import { findActiveCircleMembershipForDevice } from '@/lib/server/circleMembership';
 import { toCircleMessage } from '@/lib/server/serializers';
+import { broadcastRealtimeEvent, getCircleChannelName } from '@/lib/realtime';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -101,6 +102,9 @@ export async function POST(request: NextRequest) {
       },
       include: { user: true },
     });
+
+    const channel = getCircleChannelName(circleId);
+    broadcastRealtimeEvent(channel, 'new-message', toCircleMessage(message));
 
     return NextResponse.json(
       { ok: true, message: toCircleMessage(message) },
