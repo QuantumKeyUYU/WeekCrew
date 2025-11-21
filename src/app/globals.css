@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 :root {
+  font-size: clamp(14px, 0.45vw + 13.6px, 18px);
   color-scheme: light;
   --app-bg: linear-gradient(to bottom, #f5f3ff 0%, #f9fafb 45%, #eef2ff 100%);
   --surface-card-bg: rgba(255, 255, 255, 0.98);
@@ -115,27 +116,27 @@ body[data-animations='off'] * {
 
 @layer components {
   .app-shell {
-    width: min(1100px, 100%);
+    width: min(1200px, 100%);
     margin-inline: auto;
-    padding-inline: clamp(1.1rem, 3vw, 2.5rem);
+    padding-inline: clamp(1rem, 3.5vw, 2.8rem);
   }
 
   .app-panel {
-    border-radius: 2.5rem;
+    border-radius: clamp(1.4rem, 2vw + 1.1rem, 2.6rem);
     border: 1px solid var(--surface-card-border);
     background: var(--surface-card-bg);
     box-shadow: var(--surface-card-shadow);
   }
 
   .app-panel-muted {
-    border-radius: 2rem;
+    border-radius: clamp(1.2rem, 1.6vw + 0.9rem, 2.1rem);
     border: 1px solid var(--surface-secondary-border);
     background: var(--surface-secondary-bg);
     box-shadow: var(--surface-secondary-shadow);
   }
 
   .app-hero {
-    border-radius: 3rem;
+    border-radius: clamp(1.6rem, 2.4vw + 1.3rem, 3.1rem);
     border: 1px solid var(--surface-hero-border);
     background-image: var(--surface-hero-bg);
     box-shadow: var(--surface-hero-shadow);
@@ -143,8 +144,36 @@ body[data-animations='off'] * {
 
   .app-chip {
     border-radius: 9999px;
+    padding: clamp(0.42rem, 0.22vw + 0.38rem, 0.62rem) clamp(0.85rem, 0.25vw + 0.8rem, 1.2rem);
+    font-size: clamp(0.76rem, 0.16vw + 0.73rem, 0.95rem);
+    line-height: 1.35;
     border: 1px solid var(--chip-border);
     background-color: var(--chip-bg);
     box-shadow: var(--chip-shadow);
+  }
+
+  @media (max-width: 768px) {
+    .app-shell {
+      padding-inline: 1.1rem;
+    }
+
+    .app-panel,
+    .app-panel-muted,
+    .app-hero {
+      border-radius: 1.3rem;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .app-shell {
+      width: min(1280px, 96%);
+      padding-inline: clamp(2.2rem, 2vw + 2rem, 3rem);
+    }
+
+    .app-panel,
+    .app-panel-muted,
+    .app-hero {
+      border-radius: clamp(2rem, 1vw + 1.7rem, 3.1rem);
+    }
   }
 }
