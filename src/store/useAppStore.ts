@@ -67,6 +67,11 @@ const sortMessages = (messages: CircleMessage[]) =>
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
   );
 
+const prepareMessages = (
+  messages: CircleMessage[],
+  blockedUserIds: string[],
+) => sortMessages(filterBlockedMessages(messages, blockedUserIds));
+
 const memoryStorage = (() => {
   let storage: Record<string, string> = {};
   return {
@@ -110,18 +115,31 @@ export const useAppStore = create<AppStore>()(
         updateCircle: (updater) => set((state) => ({ circle: updater(state.circle) })),
         setMessages: (messages) =>
           set((state) => ({
-            messages: sortMessages(filterBlockedMessages(messages, state.blockedUserIds)),
+            messages: prepareMessages(messages, state.blockedUserIds),
           })),
         addMessage: (message) =>
           set((state) => ({
-            messages: sortMessages(filterBlockedMessages([...state.messages, message], state.blockedUserIds)),
+            messages: prepareMessages([...state.messages, message], state.blockedUserIds),
           })),
         replaceMessage: (tempId, message) =>
-          set((state) => ({
-            messages: state.messages.map((existing) =>
-              existing.id === tempId ? message : existing
-            ),
-          })),
+          set((state) => {
+            let didReplace = false;
+            const updated = state.messages.map((existing) => {
+              if (existing.id === tempId) {
+                didReplace = true;
+                return message;
+              }
+              return existing;
+            });
+
+            const nextMessages = didReplace
+              ? updated
+              : [...state.messages, message];
+
+            return {
+              messages: prepareMessages(nextMessages, state.blockedUserIds),
+            };
+          }),
         removeMessage: (id) =>
           set((state) => ({
             messages: state.messages.filter((message) => message.id !== id),
