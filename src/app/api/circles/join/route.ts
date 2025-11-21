@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { PrismaClient } from '@prisma/client';
 import { CircleMembershipStatus } from '@prisma/client';
 
 import { prisma } from '@/lib/prisma';
@@ -14,36 +13,6 @@ const DEFAULT_MAX_MEMBERS = 5;
 
 const normalizeText = (value: unknown) =>
   typeof value === 'string' ? value.trim() : '';
-
-async function findJoinableCircle(
-  client: PrismaClient,
-  {
-    mood,
-    interest,
-    now,
-  }: { mood: string; interest: string; now: Date },
-) {
-  // Берём несколько самых старых активных кругов по этой теме
-  const candidates = await client.circle.findMany({
-    where: {
-      status: 'active',
-      expiresAt: { gt: now },
-      mood,
-      interest,
-    },
-    orderBy: { createdAt: 'asc' },
-    take: 5,
-  });
-
-  for (const circle of candidates) {
-    const memberCount = await countActiveMembers(circle.id, client);
-    if (memberCount < circle.maxMembers) {
-      return { circle, memberCount };
-    }
-  }
-
-  return null;
-}
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
@@ -62,9 +31,6 @@ export async function POST(request: NextRequest) {
     const now = new Date();
 
     const result = await prisma.$transaction(async (tx) => {
-      let recovered = false;
-
-      // 1. Если этот девайс уже состоит в активном круге с тем же mood+interest – вернём его
       const existingMembership = await tx.circleMembership.findFirst({
         where: {
           deviceId,
@@ -81,70 +47,44 @@ export async function POST(request: NextRequest) {
       });
 
       if (existingMembership?.circle) {
-        recovered = true;
         const memberCount = await countActiveMembers(
           existingMembership.circle.id,
           tx,
         );
-
-        return {
-          circle: existingMembership.circle,
-          memberCount,
-          isNewCircle: false,
-          recovered,
-        };
+        return { circle: existingMembership.circle, memberCount, isNewCircle: false };
       }
 
-      // 2. Иначе пробуем присоединиться к уже существующему кругу
-      const joinable = await findJoinableCircle(tx, { mood, interest, now });
+      const candidates = await tx.circle.findMany({
+        where: {
+          status: 'active',
+          expiresAt: { gt: now },
+          mood,
+          interest,
+        },
+        orderBy: { createdAt: 'asc' },
+        take: 5,
+      });
 
-      if (joinable) {
-        const memberships = await tx.circleMembership.findMany({
-          where: { circleId: joinable.circle.id, deviceId },
-          orderBy: { joinedAt: 'desc' },
-        });
-
-        const [latestMembership, ...olderMemberships] = memberships;
-
-        if (latestMembership) {
-          recovered = recovered || latestMembership.status !== CircleMembershipStatus.active;
-          if (latestMembership.status !== CircleMembershipStatus.active) {
-            await tx.circleMembership.update({
-              where: { id: latestMembership.id },
-              data: { status: CircleMembershipStatus.active, leftAt: null },
-            });
-          }
-
-          if (olderMemberships.length) {
-            await tx.circleMembership.updateMany({
-              where: { id: { in: olderMemberships.map((membership) => membership.id) } },
-              data: { status: CircleMembershipStatus.left, leftAt: new Date() },
-            });
-          }
-        } else {
-          await tx.circleMembership.create({
-            data: {
-              circleId: joinable.circle.id,
+      for (const circle of candidates) {
+        const memberCount = await countActiveMembers(circle.id, tx);
+        if (memberCount < circle.maxMembers) {
+          await tx.circleMembership.upsert({
+            where: {
+              circleId_deviceId: { circleId: circle.id, deviceId },
+            },
+            update: { status: CircleMembershipStatus.active },
+            create: {
+              circleId: circle.id,
               deviceId,
               status: CircleMembershipStatus.active,
             },
           });
+
+          const updatedCount = await countActiveMembers(circle.id, tx);
+          return { circle, memberCount: updatedCount, isNewCircle: false };
         }
-
-        const memberCount = await countActiveMembers(
-          joinable.circle.id,
-          tx,
-        );
-
-        return {
-          circle: joinable.circle,
-          memberCount,
-          isNewCircle: false,
-          recovered,
-        };
       }
 
-      // 3. Подходящего круга нет – создаём новый
       const expiresAt = computeCircleExpiry(now);
       const icebreaker =
         ICEBREAKERS[Math.floor(Math.random() * ICEBREAKERS.length)] ??
@@ -172,7 +112,7 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      return { circle, memberCount: 1, isNewCircle: true, recovered: false };
+      return { circle, memberCount: 1, isNewCircle: true };
     });
 
     // Подтягиваем историю сообщений круга
@@ -189,9 +129,6 @@ export async function POST(request: NextRequest) {
       circle: toCircleSummary(result.circle, result.memberCount),
       messages,
       isNewCircle: result.isNewCircle,
-      circleId: result.circle.id,
-      created: result.isNewCircle,
-      recovered: result.recovered,
     });
 
     if (isNew) {
