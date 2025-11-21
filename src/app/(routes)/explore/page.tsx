@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
+import { AnimatePresence, motion } from 'framer-motion';
 import type { InterestId } from '@/types';
 import { INTERESTS } from '@/config/interests';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -53,6 +54,7 @@ export default function ExplorePage() {
   const [showRulesModal, setShowRulesModal] = useState(false);
   const [autoPrompted, setAutoPrompted] = useState(false);
   const [profileChecked, setProfileChecked] = useState(false);
+  const [showAssembling, setShowAssembling] = useState(false);
 
   useEffect(() => {
     if (hydrated && !accepted && !autoPrompted) {
@@ -103,6 +105,14 @@ export default function ExplorePage() {
   const selectionComplete = Boolean(selectedMood && (effectiveInterest || randomInterest));
   const canStart = Boolean(accepted && selectionComplete);
 
+  const stepMotion = useMemo(
+    () => ({
+      hidden: { opacity: 0, y: 16 },
+      visible: (delay = 0) => ({ opacity: 1, y: 0, transition: { delay, duration: 0.35, ease: [0.16, 1, 0.3, 1] } }),
+    }),
+    [],
+  );
+
   const handleSelectInterest = (id: InterestId) => {
     if (joining) return;
     setSelectedInterest((prev) => (prev === id ? null : id));
@@ -113,6 +123,16 @@ export default function ExplorePage() {
     setRandomInterest((prev) => !prev);
     setSelectedInterest(null);
   };
+
+  useEffect(() => {
+    if (selectionComplete) {
+      setShowAssembling(true);
+      const timer = setTimeout(() => setShowAssembling(false), 1500);
+      return () => clearTimeout(timer);
+    }
+    setShowAssembling(false);
+    return undefined;
+  }, [selectionComplete]);
 
   const performJoin = useCallback(async () => {
     if (!selectedMood || !selectionComplete || joining) {
@@ -182,103 +202,137 @@ export default function ExplorePage() {
   };
 
   return (
-    <div className="space-y-8 py-6">
-      <section className="app-hero overflow-hidden p-6 text-white shadow-[0_24px_120px_rgba(8,7,20,0.55)] sm:p-10">
+    <div className="space-y-10 px-3 py-8 sm:px-6 lg:px-10">
+      <motion.section
+        initial="hidden"
+        animate="visible"
+        variants={stepMotion}
+        custom={0}
+        className="app-hero overflow-hidden p-6 text-white shadow-[0_32px_140px_rgba(8,7,20,0.6)] sm:p-10"
+      >
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/70">{t('explore_intro_label')}</p>
-        <h1 className="mt-3 text-3xl font-semibold sm:text-[2.25rem]">{t('explore_page_title')}</h1>
-        <p className="mt-3 text-base text-white/80">{t('explore_page_subtitle')}</p>
-      </section>
+        <h1 className="mt-4 text-4xl font-semibold leading-tight sm:text-[2.75rem]">{t('explore_page_title')}</h1>
+        <p className="mt-4 text-lg text-white/85 sm:max-w-2xl">{t('explore_page_subtitle')}</p>
+      </motion.section>
 
-      <section className="app-panel flex flex-col gap-3 border border-white/10 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-[0_20px_60px_rgba(15,23,42,0.35)]">
+      <motion.section
+        initial="hidden"
+        animate="visible"
+        variants={stepMotion}
+        custom={0.05}
+        className="app-panel flex flex-col gap-4 rounded-3xl border border-white/10 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 text-white shadow-[0_26px_80px_rgba(15,23,42,0.35)] backdrop-blur-xl"
+      >
         <div className="flex items-start gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 text-xl shadow-inner shadow-black/40">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 text-xl shadow-inner shadow-black/40">
             📡
           </div>
           <div className="space-y-1">
-            <p className="text-sm font-semibold">{t('explore_sync_title')}</p>
+            <p className="text-base font-semibold">{t('explore_sync_title')}</p>
             <p className="text-sm text-white/80">{t('explore_sync_subtitle')}</p>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-white/10 p-3 text-xs text-white/80 shadow-inner shadow-black/25">
-          <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 font-semibold uppercase tracking-[0.18em] text-white/90">
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-white/10 p-4 text-sm text-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.25)]">
+          <span className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-white/15 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/90">
             🛰️ {t('messages_author_system')}
           </span>
           <span>{t('explore_sync_hint')}</span>
         </div>
-      </section>
+      </motion.section>
 
       {!accepted && (
-        <section className="rounded-3xl border border-amber-200 bg-amber-50/90 p-5 text-amber-900 shadow-[0_16px_40px_rgba(245,158,11,0.25)] dark:border-amber-400/40 dark:bg-amber-500/10 dark:text-amber-100">
+        <motion.section
+          initial="hidden"
+          animate="visible"
+          variants={stepMotion}
+          custom={0.1}
+          className="rounded-3xl border border-amber-200 bg-amber-50/90 p-5 text-amber-900 shadow-[0_18px_50px_rgba(245,158,11,0.25)] backdrop-blur-md dark:border-amber-400/40 dark:bg-amber-500/10 dark:text-amber-100"
+        >
           <p className="text-sm font-semibold">{t('explore_rules_notice')}</p>
           <p className="mt-1 text-xs text-amber-800/80 dark:text-amber-100/70">{t('explore_rules_required')}</p>
           <div className="mt-3">
             <button
               type="button"
               onClick={() => setShowRulesModal(true)}
-              className="inline-flex items-center rounded-full border border-transparent bg-amber-500 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-sm transition hover:bg-amber-600 dark:bg-amber-400 dark:text-slate-900"
+              className="inline-flex min-h-[44px] items-center rounded-full border border-transparent bg-amber-500 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-sm transition hover:bg-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 dark:bg-amber-400 dark:text-slate-900"
             >
               {t('explore_rules_button')}
             </button>
           </div>
-        </section>
+        </motion.section>
       )}
 
-      <section className="app-panel p-6">
+      <motion.section
+        initial="hidden"
+        animate="visible"
+        variants={stepMotion}
+        custom={0.15}
+        className="app-panel p-6 shadow-[0_26px_80px_rgba(15,23,42,0.12)]"
+      >
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-300">
           {t('explore_step_one_title')}
         </p>
-        <h2 className="mt-2 text-xl font-semibold text-slate-900 dark:text-white">{t('explore_step_one_heading')}</h2>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{t('explore_step_one_description')}</p>
-        <div className="mt-4 flex flex-wrap gap-2">
+        <h2 className="mt-3 text-3xl font-semibold text-slate-900 dark:text-white">{t('explore_step_one_heading')}</h2>
+        <p className="mt-2 text-base text-slate-600 dark:text-slate-300">{t('explore_step_one_description')}</p>
+        <div className="mt-6 flex flex-wrap gap-3">
           {MOOD_OPTIONS.map((mood) => {
             const active = selectedMood === mood.key;
             return (
-              <button
+              <motion.button
                 key={mood.key}
                 type="button"
+                whileHover={{ scale: active ? 1.02 : 1.04 }}
+                whileTap={{ scale: 0.99 }}
                 onClick={() => setSelectedMood((prev) => (prev === mood.key ? null : mood.key))}
                 className={clsx(
-                  'app-chip px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
+                  'app-chip min-h-[44px] px-4 py-2.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
                   active
-                    ? 'border-brand/70 bg-brand text-white shadow-[0_0_30px_rgba(142,97,255,0.45)]'
+                    ? 'border-white/50 bg-white/10 text-white shadow-[0_15px_50px_rgba(124,58,237,0.45)] backdrop-blur-md'
                     : 'text-slate-600 hover:-translate-y-0.5 hover:text-brand-foreground dark:text-slate-200',
                 )}
                 aria-pressed={active}
               >
                 {t(mood.labelKey)}
-              </button>
+              </motion.button>
             );
           })}
         </div>
         {moodLabel && (
-          <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
             {t('explore_mood_selected_label', { mood: moodLabel })}
           </p>
         )}
-      </section>
+      </motion.section>
 
-      <section className="app-panel space-y-4 p-6">
+      <motion.section
+        initial="hidden"
+        animate="visible"
+        variants={stepMotion}
+        custom={0.2}
+        className="app-panel space-y-5 p-6 shadow-[0_26px_80px_rgba(15,23,42,0.12)]"
+      >
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-300">
             {t('explore_step_two_title')}
           </p>
-          <h2 className="mt-2 text-xl font-semibold text-slate-900 dark:text-white">{t('explore_step_two_heading')}</h2>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{t('explore_step_two_description')}</p>
+          <h2 className="mt-3 text-3xl font-semibold text-slate-900 dark:text-white">{t('explore_step_two_heading')}</h2>
+          <p className="mt-2 text-base text-slate-600 dark:text-slate-300">{t('explore_step_two_description')}</p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           {interestsToRender.map((card) => {
             const active = selectedInterest === card.id;
             return (
-              <button
+              <motion.button
                 key={card.id}
                 type="button"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.99 }}
                 onClick={() => handleSelectInterest(card.id)}
                 className={clsx(
-                  'rounded-3xl border px-5 py-4 text-left transition',
+                  'rounded-3xl border px-5 py-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
                   motionTimingClass,
                   active
-                    ? 'border-brand/60 bg-brand/10 text-brand-foreground shadow-[0_0_30px_rgba(142,97,255,0.35)] dark:bg-brand/25 dark:text-white'
-                    : 'border-slate-100/80 bg-white/90 text-slate-700 shadow-[0_20px_60px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 dark:border-white/10 dark:bg-[#050816]/60 dark:text-slate-100',
+                    ? 'border-white/60 bg-white/5 text-white shadow-[0_25px_80px_rgba(124,58,237,0.4)] backdrop-blur-md'
+                    : 'border-slate-100/80 bg-white/90 text-slate-700 shadow-[0_22px_70px_rgba(15,23,42,0.12)] hover:-translate-y-0.5 hover:shadow-[0_28px_90px_rgba(124,58,237,0.15)] dark:border-white/10 dark:bg-[#050816]/60 dark:text-slate-100',
                 )}
                 aria-pressed={active}
               >
@@ -286,9 +340,9 @@ export default function ExplorePage() {
                   <span className="text-2xl" aria-hidden>
                     {card.emoji}
                   </span>
-                  <span className="text-base font-semibold">{card.label}</span>
+                  <span className="text-lg font-semibold">{card.label}</span>
                 </div>
-              </button>
+              </motion.button>
             );
           })}
         </div>
@@ -298,25 +352,44 @@ export default function ExplorePage() {
           className={clsx(
             'w-full rounded-3xl border border-dashed px-5 py-3 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
             randomInterest
-              ? 'border-brand bg-brand/10 text-brand-foreground'
-              : 'border-slate-300 text-slate-500 hover:border-brand/40 hover:text-brand-foreground dark:border-white/20 dark:text-slate-300',
+              ? 'border-white/60 bg-white/5 text-white shadow-[0_20px_60px_rgba(124,58,237,0.3)] backdrop-blur-md'
+              : 'border-slate-300 text-slate-600 hover:border-brand/40 hover:text-brand-foreground dark:border-white/20 dark:text-slate-300',
           )}
         >
           {t('explore_random_button')}
         </button>
-      </section>
+      </motion.section>
 
-      <section className="app-panel space-y-4 p-6">
-        <div className="flex flex-col gap-3 rounded-3xl border border-slate-200/80 bg-white/80 p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur-sm dark:border-white/10 dark:bg-slate-900/80">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 via-brand to-sky-500 text-lg text-white shadow-lg">
+      <motion.section
+        initial="hidden"
+        animate="visible"
+        variants={stepMotion}
+        custom={0.25}
+        className="app-panel space-y-4 p-6 shadow-[0_26px_80px_rgba(15,23,42,0.12)]"
+      >
+        <div className="flex flex-col gap-3 rounded-3xl border border-slate-200/80 bg-white/80 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.1)] backdrop-blur-lg dark:border-white/10 dark:bg-slate-900/80">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 via-violet-500 to-fuchsia-500 text-lg text-white shadow-lg">
               {joining ? '⌛' : '💬'}
             </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">{t('explore_ready_title')}</p>
-              <p className="text-xs text-slate-500 dark:text-slate-300">{t('explore_ready_description')}</p>
+            <div className="space-y-1">
+              <p className="text-base font-semibold text-slate-900 dark:text-white">{t('explore_ready_title')}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-300">{t('explore_ready_description')}</p>
             </div>
           </div>
+          <AnimatePresence>
+            {showAssembling && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                className="flex items-center gap-2 rounded-2xl bg-white/70 px-3 py-2 text-sm font-semibold text-slate-800 shadow-[0_12px_40px_rgba(124,58,237,0.2)] backdrop-blur"
+              >
+                <span aria-hidden>✨</span>
+                <span>✨ Круг собирается…</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
           {error && (
             <div className="rounded-2xl bg-gradient-to-r from-red-50 via-white to-orange-50 p-3 text-xs text-red-800 shadow-inner shadow-red-100 dark:from-red-500/10 dark:via-slate-900 dark:to-orange-500/10 dark:text-red-100">
               <p className="font-semibold">{error}</p>
@@ -329,11 +402,11 @@ export default function ExplorePage() {
             onClick={handleStartCircle}
             className={clsx(
               primaryCtaClass,
-              'group flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-base font-semibold shadow-[0_20px_60px_rgba(99,102,241,0.45)] disabled:shadow-none',
+              'group flex w-full items-center justify-center gap-3 rounded-2xl py-4 text-base font-semibold shadow-[0_24px_70px_rgba(109,40,217,0.5)] disabled:shadow-none',
               joining && 'cursor-wait',
             )}
           >
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/25 text-lg text-white shadow-inner shadow-white/40">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/25 text-lg text-white shadow-inner shadow-white/40">
               {joining ? '⏳' : '🚀'}
             </span>
             <span className="grow text-left">
@@ -346,7 +419,7 @@ export default function ExplorePage() {
             <p className="text-xs text-amber-700 dark:text-amber-200">{t('explore_rules_required')}</p>
           )}
         </div>
-      </section>
+      </motion.section>
 
       <TestModeHint />
 
