@@ -63,9 +63,16 @@ export const useCircleMessagesPolling = (circleId: string | null | undefined) =>
       }
 
       try {
-        const { messages: incoming, quota, memberCount } = await getCircleMessages({
+        const response = await getCircleMessages({
           circleId,
         });
+        console.debug('Fetched circle messages', response);
+
+        if (response.ok === false || !Array.isArray(response.messages)) {
+          return;
+        }
+
+        const { messages: incoming, quota, memberCount } = response;
 
         const state = useAppStore.getState();
         if (state.circle?.id !== circleId || cancelled) {

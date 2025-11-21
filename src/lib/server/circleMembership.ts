@@ -62,7 +62,7 @@ export const findActiveCircleMembership = (
   client: PrismaClient = prisma,
 ) =>
   client.circleMembership.findFirst({
-    where: { circleId, deviceId, status: DEFAULT_STATUS, circle: { status: 'active' } },
+    where: { circleId, deviceId, status: DEFAULT_STATUS },
   });
 
 export const isDeviceCircleMember = async (

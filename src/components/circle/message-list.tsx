@@ -139,9 +139,13 @@ export const MessageList = ({
         const data = await response.json();
         if (cancelled) return;
 
-        const next: CircleMessage[] = Array.isArray(data?.messages)
-          ? data.messages
-          : [];
+        console.debug('Message list poll response', data);
+
+        if (data?.ok === false || !Array.isArray(data?.messages)) {
+          return;
+        }
+
+        const next: CircleMessage[] = data.messages;
 
         setLiveMessages((prev) =>
           shouldReplaceMessages(prev, next) ? next : prev,
