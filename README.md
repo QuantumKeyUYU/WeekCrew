@@ -42,6 +42,7 @@ WeekCrew — веб‑приложение‑PWA для «кружков нед�
 npm install
 cp .env.example .env.local
 # Вставьте DATABASE_URL из Neon/Postgres
+export NEXT_PUBLIC_WEEKCREW_MODE=live
 npx prisma migrate dev --name init_weekcrew
 npm run dev
 ```
@@ -54,6 +55,7 @@ npm run dev
 
 | Переменная | Описание |
 |-----------|----------|
+| `NEXT_PUBLIC_WEEKCREW_MODE` | режим приложения: `live` (по умолчанию) для общего чата, `demo` — только локально |
 | `DATABASE_URL` | строка подключения к PostgreSQL / Neon |
 
 Без неё WeekCrew работает в демо‑режиме (всё локально).
