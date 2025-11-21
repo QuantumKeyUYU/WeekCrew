@@ -54,7 +54,9 @@ export default function StepInterest({
             <h2 className="mt-2 text-3xl font-semibold leading-tight text-white">{t('explore_step_two_heading')}</h2>
             <p className="mt-1 text-base text-white/70">{t('explore_step_two_description')}</p>
           </div>
-          <span className="hidden rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/80 sm:inline-flex">Step 2</span>
+          <span className="hidden rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/80 sm:inline-flex">
+            {t('explore_step_two_badge')}
+          </span>
         </div>
         <div className="grid grid-cols-3 gap-4 sm:grid-cols-2">
           {interests.map((card, index) => {
@@ -101,7 +103,7 @@ export default function StepInterest({
           </button>
           <p className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-white/65 shadow-inner shadow-white/5">
             <span aria-hidden>💡</span>
-            <span>Выбери интерес или нажми на случайный, чтобы увидеть магию.</span>
+            <span>{t('explore_interest_hint')}</span>
           </p>
         </div>
       </div>
