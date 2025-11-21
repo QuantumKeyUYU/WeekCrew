@@ -83,7 +83,43 @@ body[data-animations='off'] * {
   transition-duration: 0s !important;
 }
 
+@layer utilities {
+  .bg-grid {
+    background-image:
+      linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+    background-size: 140px 140px;
+  }
+
+  .bg-grid-dark {
+    background-image:
+      linear-gradient(90deg, rgba(148, 163, 184, 0.12) 1px, transparent 1px),
+      linear-gradient(180deg, rgba(148, 163, 184, 0.12) 1px, transparent 1px);
+  }
+
+  @media (max-width: 768px) {
+    .bg-grid,
+    .bg-grid-dark {
+      background-size: 110px 110px;
+    }
+  }
+
+  .scroll-snap-x {
+    scroll-snap-type: x mandatory;
+  }
+
+  .scroll-snap-align-start {
+    scroll-snap-align: start;
+  }
+}
+
 @layer components {
+  .app-shell {
+    width: min(1100px, 100%);
+    margin-inline: auto;
+    padding-inline: clamp(1.1rem, 3vw, 2.5rem);
+  }
+
   .app-panel {
     border-radius: 2.5rem;
     border: 1px solid var(--surface-card-border);

@@ -5,6 +5,10 @@ import { getOrCreateDevice } from '@/lib/server/device';
 import { findActiveCircleMembershipForDevice } from '@/lib/server/circleMembership';
 import { toCircleMessage } from '@/lib/server/serializers';
 import { broadcastRealtimeEvent, getCircleChannelName } from '@/lib/realtime';
+import {
+  applyMessageUsageToQuota,
+  checkDailyMessageLimit,
+} from '@/lib/server/messages';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -44,6 +48,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const { quota } = await checkDailyMessageLimit(prisma, { circleId, deviceId });
+
     const messages = await prisma.message.findMany({
       where: {
         circleId,
@@ -54,7 +60,7 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json(
-      { ok: true, messages: messages.map(toCircleMessage) },
+      { ok: true, messages: messages.map(toCircleMessage), quota },
       { status: 200 },
     );
   } catch (error) {
@@ -96,10 +102,20 @@ export async function POST(request: NextRequest) {
       prisma,
       now,
     );
+
     if (!membership) {
       return NextResponse.json(
         { ok: false, error: 'NOT_MEMBER' },
         { status: 403 },
+      );
+    }
+
+    const quotaCheck = await checkDailyMessageLimit(prisma, { circleId, deviceId });
+
+    if (!quotaCheck.allowed) {
+      return NextResponse.json(
+        { ok: false, error: 'daily_limit_exceeded', quota: quotaCheck.quota },
+        { status: 429 },
       );
     }
 
@@ -118,8 +134,10 @@ export async function POST(request: NextRequest) {
     const channel = getCircleChannelName(circleId);
     broadcastRealtimeEvent(channel, 'new-message', toCircleMessage(message));
 
+    const nextQuota = applyMessageUsageToQuota(quotaCheck.quota);
+
     return NextResponse.json(
-      { ok: true, message: toCircleMessage(message) },
+      { ok: true, message: toCircleMessage(message), quota: nextQuota },
       { status: 200 },
     );
   } catch (error) {
