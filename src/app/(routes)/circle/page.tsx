@@ -793,9 +793,9 @@ export default function CirclePage() {
           </div>
           <form
             onSubmit={handleSendMessage}
-            className="sticky bottom-0 space-y-2 rounded-2xl border border-slate-200/70 bg-white/95 p-3 shadow-[0_10px_30px_rgba(15,23,42,0.08)] backdrop-blur dark:border-white/10 dark:bg-slate-900/70"
+            className="sticky bottom-0 space-y-3 rounded-3xl border border-slate-200/80 bg-gradient-to-r from-white/90 via-slate-50/90 to-slate-100/80 p-4 shadow-[0_18px_50px_rgba(15,23,42,0.12)] backdrop-blur-md dark:border-white/10 dark:from-slate-900/90 dark:via-slate-900/70 dark:to-slate-950/80"
           >
-            <div className="flex flex-col gap-2 sm:flex-row">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
               <textarea
                 ref={composerRef}
                 rows={1}
@@ -804,17 +804,22 @@ export default function CirclePage() {
                 onKeyDown={handleComposerKeyDown}
                 placeholder={composerPlaceholder}
                 aria-label={composerPlaceholder}
-                className="flex-1 resize-none rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-white/10 dark:bg-slate-900/70 dark:text-white"
+                className="flex-1 min-h-[82px] resize-none rounded-2xl border border-slate-200/80 bg-white/80 px-4 py-3 text-sm text-slate-900 outline-none ring-2 ring-transparent transition focus:border-brand focus:ring-brand/25 dark:border-white/10 dark:bg-slate-900/70 dark:text-white"
                 disabled={composerDisabled}
               />
               <button
                 type="submit"
-                className="rounded-2xl bg-brand px-6 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(127,90,240,0.25)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-brand via-indigo-500 to-sky-500 px-6 py-3 text-sm font-semibold text-white shadow-[0_16px_40px_rgba(99,102,241,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_48px_rgba(99,102,241,0.38)] disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={!canSubmitMessage}
               >
-                {isSending ? t('composer_submitting') : t('composer_submit')}
+                <span aria-hidden>{isSending ? '⌛' : '🚀'}</span>
+                <span>{isSending ? t('composer_submitting') : t('composer_submit')}</span>
               </button>
             </div>
+            <p className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-300">
+              <span className="text-sm" aria-hidden>•</span>
+              <span>{t('messages_author_system')} напоминает: переписка синхронизируется между устройствами, так что друзья увидят ваши сообщения мгновенно.</span>
+            </p>
             {sendError && (
               <p
                 className="inline-flex items-center gap-2 rounded-2xl bg-red-50/80 px-3 py-2 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-200"

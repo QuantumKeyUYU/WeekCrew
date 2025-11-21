@@ -5,6 +5,7 @@ import { ApiError } from '@/lib/api-client';
 import { getCircleMessages } from '@/lib/api/circles';
 import { mergeMessages } from '@/lib/messages';
 import { useAppStore } from '@/store/useAppStore';
+import type { CircleMessage } from '@/types';
 
 const POLL_INTERVAL_MS = 5000;
 
@@ -13,6 +14,37 @@ export const useCircleMessagesPolling = (circleId: string | null | undefined) =>
   const setQuotaFromApi = useAppStore((state) => state.setQuotaFromApi);
   const updateCircle = useAppStore((state) => state.updateCircle);
   const [notMember, setNotMember] = useState(false);
+
+  const haveMessagesChanged = (
+    prev: CircleMessage[],
+    next: CircleMessage[],
+  ) => {
+    if (prev.length !== next.length) return true;
+    if (prev.length === 0 && next.length === 0) return false;
+
+    for (let index = 0; index < next.length; index += 1) {
+      const current = next[index];
+      const previous = prev[index];
+
+      if (current.id !== previous.id) return true;
+      if (current.content !== previous.content) return true;
+      if (current.createdAt !== previous.createdAt) return true;
+      if (current.isSystem !== previous.isSystem) return true;
+      if (current.deviceId !== previous.deviceId) return true;
+
+      const currentAuthor = current.author ?? null;
+      const previousAuthor = previous.author ?? null;
+
+      if (Boolean(currentAuthor) !== Boolean(previousAuthor)) return true;
+      if (currentAuthor && previousAuthor) {
+        if (currentAuthor.id !== previousAuthor.id) return true;
+        if (currentAuthor.nickname !== previousAuthor.nickname) return true;
+        if (currentAuthor.avatarKey !== previousAuthor.avatarKey) return true;
+      }
+    }
+
+    return false;
+  };
 
   useEffect(() => {
     setNotMember(false);
@@ -60,11 +92,8 @@ export const useCircleMessagesPolling = (circleId: string | null | undefined) =>
 
         const merged = mergeMessages(state.messages, incoming);
         const prevMessages = state.messages;
-        const hasChanged =
-          merged.length !== prevMessages.length ||
-          merged[merged.length - 1]?.id !== prevMessages[prevMessages.length - 1]?.id;
 
-        if (hasChanged) {
+        if (haveMessagesChanged(prevMessages, merged)) {
           setMessages(merged);
         }
       } catch (error) {

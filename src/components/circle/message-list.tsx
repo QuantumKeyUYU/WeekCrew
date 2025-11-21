@@ -14,7 +14,6 @@ import clsx from 'clsx';
 import { AVATAR_PRESETS } from '@/constants/avatars';
 import { useTranslation } from '@/i18n/useTranslation';
 import { blockUser, sendReport } from '@/lib/api/moderation';
-import { apiFetch } from '@/lib/api-client';
 import { useAppStore } from '@/store/useAppStore';
 import type { CircleMessage } from '@/types';
 
@@ -32,19 +31,33 @@ const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const getAvatarEmoji = (key?: string | null) =>
   AVATAR_PRESETS.find((preset) => preset.key === key)?.emoji ?? '🙂';
 
-const shouldReplaceMessages = (
+const haveMessagesChanged = (
   prev: CircleMessage[],
   next: CircleMessage[],
 ) => {
   if (prev.length !== next.length) return true;
   if (prev.length === 0 && next.length === 0) return false;
 
-  const prevFirst = prev[0]?.id;
-  const nextFirst = next[0]?.id;
-  const prevLast = prev[prev.length - 1]?.id;
-  const nextLast = next[next.length - 1]?.id;
+  const prevMap = new Map(prev.map((message) => [message.id, message] as const));
 
-  return prevFirst !== nextFirst || prevLast !== nextLast;
+  for (const message of next) {
+    const matching = prevMap.get(message.id);
+    if (!matching) return true;
+
+    if (
+      matching.content !== message.content ||
+      matching.createdAt !== message.createdAt ||
+      matching.isSystem !== message.isSystem ||
+      matching.deviceId !== message.deviceId ||
+      matching.author?.id !== message.author?.id ||
+      matching.author?.nickname !== message.author?.nickname ||
+      matching.author?.avatarKey !== message.author?.avatarKey
+    ) {
+      return true;
+    }
+  }
+
+  return false;
 };
 
 export const MessageList = ({
@@ -120,45 +133,13 @@ export const MessageList = ({
     setLiveMessages(messages);
   }, [circleId, messages]);
 
-  // Поллинг: каждые 4с подтягиваем с сервера полный список
+  // Синхронизируем локальные сообщения с данными из стора, чтобы обновления
+  // с других устройств появлялись сразу без дополнительного поллинга
   useEffect(() => {
-    if (!circleId) return;
-
-    let cancelled = false;
-
-    const fetchMessages = async () => {
-      try {
-        const response = await apiFetch(`/api/messages?circleId=${circleId}`);
-        if (!response.ok || cancelled) {
-          if (!cancelled) {
-            console.error('Failed to fetch circle messages', response.status);
-          }
-          return;
-        }
-
-        const data = await response.json();
-        if (cancelled) return;
-
-        const next: CircleMessage[] = Array.isArray(data?.messages)
-          ? data.messages
-          : [];
-
-        setLiveMessages((prev) =>
-          shouldReplaceMessages(prev, next) ? next : prev,
-        );
-      } catch (error) {
-        console.warn('Failed to fetch circle messages', error);
-      }
-    };
-
-    void fetchMessages();
-    const intervalId = window.setInterval(fetchMessages, 4000);
-
-    return () => {
-      cancelled = true;
-      window.clearInterval(intervalId);
-    };
-  }, [circleId]);
+    setLiveMessages((prev) =>
+      haveMessagesChanged(prev, messages) ? messages : prev,
+    );
+  }, [messages]);
 
   const visibleMessages = useMemo(
     () =>
@@ -299,7 +280,7 @@ export const MessageList = ({
       ref={containerRef}
       onScroll={handleScroll}
       className={clsx(
-        'flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1 sm:pr-2',
+        'relative flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto bg-gradient-to-b from-slate-50/40 via-transparent to-slate-100/60 pr-1 sm:pr-2 dark:from-slate-900/60 dark:via-slate-900/30 dark:to-slate-950/80',
         className,
       )}
       aria-live="polite"
@@ -365,12 +346,12 @@ export const MessageList = ({
             <div className={clsx('flex', isOwn ? 'justify-end' : 'justify-start')}>
               <article
                 className={clsx(
-                  'relative max-w-[85%] rounded-3xl border px-4 py-3 text-sm shadow-sm backdrop-blur',
+                  'relative max-w-[88%] rounded-3xl border px-5 py-4 text-[15px] shadow-xl backdrop-blur transition duration-200',
                   isSystem
-                    ? 'border-slate-200 bg-slate-50/90 text-slate-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100'
+                    ? 'border-slate-200/70 bg-white/80 text-slate-700 shadow-[0_10px_40px_rgba(148,163,184,0.25)] dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100'
                     : isOwn
-                    ? 'border-brand/70 bg-brand text-white shadow-soft'
-                    : 'border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-100',
+                    ? 'border-brand/80 bg-gradient-to-br from-brand to-indigo-500 text-white shadow-[0_14px_50px_rgba(99,102,241,0.35)]'
+                    : 'border-slate-200/80 bg-gradient-to-br from-white to-slate-50 text-slate-900 shadow-[0_16px_48px_rgba(15,23,42,0.08)] dark:border-slate-700 dark:from-slate-800/80 dark:to-slate-900/60 dark:text-slate-100',
                 )}
               >
                 {isSystem ? (
