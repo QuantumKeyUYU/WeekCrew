@@ -25,7 +25,7 @@ export const useTranslation = () => {
   return useCallback(
     (key: CopyKey, replacements?: Replacements) => {
       const locale: Locale = language ?? fallbackLocale;
-      const template = copy[locale][key] ?? copy[fallbackLocale][key] ?? key;
+      const template = copy[locale][key] ?? copy[fallbackLocale][key] ?? '';
       return formatCopy(template, replacements);
     },
     [language]

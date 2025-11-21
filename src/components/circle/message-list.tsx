@@ -98,6 +98,9 @@ export const MessageList = ({
       try {
         const response = await apiFetch(`/api/messages?circleId=${circleId}`);
         if (!response.ok || cancelled) {
+          if (!cancelled) {
+            console.error('Failed to fetch circle messages', response.status);
+          }
           return;
         }
         const data = await response.json();
