@@ -59,7 +59,14 @@ export const useCircleMessagesPolling = (circleId: string | null | undefined) =>
         }
 
         const merged = mergeMessages(state.messages, incoming);
-        setMessages(merged);
+        const prevMessages = state.messages;
+        const hasChanged =
+          merged.length !== prevMessages.length ||
+          merged[merged.length - 1]?.id !== prevMessages[prevMessages.length - 1]?.id;
+
+        if (hasChanged) {
+          setMessages(merged);
+        }
       } catch (error) {
         if (error instanceof ApiError && error.status === 403) {
           const details = (error.data as { error?: string } | null) ?? null;
