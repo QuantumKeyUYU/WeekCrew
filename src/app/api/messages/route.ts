@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
 import { getOrCreateDevice } from '@/lib/server/device';
-import {
-  findActiveCircleMembership,
-  isDeviceCircleMember,
-} from '@/lib/server/circleMembership';
+import { findActiveCircleMembershipForDevice } from '@/lib/server/circleMembership';
 import { toCircleMessage } from '@/lib/server/serializers';
 
 export async function GET(request: NextRequest) {
@@ -24,11 +21,18 @@ export async function GET(request: NextRequest) {
 
   try {
     const { id: deviceId } = await getOrCreateDevice(request);
+    const now = new Date();
 
-    const canAccess = await isDeviceCircleMember(circleId, deviceId);
-    if (!canAccess) {
+    const membership = await findActiveCircleMembershipForDevice(
+      circleId,
+      deviceId,
+      prisma,
+      now,
+    );
+
+    if (!membership) {
       return NextResponse.json(
-        { ok: false, error: 'not_member' },
+        { ok: false, error: 'NOT_MEMBER' },
         { status: 403 },
       );
     }
@@ -72,10 +76,16 @@ export async function POST(request: NextRequest) {
   try {
     const { id: deviceId } = await getOrCreateDevice(request);
 
-    const membership = await findActiveCircleMembership(circleId, deviceId);
+    const now = new Date();
+    const membership = await findActiveCircleMembershipForDevice(
+      circleId,
+      deviceId,
+      prisma,
+      now,
+    );
     if (!membership) {
       return NextResponse.json(
-        { ok: false, error: 'not_member' },
+        { ok: false, error: 'NOT_MEMBER' },
         { status: 403 },
       );
     }

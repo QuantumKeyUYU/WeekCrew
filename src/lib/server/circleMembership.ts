@@ -65,8 +65,27 @@ export const findActiveCircleMembership = (
     where: { circleId, deviceId, status: DEFAULT_STATUS },
   });
 
+export const findActiveCircleMembershipForDevice = (
+  circleId: string,
+  deviceId: string,
+  client: PrismaClient = prisma,
+  now: Date = new Date(),
+) =>
+  client.circleMembership.findFirst({
+    where: {
+      circleId,
+      deviceId,
+      status: DEFAULT_STATUS,
+      circle: { status: 'active', expiresAt: { gt: now } },
+    },
+    include: { circle: true },
+  });
+
 export const isDeviceCircleMember = async (
   circleId: string,
   deviceId: string,
   client: PrismaClient = prisma,
-) => Boolean(await findActiveCircleMembership(circleId, deviceId, client));
+) =>
+  Boolean(
+    await findActiveCircleMembershipForDevice(circleId, deviceId, client),
+  );

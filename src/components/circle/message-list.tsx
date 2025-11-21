@@ -14,7 +14,6 @@ import clsx from 'clsx';
 import { AVATAR_PRESETS } from '@/constants/avatars';
 import { useTranslation } from '@/i18n/useTranslation';
 import { blockUser, sendReport } from '@/lib/api/moderation';
-import { apiFetch } from '@/lib/api-client';
 import { useAppStore } from '@/store/useAppStore';
 import type { CircleMessage } from '@/types';
 
@@ -32,19 +31,17 @@ const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const getAvatarEmoji = (key?: string | null) =>
   AVATAR_PRESETS.find((preset) => preset.key === key)?.emoji ?? '🙂';
 
-const shouldReplaceMessages = (
-  prev: CircleMessage[],
-  next: CircleMessage[],
-) => {
-  if (prev.length !== next.length) return true;
-  if (prev.length === 0 && next.length === 0) return false;
+const mergeMessages = (existing: CircleMessage[], incoming: CircleMessage[]) => {
+  if (!incoming.length) {
+    return existing;
+  }
 
-  const prevFirst = prev[0]?.id;
-  const nextFirst = next[0]?.id;
-  const prevLast = prev[prev.length - 1]?.id;
-  const nextLast = next[next.length - 1]?.id;
+  const byId = new Map(existing.map((message) => [message.id, message]));
+  incoming.forEach((message) => byId.set(message.id, message));
 
-  return prevFirst !== nextFirst || prevLast !== nextLast;
+  return Array.from(byId.values()).sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  );
 };
 
 export const MessageList = ({
@@ -114,55 +111,14 @@ export const MessageList = ({
   // При смене круга — просто берём новые messages из пропса
   useEffect(() => {
     const hasCircleChanged = previousCircleId.current !== circleId;
-    if (!hasCircleChanged) return;
+    if (hasCircleChanged) {
+      previousCircleId.current = circleId ?? null;
+      setLiveMessages(messages);
+      return;
+    }
 
-    previousCircleId.current = circleId ?? null;
-    setLiveMessages(messages);
+    setLiveMessages((prev) => mergeMessages(prev, messages));
   }, [circleId, messages]);
-
-  // Поллинг: каждые 4 сек забираем полный снапшот
-  useEffect(() => {
-    if (!circleId) return;
-
-    let cancelled = false;
-
-    const fetchMessages = async () => {
-      try {
-        const response = await apiFetch(`/api/messages?circleId=${circleId}`);
-        if (!response.ok || cancelled) {
-          if (!cancelled) {
-            console.error('Failed to fetch circle messages', response.status);
-          }
-          return;
-        }
-
-        const data = await response.json();
-        if (cancelled) return;
-
-        console.debug('Message list poll response', data);
-
-        if (data?.ok === false || !Array.isArray(data?.messages)) {
-          return;
-        }
-
-        const next: CircleMessage[] = data.messages;
-
-        setLiveMessages((prev) =>
-          shouldReplaceMessages(prev, next) ? next : prev,
-        );
-      } catch (error) {
-        console.warn('Failed to fetch circle messages', error);
-      }
-    };
-
-    void fetchMessages();
-    const intervalId = window.setInterval(fetchMessages, 4000);
-
-    return () => {
-      cancelled = true;
-      window.clearInterval(intervalId);
-    };
-  }, [circleId]);
 
   const visibleMessages = useMemo(
     () =>
