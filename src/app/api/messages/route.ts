@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
   if (!circleId) {
     return NextResponse.json(
-      { ok: false, error: 'MISSING_CIRCLE_ID' },
+      { ok: false, error: 'invalid_payload' },
       { status: 400 },
     );
   }
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('messages GET error', error);
     return NextResponse.json(
-      { ok: false, error: 'SERVER_ERROR' },
+      { ok: false, error: 'server_error' },
       { status: 500 },
     );
   }
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
 
   if (!circleId || !content) {
     return NextResponse.json(
-      { ok: false, error: 'INVALID_PAYLOAD' },
+      { ok: false, error: 'invalid_payload' },
       { status: 400 },
     );
   }
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('messages POST error', error);
     return NextResponse.json(
-      { ok: false, error: 'SERVER_ERROR' },
+      { ok: false, error: 'server_error' },
       { status: 500 },
     );
   }
