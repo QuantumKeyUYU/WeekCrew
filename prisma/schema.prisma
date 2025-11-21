@@ -69,7 +69,7 @@ model Message {
 
   circle    Circle    @relation(fields: [circleId], references: [id], onDelete: Cascade)
   device    Device?   @relation(fields: [deviceId], references: [id], onDelete: SetNull)
-  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user      User?     @relation("UserMessages", fields: [userId], references: [id], onDelete: SetNull)
   reports   Report[]
   reactions MessageReaction[]
 
@@ -84,8 +84,9 @@ model User {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  device   Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
-  messages Message[]
+  device     Device             @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  messages   Message[]          @relation("UserMessages")
+  reactions  MessageReaction[]  @relation("UserReactions")
   reportsSent    Report[] @relation("reportsSent")
   reportsReceived Report[] @relation("reportsReceived")
   blocksInitiated Block[]  @relation("blocksInitiated")
@@ -100,7 +101,7 @@ model MessageReaction {
   createdAt DateTime @default(now())
 
   message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  author  User    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author  User    @relation("UserReactions", fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([messageId])
 }
