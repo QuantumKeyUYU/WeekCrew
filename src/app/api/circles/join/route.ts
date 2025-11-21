@@ -95,23 +95,36 @@ export async function POST(request: NextRequest) {
       const joinable = await findJoinableCircle(tx, { mood, interest, now });
 
       if (joinable) {
-        await tx.circleMembership.upsert({
-          where: {
-            // если уникальный индекс по circleId+deviceId
-            circleId_deviceId: {
+        const memberships = await tx.circleMembership.findMany({
+          where: { circleId: joinable.circle.id, deviceId },
+          orderBy: { joinedAt: 'desc' },
+        });
+
+        const [latestMembership, ...olderMemberships] = memberships;
+
+        if (latestMembership) {
+          if (latestMembership.status !== CircleMembershipStatus.active) {
+            await tx.circleMembership.update({
+              where: { id: latestMembership.id },
+              data: { status: CircleMembershipStatus.active, leftAt: null },
+            });
+          }
+
+          if (olderMemberships.length) {
+            await tx.circleMembership.updateMany({
+              where: { id: { in: olderMemberships.map((membership) => membership.id) } },
+              data: { status: CircleMembershipStatus.left, leftAt: new Date() },
+            });
+          }
+        } else {
+          await tx.circleMembership.create({
+            data: {
               circleId: joinable.circle.id,
               deviceId,
+              status: CircleMembershipStatus.active,
             },
-          },
-          update: {
-            status: CircleMembershipStatus.active,
-          },
-          create: {
-            circleId: joinable.circle.id,
-            deviceId,
-            status: CircleMembershipStatus.active,
-          },
-        });
+          });
+        }
 
         const memberCount = await countActiveMembers(
           joinable.circle.id,
