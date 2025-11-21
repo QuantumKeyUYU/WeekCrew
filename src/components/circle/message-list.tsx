@@ -1,6 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { ReactNode } from 'react';
 import clsx from 'clsx';
 
@@ -26,13 +33,8 @@ const getAvatarEmoji = (key?: string | null) =>
   AVATAR_PRESETS.find((preset) => preset.key === key)?.emoji ?? '🙂';
 
 const shouldUpdateMessages = (prev: CircleMessage[], next: CircleMessage[]) => {
-  if (prev.length !== next.length) {
-    return true;
-  }
-
-  if (prev.length === 0 && next.length === 0) {
-    return false;
-  }
+  if (prev.length !== next.length) return true;
+  if (prev.length === 0 && next.length === 0) return false;
 
   const prevFirst = prev[0]?.id;
   const nextFirst = next[0]?.id;
@@ -69,10 +71,11 @@ export const MessageList = ({
   const blockedUserIds = useAppStore((state) => state.blockedUserIds);
   const blockUserLocally = useAppStore((state) => state.blockUserLocally);
 
-  const dayFormatter = new Intl.DateFormat(locale, {
+  // ✅ тут был баг: Intl.DateFormat → Intl.DateTimeFormat
+  const dayFormatter = new Intl.DateTimeFormat(locale, {
     day: 'numeric',
     month: 'long',
-  } as Intl.DateTimeFormatOptions);
+  });
 
   const timeFormatter = new Intl.DateTimeFormat(locale, {
     hour: '2-digit',
@@ -94,14 +97,12 @@ export const MessageList = ({
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const diffDays = Math.round((startOfDay.getTime() - today.getTime()) / DAY_IN_MS);
+    const diffDays = Math.round(
+      (startOfDay.getTime() - today.getTime()) / DAY_IN_MS,
+    );
 
-    if (diffDays === 0) {
-      return t('messages_day_today');
-    }
-    if (diffDays === -1) {
-      return t('messages_day_yesterday');
-    }
+    if (diffDays === 0) return t('messages_day_today');
+    if (diffDays === -1) return t('messages_day_yesterday');
     return dayFormatter.format(date);
   };
 
@@ -109,14 +110,12 @@ export const MessageList = ({
 
   const applyIncomingMessages = useCallback((nextMessages: CircleMessage[]) => {
     setLiveMessages((prev) => {
-      if (!shouldUpdateMessages(prev, nextMessages)) {
-        return prev;
-      }
+      if (!shouldUpdateMessages(prev, nextMessages)) return prev;
       return nextMessages;
     });
   }, []);
 
-  // Синхронизация с пропсами и сменой круга
+  // синхронизация с пропсами + смена круга
   useEffect(() => {
     const hasCircleChanged = previousCircleId.current !== circleId;
     previousCircleId.current = circleId ?? null;
@@ -129,7 +128,7 @@ export const MessageList = ({
     applyIncomingMessages(messages);
   }, [applyIncomingMessages, circleId, messages]);
 
-  // Поллинг сообщений
+  // поллинг сообщений
   useEffect(() => {
     if (!circleId) return;
 
@@ -177,14 +176,11 @@ export const MessageList = ({
     [blockedUserIds, liveMessages],
   );
 
-  const scrollToBottom = useCallback(
-    (behavior: ScrollBehavior = 'auto') => {
-      const node = containerRef.current;
-      if (!node) return;
-      node.scrollTo({ top: node.scrollHeight, behavior });
-    },
-    [],
-  );
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
+    const node = containerRef.current;
+    if (!node) return;
+    node.scrollTo({ top: node.scrollHeight, behavior });
+  }, []);
 
   useLayoutEffect(() => {
     const prevLength = lastScrollLength.current;
@@ -194,7 +190,8 @@ export const MessageList = ({
 
     if (!node) {
       lastScrollLength.current = nextLength;
-      lastMessageId.current = visibleMessages[nextLength - 1]?.id ?? null;
+      lastMessageId.current =
+        visibleMessages[nextLength - 1]?.id ?? null;
       return;
     }
 
@@ -233,7 +230,8 @@ export const MessageList = ({
     if (!node) return;
 
     const threshold = 96;
-    const distanceFromBottom = node.scrollHeight - (node.scrollTop + node.clientHeight);
+    const distanceFromBottom =
+      node.scrollHeight - (node.scrollTop + node.clientHeight);
     const atBottom = distanceFromBottom <= threshold;
 
     setIsAtBottom(atBottom);
@@ -261,8 +259,14 @@ export const MessageList = ({
     setActionFeedback(null);
 
     try {
-      await sendReport({ targetUserId: targetId, circleId: message.circleId, messageId: message.id });
-      setActionFeedback('Жалоба отправлена. Спасибо, что помогаете сохранять уют');
+      await sendReport({
+        targetUserId: targetId,
+        circleId: message.circleId,
+        messageId: message.id,
+      });
+      setActionFeedback(
+        'Жалоба отправлена. Спасибо, что помогаете сохранять уют',
+      );
     } catch (error) {
       console.error(error);
       setActionFeedback('Не удалось отправить жалобу');
@@ -284,7 +288,9 @@ export const MessageList = ({
       await blockUser({ targetUserId: targetId });
       blockUserLocally(targetId);
       removeMessagesByUser(targetId);
-      setActionFeedback('Пользователь скрыт, его сообщения больше не будут показываться');
+      setActionFeedback(
+        'Пользователь скрыт, его сообщения больше не будут показываться',
+      );
     } catch (error) {
       console.error(error);
       setActionFeedback('Не удалось выполнить действие');
@@ -346,16 +352,20 @@ export const MessageList = ({
         const previous = visibleMessages[index - 1];
 
         const currentDayKey = createdAt.toDateString();
-        const previousDayKey = previous ? new Date(previous.createdAt).toDateString() : null;
+        const previousDayKey = previous
+          ? new Date(previous.createdAt).toDateString()
+          : null;
         const showDayDivider = currentDayKey !== previousDayKey;
 
-        const canModerate = Boolean(message.author?.id && !isOwn && !isSystem);
+        const canModerate = Boolean(
+          message.author?.id && !isOwn && !isSystem,
+        );
         const avatarEmoji = getAvatarEmoji(message.author?.avatarKey);
 
         return (
           <div key={message.id} className="flex flex-col gap-3">
             {showDayDivider && (
-              <div className="flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500">
+              <div className="flex items:center gap-3 text-xs text-slate-400 dark:text-slate-500">
                 <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
                 <div className="rounded-full border border-slate-200/80 bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600 shadow-sm dark:border-white/10 dark:bg-slate-800/70 dark:text-slate-100">
                   {getDayChipLabel(createdAt)}
@@ -401,7 +411,9 @@ export const MessageList = ({
                         <p
                           className={clsx(
                             'text-sm font-semibold',
-                            isOwn ? 'text-white' : 'text-slate-700 dark:text-slate-100',
+                            isOwn
+                              ? 'text-white'
+                              : 'text-slate-700 dark:text-slate-100',
                           )}
                         >
                           {authorName}
@@ -411,7 +423,9 @@ export const MessageList = ({
                           title={fullTimestamp}
                           className={clsx(
                             'text-xs',
-                            isOwn ? 'text-white/70' : 'text-slate-500 dark:text-slate-400',
+                            isOwn
+                              ? 'text-white/70'
+                              : 'text-slate-500 dark:text-slate-400',
                           )}
                         >
                           {timeLabel}
@@ -423,7 +437,9 @@ export const MessageList = ({
                         <button
                           type="button"
                           onClick={() =>
-                            setMenuFor((prev) => (prev === message.id ? null : message.id))
+                            setMenuFor((prev) =>
+                              prev === message.id ? null : message.id,
+                            )
                           }
                           className="rounded-full bg-white/50 px-2 py-1 text-xs font-semibold text-slate-600 shadow hover:bg-white/90 dark:bg-slate-800/60 dark:text-slate-200"
                           aria-label="Действия"
@@ -471,7 +487,11 @@ export const MessageList = ({
           type="button"
           onClick={handleScrollToBottom}
           className="sticky bottom-2 mr-1 mt-2 inline-flex self-end items-center gap-1 rounded-full bg-slate-900/80 px-3 py-1.5 text-xs font-semibold text-white shadow-lg shadow-black/30 backdrop-blur transition hover:bg-slate-900 sm:mr-2"
-          aria-label={hasNewWhileAway ? t('messages_scroll_new') : t('messages_scroll_bottom')}
+          aria-label={
+            hasNewWhileAway
+              ? t('messages_scroll_new')
+              : t('messages_scroll_bottom')
+          }
         >
           <span>
             {hasNewWhileAway
