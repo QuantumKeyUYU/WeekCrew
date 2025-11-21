@@ -14,6 +14,7 @@ import clsx from 'clsx';
 import { AVATAR_PRESETS } from '@/constants/avatars';
 import { useTranslation } from '@/i18n/useTranslation';
 import { blockUser, sendReport } from '@/lib/api/moderation';
+import { apiFetch } from '@/lib/api-client';
 import { useAppStore } from '@/store/useAppStore';
 import type { CircleMessage } from '@/types';
 
@@ -36,15 +37,14 @@ const shouldReplaceMessages = (
   next: CircleMessage[],
 ) => {
   if (prev.length !== next.length) return true;
-  const prevFirst = prev[0]?.id ?? null;
-  const nextFirst = next[0]?.id ?? null;
-  const prevLast = prev[prev.length - 1]?.id ?? null;
-  const nextLast = next[next.length - 1]?.id ?? null;
+  if (prev.length === 0 && next.length === 0) return false;
 
-  if (prevFirst !== nextFirst) return true;
-  if (prevLast !== nextLast) return true;
+  const prevFirst = prev[0]?.id;
+  const nextFirst = next[0]?.id;
+  const prevLast = prev[prev.length - 1]?.id;
+  const nextLast = next[next.length - 1]?.id;
 
-  return false;
+  return prevFirst !== nextFirst || prevLast !== nextLast;
 };
 
 export const MessageList = ({
@@ -111,7 +111,7 @@ export const MessageList = ({
   // Локальное состояние сообщений
   const [liveMessages, setLiveMessages] = useState<CircleMessage[]>(messages);
 
-  // Обновляем список при смене круга
+  // При смене круга — просто берём новые messages из пропса
   useEffect(() => {
     const hasCircleChanged = previousCircleId.current !== circleId;
     if (!hasCircleChanged) return;
@@ -120,11 +120,45 @@ export const MessageList = ({
     setLiveMessages(messages);
   }, [circleId, messages]);
 
+  // Поллинг: каждые 4 сек забираем полный снапшот
   useEffect(() => {
-    setLiveMessages((prev) =>
-      shouldReplaceMessages(prev, messages) ? messages : prev,
-    );
-  }, [messages]);
+    if (!circleId) return;
+
+    let cancelled = false;
+
+    const fetchMessages = async () => {
+      try {
+        const response = await apiFetch(`/api/messages?circleId=${circleId}`);
+        if (!response.ok || cancelled) {
+          if (!cancelled) {
+            console.error('Failed to fetch circle messages', response.status);
+          }
+          return;
+        }
+
+        const data = await response.json();
+        if (cancelled) return;
+
+        const next: CircleMessage[] = Array.isArray(data?.messages)
+          ? data.messages
+          : [];
+
+        setLiveMessages((prev) =>
+          shouldReplaceMessages(prev, next) ? next : prev,
+        );
+      } catch (error) {
+        console.warn('Failed to fetch circle messages', error);
+      }
+    };
+
+    void fetchMessages();
+    const intervalId = window.setInterval(fetchMessages, 4000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [circleId]);
 
   const visibleMessages = useMemo(
     () =>
@@ -265,7 +299,7 @@ export const MessageList = ({
       ref={containerRef}
       onScroll={handleScroll}
       className={clsx(
-        'relative flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto bg-gradient-to-b from-slate-50/40 via-transparent to-slate-100/60 pr-1 sm:pr-2 dark:from-slate-900/60 dark:via-slate-900/30 dark:to-slate-950/80',
+        'flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1 sm:pr-2',
         className,
       )}
       aria-live="polite"
@@ -331,12 +365,12 @@ export const MessageList = ({
             <div className={clsx('flex', isOwn ? 'justify-end' : 'justify-start')}>
               <article
                 className={clsx(
-                  'relative max-w-[88%] rounded-3xl border px-5 py-4 text-[15px] shadow-xl backdrop-blur transition duration-200',
+                  'relative max-w-[85%] rounded-3xl border px-4 py-3 text-sm shadow-sm backdrop-blur',
                   isSystem
-                    ? 'border-slate-200/70 bg-white/80 text-slate-700 shadow-[0_10px_40px_rgba(148,163,184,0.25)] dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100'
+                    ? 'border-slate-200 bg-slate-50/90 text-slate-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100'
                     : isOwn
-                    ? 'border-brand/80 bg-gradient-to-br from-brand to-indigo-500 text-white shadow-[0_14px_50px_rgba(99,102,241,0.35)]'
-                    : 'border-slate-200/80 bg-gradient-to-br from-white to-slate-50 text-slate-900 shadow-[0_16px_48px_rgba(15,23,42,0.08)] dark:border-slate-700 dark:from-slate-800/80 dark:to-slate-900/60 dark:text-slate-100',
+                    ? 'border-brand/70 bg-brand text-white shadow-soft'
+                    : 'border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-100',
                 )}
               >
                 {isSystem ? (
@@ -395,7 +429,7 @@ export const MessageList = ({
                               prev === message.id ? null : message.id,
                             )
                           }
-                          className="rounded-full bg-white/50 px-2 py-1 text-xs font-semibold text-slate-600 shadow hover:bg-white/90 dark:bg-slate-800/60 dark:text-slate-200"
+                          className="rounded-full bg-white/50 px-2 py-1 text-xs font-semibold text-slate-600 shadow hover:bg:white/90 dark:bg-slate-800/60 dark:text-slate-200"
                           aria-label="Действия"
                         >
                           ⋯
@@ -440,7 +474,7 @@ export const MessageList = ({
         <button
           type="button"
           onClick={handleScrollToBottom}
-          className="sticky bottom-2 mr-1 mt-2 inline-flex self-end items-center gap-1 rounded-full bg-slate-900/80 px-3 py-1.5 text-xs font-semibold text-white shadow-lg shadow-black/30 backdrop-blur transition hover:bg-slate-900 sm:mr-2"
+          className="sticky bottom-2 mr-1 mt-2 inline-flex self-end items-center gap-1 rounded-full bg-slate-900/80 px-3 py-1.5 text-xs font-semibold text:white shadow-lg shadow-black/30 backdrop-blur transition hover:bg-slate-900 sm:mr-2"
           aria-label={
             hasNewWhileAway
               ? t('messages_scroll_new')
