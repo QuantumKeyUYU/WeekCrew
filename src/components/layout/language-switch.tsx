@@ -1,14 +1,12 @@
 'use client';
 
-import type { MouseEventHandler } from 'react';
+import type { MouseEvent } from 'react';
 import clsx from 'clsx';
-import { motion } from 'framer-motion';
-
-import { useTranslation } from '@/i18n/useTranslation';
 import { useAppStore } from '@/store/useAppStore';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export const LanguageSwitch = () => {
-  // чтобы i18n инициализировался, если нужно
+  // просто чтобы i18n подтянулся, даже если текстов тут нет
   useTranslation();
 
   const language = useAppStore((state) => state.settings.language ?? 'ru');
@@ -19,8 +17,7 @@ export const LanguageSwitch = () => {
     updateSettings({ language: next });
   };
 
-  // Клик по всей плашке: левая половина = RU, правая половина = EN
-  const handleContainerClick: MouseEventHandler<HTMLDivElement> = (event) => {
+  const handleContainerClick = (event: MouseEvent<HTMLDivElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const mid = rect.width / 2;
@@ -31,41 +28,54 @@ export const LanguageSwitch = () => {
 
   return (
     <div
-      className="relative inline-flex h-8 w-[90px] items-center rounded-full border border-white/25 bg-white/10 px-1 shadow-[0_10px_30px_rgba(15,23,42,0.55)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/70"
       onClick={handleContainerClick}
+      className="relative inline-flex h-9 w-[96px] cursor-pointer items-center rounded-full border border-white/30 bg-white/12 px-1 text-[11px] font-semibold uppercase shadow-[0_10px_30px_rgba(15,23,42,0.5)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/70"
     >
-      {/* Подложка-ползунок, который красиво переезжает RU <-> EN */}
-      <motion.div
-        layout
-        className="pointer-events-none absolute inset-y-1 w-[40px] rounded-full bg-white shadow-[0_6px_18px_rgba(15,23,42,0.35)] dark:bg-slate-100"
-        animate={{ x: language === 'ru' ? 0 : 42 }}
-        transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+      {/* Слайдер-подложка */}
+      <div
+        className={clsx(
+          'pointer-events-none absolute inset-y-1 left-1 w-[40px] rounded-full bg-white shadow-[0_8px_20px_rgba(15,23,42,0.45)] transition-transform duration-200 ease-out'
+        )}
+        style={{
+          transform: language === 'ru' ? 'translateX(0)' : 'translateX(44px)'
+        }}
       />
 
-      {/* Кнопки поверх ползунка */}
-      {(['ru', 'en'] as const).map((locale) => {
-        const active = locale === language;
-        return (
-          <button
-            key={locale}
-            type="button"
-            onClick={(e) => {
-              // чтобы клик по самой кнопке не вызывал второй раз containerClick
-              e.stopPropagation();
-              handleChange(locale);
-            }}
-            className={clsx(
-              'relative z-10 flex-1 text-center text-[11px] font-semibold tracking-wide uppercase transition-colors',
-              active
-                ? 'text-slate-900'
-                : 'text-white/70 hover:text-white'
-            )}
-            aria-pressed={active}
-          >
-            {locale === 'ru' ? 'RU' : 'EN'}
-          </button>
-        );
-      })}
+      {/* Кнопка RU */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleChange('ru');
+        }}
+        className={clsx(
+          'relative z-10 flex flex-1 items-center justify-center rounded-full px-1 py-1 transition-colors duration-150',
+          language === 'ru'
+            ? 'text-slate-900 dark:text-slate-900'
+            : 'text-white/70 hover:text-white'
+        )}
+        aria-pressed={language === 'ru'}
+      >
+        RU
+      </button>
+
+      {/* Кнопка EN */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleChange('en');
+        }}
+        className={clsx(
+          'relative z-10 flex flex-1 items-center justify-center rounded-full px-1 py-1 transition-colors duration-150',
+          language === 'en'
+            ? 'text-slate-900 dark:text-slate-900'
+            : 'text-white/70 hover:text-white'
+        )}
+        aria-pressed={language === 'en'}
+      >
+        EN
+      </button>
     </div>
   );
 };
