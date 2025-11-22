@@ -33,12 +33,13 @@ export const Header = () => {
   }, []);
 
   return (
-    // px-3 — те же отступы, что у app-shell (0.75rem), чтобы всё легло ровно
+    // те же боковые паддинги, что и у app-shell
     <header className="sticky top-3 z-50 px-3 sm:top-4 sm:px-6">
       <div
         className={clsx(
-          // Основная «таблетка» шапки
-          'mx-auto flex w-full max-w-5xl items-center justify-between gap-3 rounded-full border px-3 py-2.5 sm:px-4',
+          // ВАЖНО: flex-wrap + нет justify-between по умолчанию,
+          // чтобы на мобиле элементы могли переноситься, а не вылазить за экран.
+          'header-shell mx-auto flex w-full max-w-5xl flex-wrap items-center gap-2 rounded-full border px-3 py-2.5 sm:flex-nowrap sm:justify-between sm:gap-3 sm:px-4',
           'backdrop-blur-2xl transition-all duration-300 ease-out',
           'shadow-[0_14px_45px_rgba(15,23,42,0.12)] dark:shadow-[0_18px_55px_rgba(0,0,0,0.55)]',
           isScrolled
@@ -46,7 +47,7 @@ export const Header = () => {
             : 'border-white/40 bg-white/60 text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-white',
         )}
       >
-        {/* Логотип / бренд */}
+        {/* Левая часть — логотип */}
         <Link
           href="/"
           aria-label="WeekCrew — на главную"
@@ -60,8 +61,8 @@ export const Header = () => {
           </span>
         </Link>
 
-        {/* Правый блок: профиль + язык + настройки */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        {/* Правая часть — может УЙТИ на новую строку на маленьком экране */}
+        <div className="ml-auto flex flex-wrap items-center gap-2 sm:flex-nowrap sm:gap-3">
           <button
             type="button"
             onClick={() => openProfileModal()}
