@@ -8,9 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "format": "prettier --write .",
-    // генерим Prisma Client после установки зависимостей (это нужно Vercel)
     "postinstall": "prisma generate",
-    // эти два — только для тебя локально / вручную
     "db:push": "prisma db push --accept-data-loss",
     "db:migrate": "prisma migrate deploy"
   },
