@@ -23,10 +23,13 @@ export const metadata: Metadata = {
   },
 };
 
-// НОРМАЛЬНЫЙ viewport, чтобы не было странного масштаба
+// ВЫКЛЮЧАЕМ ЗУМ, фиксируем масштаб 1.0
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  minimumScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: 'cover',
   themeColor: '#7F5AF0',
 };
@@ -65,7 +68,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <div className="flex min-h-screen flex-col">
             <Header />
             <main className="flex-1">
-              {/* Вся центровка и паддинги теперь в .app-shell внутри page.tsx */}
               {children}
             </main>
             <Footer />
