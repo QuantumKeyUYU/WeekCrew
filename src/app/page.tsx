@@ -74,7 +74,7 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, ease: 'easeOut' }}
-            className="app-hero relative overflow-hidden px-6 py-9 text-left sm:px-10 sm:py-12"
+            className="app-hero relative overflow-hidden px-6 py-8 text-left sm:px-10 sm:py-12"
           >
             <div className="pointer-events-none absolute inset-0 opacity-70">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_24%,rgba(129,140,248,0.22),transparent_45%)]" />
@@ -84,7 +84,8 @@ export default function HomePage() {
 
             <div className="relative mx-auto flex max-w-4xl flex-col gap-6 sm:gap-8">
               <div className="space-y-3 sm:space-y-4">
-                <h1 className="text-4xl font-semibold leading-tight tracking-tight text-[var(--text-primary)] sm:text-5xl">
+                {/* Чуть меньше заголовок на мобиле */}
+                <h1 className="text-3xl font-semibold leading-tight tracking-tight text-[var(--text-primary)] sm:text-5xl">
                   {t('landing_hero_title')}
                 </h1>
                 <p className="max-w-2xl text-base text-[var(--text-secondary)] sm:text-lg">
@@ -141,7 +142,7 @@ export default function HomePage() {
                 </div>
 
                 <div className="relative flex items-start gap-3 sm:gap-4">
-                  <span className="step-index group-hover:scale-[1.05] group-hover:shadow-[0_18px_42px_rgba(79,70,229,0.5)] transition-transform duration-200">
+                  <span className="step-index transition-transform duration-200 group-hover:scale-[1.05] group-hover:shadow-[0_18px_42px_rgba(79,70,229,0.5)]">
                     {index + 1}
                   </span>
                   <div className="space-y-1">
