@@ -95,15 +95,21 @@
     @apply h-full;
   }
 
-  /* Чуть уменьшаем базовый размер шрифта на мобилках,
-     чтобы не ощущалось как “увеличенный масштаб”. */
+  /* Главный рычаг “масштаба” — размер шрифта html.
+     На телефонах 14px, на планшетах 15px, на десктопе 16px. */
   html {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter',
       sans-serif;
-    font-size: 15px;
+    font-size: 14px;
   }
 
   @media (min-width: 640px) {
+    html {
+      font-size: 15px;
+    }
+  }
+
+  @media (min-width: 1024px) {
     html {
       font-size: 16px;
     }
@@ -191,8 +197,6 @@
     box-shadow: 0 30px 120px rgba(0, 0, 0, 0.85);
   }
 
-  /* Hero-текст */
-
   .app-hero h1 {
     color: var(--text-primary);
   }
@@ -201,7 +205,7 @@
     color: var(--text-secondary);
   }
 
-  /* Список шагов на лендинге */
+  /* Список шагов */
 
   .steps-list {
     @apply space-y-3;
@@ -231,7 +235,7 @@
     box-shadow: 0 0 35px rgba(96, 165, 250, 0.7);
   }
 
-  /* Маленькая плашка WeekCrew над hero */
+  /* Плашка WeekCrew над хиро */
 
   .tagline-pill {
     border-radius: 9999px;
