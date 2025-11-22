@@ -15,21 +15,21 @@ export const LanguageSwitch = () => {
   };
 
   return (
-    <div className="inline-flex items-center rounded-full border border-white/40 bg-white/70 p-1 text-[13px] font-semibold text-slate-700 shadow-[0_12px_30px_rgba(15,23,42,0.1)] backdrop-blur dark:border-white/15 dark:bg-white/5 dark:text-white/80">
+    <div className="inline-flex items-center rounded-full border border-white/20 bg-white/10 p-0.5 backdrop-blur-md dark:border-white/10 dark:bg-white/5">
       {(['ru', 'en'] as const).map((locale) => (
         <button
           key={locale}
           type="button"
           onClick={() => handleChange(locale)}
           className={clsx(
-            'min-w-[48px] rounded-full px-3 py-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
+            'px-2 py-1 text-xs font-semibold rounded-full transition-all',
             language === locale
-              ? 'bg-[var(--accent-gradient)] text-white shadow-[0_10px_26px_rgba(79,70,229,0.32)]'
-              : 'text-slate-500 hover:text-slate-900 dark:text-white/70 dark:hover:text-white',
+              ? 'bg-white text-slate-900 dark:bg-white dark:text-slate-900'
+              : 'text-white/70 hover:text-white'
           )}
           aria-pressed={language === locale}
         >
-          {locale === 'ru' ? t('settings_language_ru') : t('settings_language_en')}
+          {locale === 'ru' ? 'RU' : 'EN'}
         </button>
       ))}
     </div>
