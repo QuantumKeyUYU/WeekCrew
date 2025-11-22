@@ -6,7 +6,7 @@ import clsx from 'clsx';
 import type { InterestId } from '@/types';
 import { INTERESTS } from '@/config/interests';
 import { useTranslation } from '@/i18n/useTranslation';
-import { motionTimingClass, primaryCtaClass } from '@/styles/tokens';
+import { primaryCtaClass } from '@/styles/tokens';
 import { MOOD_OPTIONS, type MoodKey } from '@/constants/moods';
 import { saveCircleSelection } from '@/lib/circleSelection';
 import { LANGUAGE_INTERESTS } from '@/constants/language-interests';
@@ -180,20 +180,26 @@ export default function ExplorePage() {
 
   return (
     <div className="space-y-10 py-8 sm:space-y-12 sm:py-12">
-      <section className="app-hero relative overflow-hidden space-y-4 p-7 text-left text-white sm:space-y-5 sm:p-10">
-        <div className="pointer-events-none absolute inset-0 opacity-70">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_16%_24%,rgba(124,136,255,0.1),transparent_36%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(45,212,191,0.12),transparent_40%)]" />
+      <section className="app-hero relative overflow-hidden space-y-4 p-7 text-left text-[var(--text-primary)] sm:space-y-5 sm:p-10">
+        <div className="pointer-events-none absolute inset-0 opacity-85">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_16%_24%,rgba(124,136,255,0.18),transparent_36%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(34,197,94,0.18),transparent_40%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.08),transparent_26%,rgba(255,255,255,0.06))]" />
         </div>
-        <h1 className="relative text-[1.9rem] font-semibold leading-tight tracking-tight text-white/90 sm:text-[2.1rem]">
+        <h1 className="relative text-[1.95rem] font-semibold leading-tight tracking-tight text-[var(--text-primary)] sm:text-[2.35rem]">
           {t('explore_page_title')}
         </h1>
-        <p className="relative max-w-2xl text-sm text-white/80 sm:text-base">{t('explore_page_subtitle')}</p>
+        <p className="relative max-w-2xl text-sm text-[var(--text-secondary)] sm:text-base">{t('explore_page_subtitle')}</p>
       </section>
 
-      <section className="app-panel space-y-5 p-5 sm:p-6">
+      <section className="app-panel relative overflow-hidden space-y-5 p-5 sm:p-6">
+        <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 hover:opacity-100">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_12%,rgba(79,70,229,0.08),transparent_34%),radial-gradient(circle_at_88%_40%,rgba(34,197,94,0.08),transparent_32%)]" />
+        </div>
         <div className="flex items-start gap-3 sm:gap-4">
-          <span className="step-index text-base leading-none">1</span>
+          <span className="step-index text-base leading-none transition-transform duration-200 hover:scale-[1.05] hover:shadow-[0_12px_28px_rgba(79,70,229,0.25)]">
+            1
+          </span>
           <div className="space-y-1">
             <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
               {t('explore_step_one_title')}
@@ -202,7 +208,7 @@ export default function ExplorePage() {
             <p className="text-sm text-[var(--text-secondary)]">{t('explore_step_one_description')}</p>
           </div>
         </div>
-        <div className="mt-2 flex flex-wrap gap-2">
+        <div className="mt-2 flex flex-wrap gap-3">
           {MOOD_OPTIONS.map((mood) => {
             const active = selectedMood === mood.key;
             return (
@@ -211,14 +217,15 @@ export default function ExplorePage() {
                 type="button"
                 onClick={() => setSelectedMood((prev) => (prev === mood.key ? null : mood.key))}
                 className={clsx(
-                  'rounded-full border px-4 py-2.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
+                  'group relative overflow-hidden rounded-full border px-4 py-2.5 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
                   active
-                    ? 'border-indigo-200 bg-gradient-to-r from-indigo-50 to-emerald-50 text-slate-900 shadow-[0_4px_12px_rgba(0,0,0,0.06)] dark:border-white/20 dark:bg-white/5 dark:text-white'
-                    : 'border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:border-white/10 dark:bg-slate-900/40 dark:text-white/85 dark:hover:bg-slate-800/60',
+                    ? 'border-transparent bg-[radial-gradient(circle_at_20%_20%,rgba(79,70,229,0.22),transparent_36%),radial-gradient(circle_at_82%_70%,rgba(34,197,94,0.2),transparent_38%),var(--accent-strong)] text-white shadow-[0_14px_40px_rgba(79,70,229,0.3)]'
+                    : 'border-[var(--chip-border)] bg-[var(--chip-bg)] text-[var(--text-primary)] shadow-[0_10px_28px_rgba(15,23,42,0.06)] hover:-translate-y-[2px] hover:border-[var(--border-card)] hover:bg-white/70 hover:text-[var(--text-primary)] dark:hover:bg-white/10',
                 )}
                 aria-pressed={active}
               >
-                {t(mood.labelKey)}
+                <span className="relative z-10">{t(mood.labelKey)}</span>
+                <span className="pointer-events-none absolute inset-0 rounded-full bg-white/0 transition-opacity group-hover:bg-white/5" />
               </button>
             );
           })}
@@ -228,9 +235,14 @@ export default function ExplorePage() {
         )}
       </section>
 
-      <section className="app-panel space-y-5 p-5 sm:p-6">
+      <section className="app-panel relative overflow-hidden space-y-5 p-5 sm:p-6">
+        <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 hover:opacity-100">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_14%_18%,rgba(79,70,229,0.08),transparent_34%),radial-gradient(circle_at_86%_48%,rgba(34,197,94,0.08),transparent_32%)]" />
+        </div>
         <div className="flex items-start gap-3 sm:gap-4">
-          <span className="step-index text-base leading-none">2</span>
+          <span className="step-index text-base leading-none transition-transform duration-200 hover:scale-[1.05] hover:shadow-[0_12px_28px_rgba(79,70,229,0.25)]">
+            2
+          </span>
           <div className="space-y-1">
             <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
               {t('explore_step_two_title')}
@@ -248,19 +260,21 @@ export default function ExplorePage() {
                 type="button"
                 onClick={() => handleSelectInterest(card.id)}
                 className={clsx(
-                  'rounded-3xl border px-5 py-4 text-left transition',
-                  motionTimingClass,
+                  'group relative overflow-hidden rounded-3xl border px-5 py-4 text-left shadow-[var(--shadow-soft)] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent hover:-translate-y-1',
                   active
-                    ? 'border-transparent bg-gradient-to-r from-indigo-500 to-emerald-500 text-white shadow-[0_6px_18px_rgba(16,185,129,0.28)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.55)]'
-                    : 'border-slate-200 bg-white/90 text-slate-900 shadow-[0_4px_12px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[var(--shadow-card-strong)] dark:border-white/10 dark:bg-white/5 dark:text-white/85',
+                    ? 'border-transparent bg-[var(--accent-gradient)] text-white shadow-[0_18px_48px_rgba(79,70,229,0.35)]'
+                    : 'border-[var(--border-card)] bg-[var(--surface-subtle)]/90 text-[var(--text-primary)] hover:border-[var(--border-strong)] hover:bg-white/80 dark:hover:bg-white/10',
                 )}
                 aria-pressed={active}
               >
-                <div className="flex items-center gap-3">
-                  <span className="text-[1.45rem] leading-none" aria-hidden>
+                <div className="absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_14%_16%,rgba(79,70,229,0.08),transparent_38%),radial-gradient(circle_at_86%_70%,rgba(34,197,94,0.08),transparent_34%)]" />
+                </div>
+                <div className="relative flex items-center gap-3">
+                  <span className={clsx('text-[1.45rem] leading-none transition-transform duration-200', active ? 'scale-110' : 'group-hover:scale-110')} aria-hidden>
                     {card.emoji}
                   </span>
-                  <span className="text-base font-semibold leading-snug tracking-tight text-slate-900 dark:text-white">{card.label}</span>
+                  <span className="text-base font-semibold leading-snug tracking-tight">{card.label}</span>
                 </div>
               </button>
             );
@@ -270,43 +284,49 @@ export default function ExplorePage() {
           type="button"
           onClick={handleRandomInterest}
           className={clsx(
-            'w-full rounded-3xl border border-dashed px-5 py-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
+            'w-full rounded-3xl border border-dashed px-5 py-3 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
             randomInterest
-              ? 'border-indigo-200 bg-gradient-to-r from-indigo-50 to-emerald-50 text-slate-900 shadow-[0_4px_12px_rgba(0,0,0,0.06)] dark:border-white/20 dark:bg-white/5 dark:text-white'
-              : 'border-slate-200 bg-white text-slate-700 shadow-none hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 dark:border-white/10 dark:bg-slate-900/40 dark:text-white/80 dark:hover:bg-slate-800/60',
+              ? 'border-transparent bg-[radial-gradient(circle_at_20%_20%,rgba(79,70,229,0.18),transparent_32%),radial-gradient(circle_at_80%_60%,rgba(34,197,94,0.14),transparent_36%),var(--accent-strong)] text-white shadow-[0_14px_38px_rgba(79,70,229,0.28)]'
+              : 'border-[var(--border-card)] bg-[var(--surface-subtle)]/90 text-[var(--text-primary)] shadow-[0_6px_20px_rgba(15,23,42,0.08)] hover:-translate-y-[2px] hover:border-[var(--border-strong)] hover:bg-white/80 dark:hover:bg-white/10',
           )}
         >
           {t('explore_random_button')}
         </button>
       </section>
 
-      <section className="app-panel flex flex-col gap-4 p-5 sm:p-6">
-        <div className="space-y-2 text-left">
-          <p className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white">{t('explore_ready_title')}</p>
-          <p className="text-sm text-slate-600 dark:text-slate-200">{t('explore_ready_description')}</p>
+      <section className="app-hero relative flex flex-col gap-4 overflow-hidden p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <div className="pointer-events-none absolute inset-0 opacity-80">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_14%_18%,rgba(124,136,255,0.16),transparent_40%),radial-gradient(circle_at_88%_72%,rgba(34,197,94,0.2),transparent_36%)]" />
         </div>
-        {error && (
-          <div className="rounded-lg bg-red-500/10 p-3 text-xs text-red-800 dark:text-red-100">
-            <p className="font-semibold text-red-700 dark:text-red-50">{error}</p>
-            {errorHint && <p className="mt-1 text-red-700/80 dark:text-red-50/80">{errorHint}</p>}
-          </div>
-        )}
-        <div className="mt-auto flex justify-center sm:justify-start">
+        <div className="relative space-y-2 text-left sm:max-w-xl">
+          <p className="text-xl font-semibold tracking-tight text-[var(--text-primary)]">{t('explore_ready_title')}</p>
+          <p className="text-sm text-[var(--text-secondary)]">{t('explore_ready_description')}</p>
+        </div>
+        <div className="relative flex w-full flex-col items-start gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
           <button
             type="button"
             disabled={!canStart || joining}
             onClick={handleStartCircle}
             className={clsx(
               primaryCtaClass,
-              'flex w-full items-center justify-center gap-2 rounded-full py-3 text-base font-semibold sm:w-auto',
+              'flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 text-base font-semibold sm:w-auto',
               joining && 'cursor-wait',
             )}
           >
             {joining ? t('explore_starting_state') : t('explore_start_button')}
           </button>
+          {!selectionComplete && (
+            <p className="text-xs text-[var(--text-secondary)]">{t('explore_ready_hint')}</p>
+          )}
+          {!accepted && (
+            <p className="text-xs text-[var(--text-secondary)]">{t('explore_rules_required')}</p>
+          )}
         </div>
-        {!accepted && (
-          <p className="text-xs text-slate-600 dark:text-slate-200">{t('explore_rules_required')}</p>
+        {error && (
+          <div className="relative w-full rounded-2xl border border-red-200/70 bg-red-50/70 p-3 text-xs text-red-800 shadow-[0_12px_28px_rgba(248,113,113,0.2)] dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-100">
+            <p className="font-semibold text-red-700 dark:text-red-50">{error}</p>
+            {errorHint && <p className="mt-1 text-red-700/80 dark:text-red-50/80">{errorHint}</p>}
+          </div>
         )}
       </section>
 
