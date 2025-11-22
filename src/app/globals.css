@@ -72,31 +72,22 @@
 }
 
 /* ============================
-   Базовая типографика + фон
+   База: типографика + фон
    ============================ */
 
 @layer base {
-  html {
-    height: 100%;
-    /* База для Tailwind (rem). На десктопе 16px, на мобилке увеличим ниже. */
-    font-size: 16px;
+  html,
+  body {
+    @apply h-full;
   }
 
   body {
-    height: 100%;
     @apply antialiased;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', sans-serif;
     background-image: var(--bg-body);
     background-attachment: fixed;
     background-size: cover;
     color: var(--text-primary);
-  }
-
-  /* На телефонах всё крупнее: растут rem → шрифты, отступы, кнопки */
-  @media (max-width: 640px) {
-    html {
-      font-size: 18px; /* можно поставить 17px, если покажется слишком большим */
-    }
   }
 
   ::selection {
@@ -246,5 +237,48 @@
 
   [data-theme='dark'] .tagline-text {
     color: rgba(226, 232, 240, 0.9);
+  }
+
+  /* ============================
+     Доп. тюнинг под мобильные
+     ============================ */
+
+  @media (max-width: 640px) {
+    /* Чуть увеличиваем шрифт и плотность именно в hero */
+    .app-hero {
+      padding-top: 1.5rem;
+      padding-bottom: 1.7rem;
+    }
+
+    .app-hero h1 {
+      font-size: 2.2rem;     /* крупнее заголовок */
+      line-height: 1.15;
+    }
+
+    .app-hero p {
+      font-size: 1rem;       /* текст под заголовком поувесистее */
+      line-height: 1.45;
+    }
+
+    /* Шаги под hero — читаемее */
+    .steps-list {
+      font-size: 0.97rem;
+    }
+
+    .steps-list p {
+      line-height: 1.5;
+    }
+
+    .step-index {
+      width: 2.3rem;
+      height: 2.3rem;
+      font-size: 0.95rem;
+    }
+
+    /* Чуть меньше боковые отступы, чтобы карточки занимали больше экрана */
+    .app-shell {
+      padding-left: 0.9rem;
+      padding-right: 0.9rem;
+    }
   }
 }
