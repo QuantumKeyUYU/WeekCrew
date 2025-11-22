@@ -115,8 +115,8 @@ export default function SettingsPage() {
 
   return (
     <main className="space-y-6 py-6">
-      <section className="app-hero p-6 text-white shadow-[0_28px_120px_rgba(8,7,20,0.85)]">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-brand/70">WeekCrew</p>
+      <section className="app-hero p-6 text-white">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand/70">WeekCrew</p>
         <h1 className="mt-2 text-2xl font-semibold">{t('settings_title')}</h1>
         <p className="mt-2 text-sm text-white/80">{t('settings_intro')}</p>
       </section>
@@ -140,10 +140,10 @@ export default function SettingsPage() {
                 type="button"
                 onClick={() => handleThemeChange(option)}
                 className={clsx(
-                  'app-chip px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
+                  'rounded-full border px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
                   active
-                    ? 'border-brand/70 bg-brand text-white shadow-[0_0_30px_rgba(142,97,255,0.45)]'
-                    : 'text-slate-600 hover:-translate-y-0.5 hover:text-brand-foreground dark:text-slate-200',
+                    ? 'border-brand/70 bg-brand/15 text-brand-foreground dark:bg-brand/20 dark:text-white'
+                    : 'border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-slate-600 hover:-translate-y-0.5 hover:border-brand/30 hover:text-brand-foreground dark:text-slate-200',
                 )}
                 aria-pressed={active}
               >
@@ -163,7 +163,7 @@ export default function SettingsPage() {
           </button>
         </div>
         {message && <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">{message}</p>}
-        <div className="mt-6 rounded-2xl border border-dashed border-slate-200/80 bg-white/60 p-4 text-sm text-slate-700 dark:border-white/10 dark:bg-slate-900/40 dark:text-slate-200">
+        <div className="mt-6 rounded-2xl border border-dashed border-[var(--border-subtle)] bg-[var(--surface-subtle)] p-4 text-sm text-slate-700 dark:border-white/10 dark:bg-slate-900/40 dark:text-slate-200">
           <p className="text-sm text-slate-600 dark:text-slate-200">{t('settings_device_reset_description')}</p>
           <button
             type="button"
@@ -186,7 +186,7 @@ export default function SettingsPage() {
           <button
             type="button"
             onClick={() => setShowRules(true)}
-            className="inline-flex items-center rounded-full border border-slate-300 px-5 py-2 text-sm font-medium text-slate-600 transition hover:-translate-y-0.5 hover:border-brand/40 hover:text-brand-foreground dark:border-white/20 dark:text-white"
+            className="inline-flex items-center rounded-full border border-[var(--border-subtle)] px-5 py-2 text-sm font-medium text-slate-600 transition hover:-translate-y-0.5 hover:border-brand/40 hover:text-brand-foreground dark:border-white/20 dark:text-white"
           >
             {t('settings_rules_button')}
           </button>
@@ -201,10 +201,10 @@ export default function SettingsPage() {
         {rulesMessage && <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">{rulesMessage}</p>}
       </section>
 
-      <details className="app-panel border border-dashed border-slate-200/70 p-6 text-sm text-slate-700 shadow-none dark:border-white/20 dark:text-slate-200">
+      <details className="app-panel border border-dashed border-[var(--border-subtle)] p-6 text-sm text-slate-700 shadow-none dark:border-white/20 dark:text-slate-200">
         <summary className="cursor-pointer text-base font-semibold text-slate-900 dark:text-white">{t('settings_technical_title')}</summary>
         <p className="mt-2 text-sm text-slate-500 dark:text-slate-300">{t('settings_technical_description')}</p>
-        <div className="mt-4 space-y-3 rounded-2xl border border-slate-200/60 bg-white/80 p-4 text-xs text-slate-600 dark:border-white/10 dark:bg-slate-950/40 dark:text-slate-200">
+        <div className="mt-4 space-y-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] p-4 text-xs text-slate-600 dark:border-white/10 dark:bg-slate-950/40 dark:text-slate-200">
           <div>
             <p className="text-[11px] uppercase tracking-wide text-slate-400">{t('settings_device_current_label')}</p>
             <p className="mt-1 break-all font-mono text-[12px] text-slate-800 dark:text-white">{deviceId ?? t('settings_device_loading')}</p>

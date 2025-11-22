@@ -10,7 +10,8 @@ import type { UserProfile } from '@/types';
 interface ProfileModalProps {
   open: boolean;
   onClose: () => void;
-  onSaved: (user: UserProfile) => void;
+  // eslint-disable-next-line no-unused-vars
+  onSaved: (_profile: UserProfile) => void;
   initialProfile?: UserProfile | null;
 }
 
