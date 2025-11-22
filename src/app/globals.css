@@ -77,16 +77,14 @@
 
 @layer base {
   html {
-    font-size: 16px; /* чтобы браузер не мудрил с авто-зумом */
-  }
-
-  html,
-  body {
     @apply h-full;
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
-    @apply antialiased;
+    @apply h-full antialiased;
+    margin: 0;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', sans-serif;
     background-image: var(--bg-body);
     background-attachment: fixed;
@@ -107,6 +105,10 @@
   .app-shell {
     min-height: 100vh;
     padding: 1.25rem 0.75rem 2.75rem;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    max-width: 72rem; /* ~max-w-5xl */
   }
 
   @screen sm {
@@ -248,23 +250,6 @@
      ============================ */
 
   @media (max-width: 640px) {
-    /* Чуть плотнее, но без гигантских размеров */
-
-    .app-hero {
-      padding-top: 1.5rem;
-      padding-bottom: 1.6rem;
-    }
-
-    .app-hero h1 {
-      font-size: 1.75rem; /* около 28px, комфортно на мобиле */
-      line-height: 1.2;
-    }
-
-    .app-hero p {
-      font-size: 0.95rem;
-      line-height: 1.5;
-    }
-
     .steps-list {
       font-size: 0.95rem;
     }
@@ -279,7 +264,6 @@
       font-size: 0.9rem;
     }
 
-    /* Чуть меньше боковые отступы, чтобы карточки занимали больше экрана */
     .app-shell {
       padding-left: 0.9rem;
       padding-right: 0.9rem;
