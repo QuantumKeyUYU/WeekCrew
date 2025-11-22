@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
-import { primaryCtaClass } from '@/styles/tokens';
+import { primaryCtaClass, secondaryCtaClass } from '@/styles/tokens';
 import { SafetyRulesModal } from '@/components/modals/safety-rules-modal';
 import { useSafetyRules } from '@/hooks/useSafetyRules';
 import { useAppStore } from '@/store/useAppStore';
@@ -41,35 +41,38 @@ export default function HomePage() {
 
   return (
     <>
-      <div className="space-y-10 py-8 sm:space-y-16 sm:py-14">
+      <div className="space-y-8 py-6 sm:space-y-14 sm:py-10">
         {/* Верхняя карточка-бренд */}
-        <section className="app-panel relative p-6 sm:p-8">
-          <div className="relative flex flex-col items-center gap-3 text-center sm:flex-row sm:justify-between sm:text-left">
-            <div className="flex flex-col items-center gap-2 sm:items-start">
-              <span className="app-chip inline-flex items-center gap-2 px-4 py-1.5 text-xs font-semibold text-slate-900 dark:text-white">
-                <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                WeekCrew
-              </span>
-              <p className="max-w-xl text-sm text-slate-600 dark:text-slate-300">
-                {t('landing_logo_tagline')}
-              </p>
-            </div>
+        <section className="flex items-center justify-between rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-4 py-3 shadow-[var(--shadow-soft)] sm:px-6">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
+            <span className="app-chip inline-flex items-center gap-2 px-3 py-1 text-xs font-semibold text-[var(--text-primary)]">
+              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+              WeekCrew · {t('landing_logo_tagline')}
+            </span>
+            <p className="text-xs text-[var(--text-secondary)] sm:text-sm">{t('landing_hero_subtitle')}</p>
           </div>
+          {currentCircle && (
+            <button
+              type="button"
+              onClick={() => router.push('/circle')}
+              className="text-sm font-semibold text-[var(--text-secondary)] underline-offset-4 transition hover:text-[var(--text-primary)]"
+            >
+              {t('landing_go_to_circle')}
+            </button>
+          )}
         </section>
 
         {/* Hero-блок */}
-        <section className="app-hero relative px-5 py-12 text-center text-white sm:px-12 sm:py-14">
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-brand/10" />
-
+        <section className="app-hero relative px-5 py-10 text-center text-white sm:px-10 sm:py-12">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: 'easeOut' }}
-            className="relative mx-auto max-w-3xl space-y-7"
+            className="relative mx-auto max-w-3xl space-y-6"
           >
-            <div className="mx-auto inline-flex items-center gap-3 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/80 backdrop-blur">
+            <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/80">
               <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-300" />
-              {t('landing_more_link')}
+              WeekCrew · {t('landing_logo_tagline')}
             </div>
 
             <h1 className="text-[2.05rem] font-semibold leading-tight sm:text-[2.9rem]">
@@ -83,69 +86,53 @@ export default function HomePage() {
             <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
               <button
                 type="button"
-                onClick={() =>
-                  document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })
-                }
-                className="order-2 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/5 px-6 py-2.5 text-sm font-medium text-white/90 transition duration-200 hover:border-white/40 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/55 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent sm:order-1"
-              >
-                {t('landing_more_link')}
-                <span aria-hidden className="text-lg leading-none">↗</span>
-              </button>
-              <button
-                type="button"
                 onClick={handleStart}
                 className={`${primaryCtaClass} order-1 sm:order-2`}
               >
                 {t('landing_hero_cta')}
               </button>
-            </div>
-
-            {currentCircle && (
               <button
                 type="button"
-                onClick={() => router.push('/circle')}
-                className="text-sm font-medium text-white/75 underline-offset-4 transition hover:text-white"
+                onClick={() =>
+                  document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })
+                }
+                className={`${secondaryCtaClass} order-2 sm:order-1 text-white`}
               >
-                {t('landing_go_to_circle')}
+                {t('landing_more_link')} ↗
               </button>
-            )}
+            </div>
           </motion.div>
         </section>
 
         {/* Как устроен проект */}
         <section
           id="how-it-works"
-          className="app-panel relative scroll-mt-24 p-7 md:scroll-mt-28"
+          className="app-panel relative scroll-mt-24 p-6 md:scroll-mt-28"
         >
           <div className="relative space-y-3 text-center">
-            <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
+            <h2 className="text-2xl font-semibold text-[var(--text-primary)]">
               {t('landing_how_title')}
             </h2>
-            <p className="text-sm text-slate-600 dark:text-slate-300">
-              {t('landing_how_subtitle')}
-            </p>
+            <p className="text-sm text-[var(--text-secondary)]">{t('landing_how_subtitle')}</p>
           </div>
 
-          <div className="relative mt-10 grid gap-4 sm:grid-cols-3">
+          <div className="relative mt-8 grid gap-4 sm:grid-cols-3">
             {steps.map((step, index) => (
               <article
                 key={step.title}
-                className="group relative overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] p-5 shadow-[var(--shadow-soft)] transition duration-300 hover:-translate-y-1 hover:border-brand/30"
+                className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] p-4 text-left shadow-[var(--shadow-soft)]"
               >
-                <div className="relative flex flex-col gap-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-300">
-                    Step {index + 1}
-                  </p>
-                  <h3 className="text-base font-semibold text-slate-900 dark:text-white">{step.title}</h3>
-                  <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                    {step.description}
-                  </p>
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-secondary)]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden />
+                  Шаг {index + 1}
                 </div>
+                <h3 className="mt-3 text-base font-semibold text-[var(--text-primary)]">{step.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary)]">{step.description}</p>
               </article>
             ))}
           </div>
 
-          <div className="relative mt-12 flex justify-center">
+          <div className="relative mt-10 flex justify-center">
             <button type="button" onClick={handleStart} className={primaryCtaClass}>
               {t('landing_hero_cta')}
             </button>
