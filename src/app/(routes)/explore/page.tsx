@@ -180,11 +180,15 @@ export default function ExplorePage() {
 
   return (
     <div className="space-y-10 py-8 sm:space-y-12 sm:py-12">
-      <section className="app-hero space-y-4 p-7 text-left text-white sm:space-y-5 sm:p-10">
-        <h1 className="text-[1.85rem] font-semibold leading-tight sm:text-[2.05rem]">
+      <section className="app-hero relative overflow-hidden space-y-4 p-7 text-left text-white sm:space-y-5 sm:p-10">
+        <div className="pointer-events-none absolute inset-0 opacity-70">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_16%_24%,rgba(124,136,255,0.1),transparent_36%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(45,212,191,0.12),transparent_40%)]" />
+        </div>
+        <h1 className="relative text-[1.9rem] font-semibold leading-tight tracking-tight text-white/90 sm:text-[2.1rem]">
           {t('explore_page_title')}
         </h1>
-        <p className="max-w-2xl text-sm text-white/80 sm:text-base">{t('explore_page_subtitle')}</p>
+        <p className="relative max-w-2xl text-sm text-white/80 sm:text-base">{t('explore_page_subtitle')}</p>
       </section>
 
       <section className="app-panel space-y-5 p-5 sm:p-6">
@@ -194,7 +198,7 @@ export default function ExplorePage() {
             <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
               {t('explore_step_one_title')}
             </p>
-            <h2 className="text-lg font-semibold text-[var(--text-primary)]">{t('explore_step_one_heading')}</h2>
+            <h2 className="text-lg font-semibold tracking-tight text-[var(--text-primary)]">{t('explore_step_one_heading')}</h2>
             <p className="text-sm text-[var(--text-secondary)]">{t('explore_step_one_description')}</p>
           </div>
         </div>
@@ -207,10 +211,10 @@ export default function ExplorePage() {
                 type="button"
                 onClick={() => setSelectedMood((prev) => (prev === mood.key ? null : mood.key))}
                 className={clsx(
-                  'rounded-full border px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
+                  'rounded-full border px-4 py-2.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
                   active
-                    ? 'border-brand/70 bg-brand/15 text-brand-foreground dark:bg-brand/20 dark:text-white'
-                    : 'border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-[var(--text-primary)] hover:border-brand/30 hover:text-brand-foreground',
+                    ? 'border-white/30 bg-white/10 text-white shadow-[0_16px_36px_rgba(0,0,0,0.45)]'
+                    : 'border-[var(--border-subtle)] bg-[var(--surface-subtle)]/80 text-[var(--text-primary)] hover:border-white/20 hover:bg-white/5 hover:text-[var(--text-primary)] dark:border-white/10 dark:bg-white/5 dark:text-white/85',
                 )}
                 aria-pressed={active}
               >
@@ -231,7 +235,7 @@ export default function ExplorePage() {
             <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
               {t('explore_step_two_title')}
             </p>
-            <h2 className="text-lg font-semibold text-[var(--text-primary)]">{t('explore_step_two_heading')}</h2>
+            <h2 className="text-lg font-semibold tracking-tight text-[var(--text-primary)]">{t('explore_step_two_heading')}</h2>
             <p className="text-sm text-[var(--text-secondary)]">{t('explore_step_two_description')}</p>
           </div>
         </div>
@@ -244,19 +248,19 @@ export default function ExplorePage() {
                 type="button"
                 onClick={() => handleSelectInterest(card.id)}
                 className={clsx(
-                  'rounded-2xl border px-5 py-4 text-left transition',
+                  'rounded-3xl border px-5 py-4 text-left transition',
                   motionTimingClass,
                   active
-                    ? 'border-brand/60 bg-brand/12 text-brand-foreground dark:bg-brand/20 dark:text-white'
-                    : 'border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-[var(--text-primary)] hover:-translate-y-0.5 hover:border-brand/30',
+                    ? 'border-white/30 bg-white/10 text-white shadow-[0_18px_44px_rgba(0,0,0,0.45)]'
+                    : 'border-[var(--border-card)] bg-[var(--surface-subtle)]/90 text-[var(--text-primary)] hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/5 dark:border-white/10 dark:bg-white/5 dark:text-white/85',
                 )}
                 aria-pressed={active}
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl" aria-hidden>
+                  <span className="text-[1.7rem]" aria-hidden>
                     {card.emoji}
                   </span>
-                  <span className="text-base font-semibold">{card.label}</span>
+                  <span className="text-base font-semibold tracking-tight">{card.label}</span>
                 </div>
               </button>
             );
@@ -266,10 +270,10 @@ export default function ExplorePage() {
           type="button"
           onClick={handleRandomInterest}
           className={clsx(
-            'w-full rounded-2xl border border-dashed px-5 py-3 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
+            'w-full rounded-3xl border border-dashed px-5 py-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
             randomInterest
-              ? 'border-brand bg-brand/12 text-brand-foreground'
-              : 'border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-[var(--text-secondary)] hover:border-brand/30 hover:text-brand-foreground',
+              ? 'border-white/30 bg-white/10 text-white shadow-[0_14px_32px_rgba(0,0,0,0.38)]'
+              : 'border-[var(--border-card)] bg-[var(--surface-subtle)]/90 text-[var(--text-secondary)] hover:border-white/20 hover:bg-white/5 hover:text-[var(--text-primary)] dark:border-white/10 dark:bg-white/5 dark:text-white/80',
           )}
         >
           {t('explore_random_button')}
@@ -278,7 +282,7 @@ export default function ExplorePage() {
 
       <section className="app-panel space-y-5 p-5 sm:p-6">
         <div className="space-y-1">
-          <p className="text-base font-semibold text-[var(--text-primary)]">{t('explore_ready_title')}</p>
+          <p className="text-base font-semibold tracking-tight text-[var(--text-primary)]">{t('explore_ready_title')}</p>
           <p className="text-sm text-[var(--text-secondary)]">{t('explore_ready_description')}</p>
         </div>
         {error && (
