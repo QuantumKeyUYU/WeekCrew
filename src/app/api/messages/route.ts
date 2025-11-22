@@ -1,130 +1,150 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+
+import { getPrismaClient } from '@/lib/prisma';
 import { getOrCreateDevice } from '@/lib/server/device';
-import { countActiveMembers, isDeviceCircleMember } from '@/lib/server/circleMembership';
+import { findActiveCircleMembershipForDevice } from '@/lib/server/circleMembership';
 import { toCircleMessage } from '@/lib/server/serializers';
-import { isCircleActive } from '@/lib/server/circles';
-import { DEVICE_HEADER_NAME } from '@/lib/device';
-import { applyMessageUsageToQuota, checkDailyMessageLimit } from '@/lib/server/messages';
-import { buildCircleMessagesWhere } from '@/lib/server/messageQueries';
-import { getUserWithBlocks } from '@/lib/server/users';
+import { broadcastRealtimeEvent, getCircleChannelName } from '@/lib/realtime';
+import {
+  applyMessageUsageToQuota,
+  checkDailyMessageLimit,
+} from '@/lib/server/messages';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const circleId = searchParams.get('circleId')?.trim();
+  const circleId = searchParams.get('circleId');
+  const sinceParam = searchParams.get('since');
+  const sinceDate = sinceParam ? new Date(sinceParam) : null;
+  const hasValidSince = Boolean(sinceDate) && !Number.isNaN(sinceDate?.getTime());
 
   if (!circleId) {
-    return NextResponse.json({ error: 'circle_required' }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: 'invalid_payload' },
+      { status: 400 },
+    );
   }
 
   try {
-    const { id: deviceId, isNew } = await getOrCreateDevice(request);
-    const canAccess = await isDeviceCircleMember(circleId, deviceId);
+    const prisma = getPrismaClient();
 
-    if (!canAccess) {
-      return NextResponse.json({ error: 'not_member' }, { status: 403 });
+    if (!prisma) {
+      return NextResponse.json({ ok: false, error: 'BACKEND_DISABLED' }, { status: 503 });
     }
 
-    const user = await getUserWithBlocks(deviceId);
+    const { id: deviceId } = await getOrCreateDevice(request, prisma);
+    const now = new Date();
 
-    const blockedIds = user?.blocksInitiated?.map((block) => block.blockedId) ?? [];
-    const messageFilters = buildCircleMessagesWhere({
+    const membership = await findActiveCircleMembershipForDevice(
       circleId,
-      blockedUserIds: blockedIds,
-    });
+      deviceId,
+      prisma,
+      now,
+    );
 
-    const [messages, memberCount, quota] = await Promise.all([
-      prisma.message.findMany({
-        where: messageFilters,
-        orderBy: { createdAt: 'asc' },
-        include: { user: true },
-      }),
-      countActiveMembers(circleId),
-      checkDailyMessageLimit(prisma, { circleId, deviceId }),
-    ]);
-
-    const response = NextResponse.json({
-      messages: messages.map(toCircleMessage),
-      quota: quota.quota,
-      memberCount,
-      debug: {
-        circleId,
-        messagesCount: messages.length,
-        membersCount: memberCount,
-      },
-    });
-    if (isNew) {
-      response.headers.set(DEVICE_HEADER_NAME, deviceId);
+    if (!membership) {
+      return NextResponse.json(
+        { ok: false, error: 'NOT_MEMBER' },
+        { status: 403 },
+      );
     }
-    return response;
+
+    const { quota } = await checkDailyMessageLimit(prisma, { circleId, deviceId });
+
+    const messages = await prisma.message.findMany({
+      where: {
+        circleId,
+        ...(hasValidSince ? { createdAt: { gt: sinceDate } } : {}),
+      },
+      orderBy: { createdAt: 'asc' },
+      include: { user: true },
+    });
+
+    return NextResponse.json(
+      { ok: true, messages: messages.map(toCircleMessage), quota },
+      { status: 200 },
+    );
   } catch (error) {
-    console.error('messages list error', error);
-    return NextResponse.json({ messages: [] }, { status: 500 });
+    console.error('messages GET error', error);
+    return NextResponse.json(
+      { ok: false, error: 'server_error' },
+      { status: 500 },
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
-  const circleId = typeof body?.circleId === 'string' ? body.circleId.trim() : '';
-  const content = typeof body?.content === 'string' ? body.content.trim() : '';
+  const circleId =
+    typeof body?.circleId === 'string' ? body.circleId.trim() : '';
+  const content =
+    typeof body?.content === 'string' ? body.content.trim() : '';
 
-  if (!circleId) {
-    return NextResponse.json({ error: 'circle_required' }, { status: 400 });
-  }
-
-  if (!content) {
-    return NextResponse.json({ error: 'INVALID_PAYLOAD' }, { status: 400 });
+  if (!circleId || !content) {
+    return NextResponse.json(
+      { ok: false, error: 'invalid_payload' },
+      { status: 400 },
+    );
   }
 
   try {
-    const { id: deviceId, isNew } = await getOrCreateDevice(request);
-    const canSend = await isDeviceCircleMember(circleId, deviceId);
+    const prisma = getPrismaClient();
 
-    if (!canSend) {
-      return NextResponse.json({ error: 'not_member' }, { status: 403 });
+    if (!prisma) {
+      return NextResponse.json({ ok: false, error: 'BACKEND_DISABLED' }, { status: 503 });
     }
 
-    const user = await prisma.user.findUnique({ where: { deviceId } });
-    const circle = await prisma.circle.findUnique({ where: { id: circleId } });
+    const { id: deviceId } = await getOrCreateDevice(request, prisma);
 
-    if (!circle || !isCircleActive(circle)) {
-      return NextResponse.json({ error: 'circle_expired' }, { status: 403 });
-    }
+    const now = new Date();
+    const membership = await findActiveCircleMembershipForDevice(
+      circleId,
+      deviceId,
+      prisma,
+      now,
+    );
 
-    const quotaResult = await checkDailyMessageLimit(prisma, { circleId, deviceId });
-
-    if (!quotaResult.allowed) {
+    if (!membership) {
       return NextResponse.json(
-        { ok: false, error: 'daily_limit_exceeded', quota: quotaResult.quota },
+        { ok: false, error: 'NOT_MEMBER' },
+        { status: 403 },
+      );
+    }
+
+    const quotaCheck = await checkDailyMessageLimit(prisma, { circleId, deviceId });
+
+    if (!quotaCheck.allowed) {
+      return NextResponse.json(
+        { ok: false, error: 'daily_limit_exceeded', quota: quotaCheck.quota },
         { status: 429 },
       );
     }
+
+    const user = await prisma.user.findUnique({ where: { deviceId } });
 
     const message = await prisma.message.create({
       data: {
         circleId,
         deviceId,
-        userId: user?.id,
+        userId: user?.id ?? null,
         content,
-        isSystem: false,
       },
       include: { user: true },
     });
 
-    const response = NextResponse.json(
-      {
-        ok: true,
-        message: toCircleMessage(message),
-        quota: applyMessageUsageToQuota(quotaResult.quota),
-      },
-      { status: 201 },
+    const channel = getCircleChannelName(circleId);
+    broadcastRealtimeEvent(channel, 'new-message', toCircleMessage(message));
+
+    const nextQuota = applyMessageUsageToQuota(quotaCheck.quota);
+
+    return NextResponse.json(
+      { ok: true, message: toCircleMessage(message), quota: nextQuota },
+      { status: 200 },
     );
-    if (isNew) {
-      response.headers.set(DEVICE_HEADER_NAME, deviceId);
-    }
-    return response;
   } catch (error) {
-    console.error('message send error', error);
-    return NextResponse.json({ error: 'SERVER_ERROR' }, { status: 500 });
+    console.error('messages POST error', error);
+    return NextResponse.json(
+      { ok: false, error: 'server_error' },
+      { status: 500 },
+    );
   }
 }

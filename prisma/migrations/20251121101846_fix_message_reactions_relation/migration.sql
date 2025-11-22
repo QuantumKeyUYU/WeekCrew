@@ -1,0 +1,1 @@
+-- No-op migration: relation naming updated and reverse reaction relation added at the Prisma schema level.

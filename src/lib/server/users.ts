@@ -1,5 +1,5 @@
 import type { User } from '@prisma/client';
-import { prisma } from '@/lib/prisma';
+import { ensurePrismaClient } from '@/lib/prisma';
 import type { UserProfile } from '@/types';
 
 export const toUserProfile = (user: User): UserProfile => ({
@@ -12,10 +12,10 @@ export const toUserProfile = (user: User): UserProfile => ({
 });
 
 export const findUserByDeviceId = (deviceId: string) =>
-  prisma.user.findUnique({ where: { deviceId } });
+  ensurePrismaClient().user.findUnique({ where: { deviceId } });
 
 export const getUserWithBlocks = (deviceId: string) =>
-  prisma.user.findUnique({
+  ensurePrismaClient().user.findUnique({
     where: { deviceId },
     include: {
       blocksInitiated: {

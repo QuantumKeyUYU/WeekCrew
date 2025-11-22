@@ -3,10 +3,28 @@
 import { useEffect, useState } from 'react';
 import { ApiError } from '@/lib/api-client';
 import { getCircleMessages } from '@/lib/api/circles';
-import { mergeMessages } from '@/lib/messages';
 import { useAppStore } from '@/store/useAppStore';
+import type { CircleMessage } from '@/types';
 
 const POLL_INTERVAL_MS = 5000;
+
+const mergeMessages = (
+  existing: CircleMessage[],
+  incoming: CircleMessage[],
+) => {
+  if (!incoming.length) {
+    return existing;
+  }
+
+  const byId = new Map(existing.map((message) => [message.id, message]));
+  incoming.forEach((message) => {
+    byId.set(message.id, message);
+  });
+
+  return Array.from(byId.values()).sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  );
+};
 
 export const useCircleMessagesPolling = (circleId: string | null | undefined) => {
   const setMessages = useAppStore((state) => state.setMessages);
@@ -20,27 +38,43 @@ export const useCircleMessagesPolling = (circleId: string | null | undefined) =>
 
   useEffect(() => {
     if (!circleId) {
+      setMessages([]);
       return undefined;
     }
 
+    setMessages([]);
     let cancelled = false;
     let intervalId: ReturnType<typeof setInterval> | null = null;
 
-    const poll = async () => {
+    const poll = async (reset = false) => {
       if (cancelled || !circleId) {
         return;
       }
 
-      try {
-        const currentMessages = useAppStore.getState().messages;
-        const last = currentMessages[currentMessages.length - 1];
-        const { messages: incoming, quota, memberCount } = await getCircleMessages({
-          circleId,
-          since: last?.createdAt,
-        });
+      const state = useAppStore.getState();
+      if (state.circle?.id !== circleId) {
+        return;
+      }
 
-        const state = useAppStore.getState();
-        if (state.circle?.id !== circleId || cancelled) {
+      const previousMessages = reset ? [] : state.messages;
+      const lastTimestamp = reset
+        ? undefined
+        : previousMessages[previousMessages.length - 1]?.createdAt;
+
+      try {
+        const response = await getCircleMessages({
+          circleId,
+          ...(lastTimestamp ? { since: lastTimestamp } : {}),
+        });
+        console.debug('Fetched circle messages', response);
+
+        if (response.ok === false || !Array.isArray(response.messages)) {
+          return;
+        }
+
+        const { messages: incoming, quota, memberCount } = response;
+
+        if (cancelled) {
           return;
         }
 
@@ -54,16 +88,15 @@ export const useCircleMessagesPolling = (circleId: string | null | undefined) =>
           });
         }
 
-        if (incoming.length === 0) {
-          return;
-        }
+        const nextMessages = reset
+          ? incoming
+          : mergeMessages(previousMessages, incoming);
 
-        const merged = mergeMessages(state.messages, incoming);
-        setMessages(merged);
+        setMessages(nextMessages);
       } catch (error) {
         if (error instanceof ApiError && error.status === 403) {
           const details = (error.data as { error?: string } | null) ?? null;
-          if (details?.error === 'not_member') {
+          if (details?.error === 'NOT_MEMBER' || details?.error === 'not_member') {
             if (!cancelled) {
               setNotMember(true);
             }
@@ -81,8 +114,8 @@ export const useCircleMessagesPolling = (circleId: string | null | undefined) =>
       }
     };
 
-    intervalId = setInterval(poll, POLL_INTERVAL_MS);
-    poll();
+    intervalId = setInterval(() => poll(false), POLL_INTERVAL_MS);
+    void poll(true);
 
     return () => {
       cancelled = true;

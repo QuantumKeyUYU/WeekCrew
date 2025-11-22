@@ -1,17 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
 import { getOrCreateDevice } from '@/lib/server/device';
 import { DEVICE_HEADER_NAME } from '@/lib/device';
-import {
-  countActiveMembers,
-  findLatestActiveMembershipForDevice,
-  markMembershipLeft,
-} from '@/lib/server/circleMembership';
+import { countActiveMembers, findLatestActiveMembershipForDevice } from '@/lib/server/circleMembership';
 
 export async function POST(request: NextRequest) {
   try {
-    const { id: deviceId, isNew } = await getOrCreateDevice(request);
-    const membership = await findLatestActiveMembershipForDevice(deviceId);
+    const prisma = getPrismaClient();
+
+    if (!prisma) {
+      return NextResponse.json({ ok: false, error: 'BACKEND_DISABLED' }, { status: 503 });
+    }
+
+    const { id: deviceId, isNew } = await getOrCreateDevice(request, prisma);
+    const membership = await findLatestActiveMembershipForDevice(deviceId, prisma);
 
     if (!membership) {
       const response = NextResponse.json({ ok: true, circle: null });
@@ -21,8 +23,11 @@ export async function POST(request: NextRequest) {
       return response;
     }
 
-    await markMembershipLeft(membership.id);
-    const memberCount = await countActiveMembers(membership.circleId);
+    await prisma.circleMembership.deleteMany({
+      where: { circleId: membership.circleId, deviceId },
+    });
+
+    const memberCount = await countActiveMembers(membership.circleId, prisma);
 
     const response = NextResponse.json({
       ok: true,

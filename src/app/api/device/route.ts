@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
 import { getOrCreateDevice } from '@/lib/server/device';
 
 export async function DELETE(request: NextRequest) {
-  const { device, id: deviceId, isNew } = await getOrCreateDevice(request);
+  const prisma = getPrismaClient();
+
+  if (!prisma) {
+    return NextResponse.json({ ok: false, error: 'BACKEND_DISABLED' }, { status: 503 });
+  }
+
+  const { device, id: deviceId, isNew } = await getOrCreateDevice(request, prisma);
 
   if (isNew) {
     if (device) {
@@ -21,10 +27,26 @@ export async function DELETE(request: NextRequest) {
     const circleIds = [...new Set(memberships.map((membership) => membership.circleId))];
 
     await prisma.$transaction(async (tx) => {
+      await tx.message.deleteMany({ where: { deviceId } });
+      await tx.circleMembership.deleteMany({ where: { deviceId } });
+
       if (circleIds.length > 0) {
-        await tx.message.deleteMany({ where: { circleId: { in: circleIds } } });
-        await tx.circleMembership.deleteMany({ where: { circleId: { in: circleIds } } });
-        await tx.circle.deleteMany({ where: { id: { in: circleIds } } });
+        const circlesWithMembers = await Promise.all(
+          circleIds.map(async (circleId) => ({
+            circleId,
+            memberCount: await tx.circleMembership.count({
+              where: { circleId, status: 'active' },
+            }),
+          })),
+        );
+
+        const emptyCircleIds = circlesWithMembers
+          .filter((entry) => entry.memberCount === 0)
+          .map((entry) => entry.circleId);
+
+        if (emptyCircleIds.length > 0) {
+          await tx.circle.deleteMany({ where: { id: { in: emptyCircleIds } } });
+        }
       }
 
       await tx.device.deleteMany({ where: { id: deviceId } });

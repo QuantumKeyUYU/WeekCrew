@@ -2,8 +2,6 @@ import { PrismaClient } from '@prisma/client';
 
 const globalForPrisma = global as unknown as { prisma?: PrismaClient };
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient();
-
 export const isLiveBackendEnabled = Boolean(process.env.DATABASE_URL);
 
 if (!isLiveBackendEnabled) {
@@ -12,6 +10,29 @@ if (!isLiveBackendEnabled) {
   );
 }
 
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma;
-}
+const createPrismaClient = () => {
+  const client = globalForPrisma.prisma ?? new PrismaClient();
+
+  if (process.env.NODE_ENV !== 'production') {
+    globalForPrisma.prisma = client;
+  }
+
+  return client;
+};
+
+export const getPrismaClient = (): PrismaClient | null => {
+  if (!isLiveBackendEnabled) {
+    return null;
+  }
+  return createPrismaClient();
+};
+
+export const prisma = getPrismaClient();
+
+export const ensurePrismaClient = (): PrismaClient => {
+  const client = getPrismaClient();
+  if (!client) {
+    throw new Error('DATABASE_URL is not configured. Live backend is disabled.');
+  }
+  return client;
+};

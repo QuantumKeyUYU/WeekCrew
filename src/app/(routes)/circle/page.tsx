@@ -13,7 +13,6 @@ import { CircleEmptyState } from '@/components/circle/empty-state';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSafetyRules } from '@/hooks/useSafetyRules';
 import { SafetyRulesModal } from '@/components/modals/safety-rules-modal';
-import { MessageList } from '@/components/circle/message-list';
 import { INTERESTS_MAP } from '@/config/interests';
 import { MOOD_OPTIONS } from '@/constants/moods';
 import { clearCircleSelection, loadCircleSelection } from '@/lib/circleSelection';
@@ -21,16 +20,20 @@ import { ApiError } from '@/lib/api-client';
 import { useAppStore } from '@/store/useAppStore';
 import { LANGUAGE_INTERESTS } from '@/constants/language-interests';
 import {
-  getCurrentCircle,
+  addReaction as addReactionApi,
   getCircleMessages,
+  joinCircle,
   leaveCircle as leaveCircleApi,
   sendMessage as sendCircleMessage,
+  sendTyping,
 } from '@/lib/api/circles';
 import { getProfile } from '@/lib/api/profile';
 import { getOrCreateDeviceId, resetDeviceId } from '@/lib/device';
 import type { CircleMessage, DailyQuotaSnapshot } from '@/types';
 import { useCircleMessagesPolling } from '@/hooks/useCircleMessagesPolling';
 import { getCircleWeekPhase } from '@/lib/circle-week-phase';
+import { ChatWindow } from '@/components/ChatWindow';
+import { useLiveChat } from '@/hooks/useLiveChat';
 
 const DAY_MS = 1000 * 60 * 60 * 24;
 
@@ -78,8 +81,26 @@ export default function CirclePage() {
 
   const lastCircleIdRef = useRef<string | null>(circle?.id ?? null);
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
+  const typingSignalRef = useRef<number>(0);
   const currentDeviceId =
     storeDeviceId ?? (typeof window !== 'undefined' ? getOrCreateDeviceId() : null);
+
+  const {
+    messages: liveMessages,
+    setMessages: setLiveMessages,
+    typing: typingUsers,
+    reactions,
+  } = useLiveChat(circleId, {
+    initialMessages: messages,
+    onMessage: (incoming) => {
+      const exists = useAppStore
+        .getState()
+        .messages.some((message) => message.id === incoming.id);
+      if (!exists) {
+        addMessage(incoming);
+      }
+    },
+  });
 
   useEffect(() => {
     const stored = loadCircleSelection();
@@ -143,6 +164,9 @@ export default function CirclePage() {
   }, [circle?.id, setQuotaFromApi]);
 
   const handleAccessRevoked = useCallback(() => {
+    void leaveCircleApi().catch((error) => {
+      console.warn('Failed to cleanup circle after access revoked', error);
+    });
     setNotMember(true);
     setCircle(null);
     setMessages([]);
@@ -153,39 +177,58 @@ export default function CirclePage() {
   }, [clearCircleSelection, clearSession, setCircle, setMessages, setQuotaFromApi]);
 
   useEffect(() => {
-    if (circle) {
-      return;
-    }
     let cancelled = false;
-    setLoadingCircle(true);
-    getCurrentCircle()
-      .then((response) => {
+
+    const startFreshCircle = async () => {
+      setLoadingCircle(true);
+      setMessages([]);
+
+      try {
+        const storedSelection = loadCircleSelection();
+        const fallbackMood = MOOD_OPTIONS[0]?.key ?? 'default';
+        const fallbackInterest =
+          LANGUAGE_INTERESTS[0]?.id ?? Object.keys(INTERESTS_MAP)[0] ?? 'default';
+
+        const response = await joinCircle({
+          mood: storedSelection?.mood ?? fallbackMood,
+          interest: storedSelection?.interestId ?? fallbackInterest,
+        });
+
         if (cancelled) return;
+
         setCircle(response.circle);
-        if (!response.circle) {
+        setMessages(response.messages);
+        setQuotaFromApi(null);
+        setNotMember(false);
+        lastCircleIdRef.current = response.circle.id;
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Failed to start a fresh circle', error);
+          setCircle(null);
           setMessages([]);
         }
-      })
-      .catch((error) => {
-        if (!cancelled) {
-          console.error('Failed to load current circle', error);
-        }
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) {
           setLoadingCircle(false);
         }
-      });
+      }
+    };
+
+    void startFreshCircle();
 
     return () => {
       cancelled = true;
+      void leaveCircleApi().catch((err) => {
+        console.warn('Failed to delete circle on exit', err);
+      });
     };
-  }, [circle, setCircle, setMessages]);
+  }, [joinCircle, leaveCircleApi, setCircle, setLoadingCircle, setMessages, setNotMember, setQuotaFromApi]);
 
   useEffect(() => {
     if (!circle || notMember) {
       setMessages([]);
       setMessagesLoading(false);
+      setLiveMessages([]);
       return;
     }
 
@@ -228,7 +271,15 @@ export default function CirclePage() {
     return () => {
       cancelled = true;
     };
-  }, [circle?.id, notMember, setMessages, setMessagesLoading, setQuotaFromApi, updateCircle]);
+  }, [circle?.id, notMember, setLiveMessages, setMessages, setMessagesLoading, setQuotaFromApi, updateCircle]);
+
+  useEffect(() => {
+    if (!circleId) {
+      setLiveMessages([]);
+      return;
+    }
+    setLiveMessages(messages.filter((message) => message.circleId === circleId));
+  }, [circleId, messages, setLiveMessages]);
 
   const { notMember: pollingNotMember } = useCircleMessagesPolling(circleId);
 
@@ -238,7 +289,13 @@ export default function CirclePage() {
     }
   }, [pollingNotMember, handleAccessRevoked]);
 
-  const handleStartMatching = () => {
+  const handleStartMatching = async () => {
+    try {
+      await leaveCircleApi();
+    } catch (error) {
+      console.warn('Failed to leave circle before matching', error);
+    }
+    lastCircleIdRef.current = null;
     clearSession();
     resetDeviceId();
     setMessages([]);
@@ -271,6 +328,7 @@ export default function CirclePage() {
     } finally {
       setLeavePending(false);
     }
+    lastCircleIdRef.current = null;
     clearSession();
     resetDeviceId();
     setMessages([]);
@@ -286,6 +344,20 @@ export default function CirclePage() {
     const nextHeight = Math.min(node.scrollHeight, 200);
     node.style.height = `${nextHeight}px`;
   }, []);
+
+  const emitTyping = useCallback(() => {
+    if (!circleId || notMember || isCircleExpired) {
+      return;
+    }
+    const now = Date.now();
+    if (now - typingSignalRef.current < 2000) {
+      return;
+    }
+    typingSignalRef.current = now;
+    void sendTyping(circleId).catch((error) => {
+      console.warn('Failed to send typing event', error);
+    });
+  }, [circleId, isCircleExpired, notMember, sendTyping]);
 
   const sendMessageCore = useCallback(async () => {
     const currentUserProfile = useAppStore.getState().user;
@@ -320,14 +392,17 @@ export default function CirclePage() {
     setSendError(null);
 
     try {
-      const response = await sendCircleMessage({ circleId: circle.id, content: trimmed });
+      const response = await sendCircleMessage({
+        circleId: circle.id,
+        content: trimmed,
+        deviceId: currentDeviceId ?? undefined,
+      });
       replaceMessage(optimisticId, response.message);
-      setQuotaFromApi(response.quota);
+      setQuotaFromApi(response.quota ?? null);
     } catch (error) {
-      console.error('Failed to send message', error);
-      removeMessage(optimisticId);
       if (error instanceof ApiError) {
         const details = (error.data as { error?: string; quota?: DailyQuotaSnapshot } | null) ?? null;
+        console.error('Failed to send message', error.status, details?.error);
         if (details?.error === 'daily_limit_exceeded') {
           setQuotaFromApi(details.quota ?? null);
           setSendError(t('circle_limit_reached'));
@@ -345,7 +420,10 @@ export default function CirclePage() {
             return;
           }
         }
+      } else {
+        console.error('Failed to send message', error);
       }
+      removeMessage(optimisticId);
       setSendError(t('composer_send_error'));
     } finally {
       setIsSending(false);
@@ -376,6 +454,16 @@ export default function CirclePage() {
     }
     await sendMessageCore();
   }, [openProfileModal, sendMessageCore, user]);
+
+  const handleReact = useCallback(
+    (messageId: string, emoji: string) => {
+      if (!circleId || notMember) return;
+      void addReactionApi(messageId, emoji).catch((error) => {
+        console.warn('Failed to add reaction', error);
+      });
+    },
+    [addReactionApi, circleId, notMember],
+  );
 
   const systemMessageLines = t('circle_system_message').split('\n');
   const quickRules = t('rules_modal_points').split('|');
@@ -442,6 +530,7 @@ export default function CirclePage() {
 
   const handleComposerKeyDown = useCallback(
     (event: KeyboardEvent<HTMLTextAreaElement>) => {
+      emitTyping();
       if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();
         if (!canSubmitMessage) {
@@ -450,7 +539,7 @@ export default function CirclePage() {
         void attemptSendMessage();
       }
     },
-    [attemptSendMessage, canSubmitMessage],
+    [attemptSendMessage, canSubmitMessage, emitTyping],
   );
 
   useEffect(() => {
@@ -508,6 +597,30 @@ export default function CirclePage() {
     const timePart = resetDate.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
     return t('circle_quota_reset_hint', { time: `${datePart}, ${timePart}` });
   })();
+
+  const composerSupport = (() => {
+    if (sendError) {
+      return null;
+    }
+    if (isLimitReached) {
+      return quotaResetLabel
+        ? `${t('circle_quota_exhausted')} · ${quotaResetLabel}`
+        : t('circle_quota_exhausted');
+    }
+    if (typeof dailyRemaining === 'number' && typeof dailyLimit === 'number') {
+      const reset = quotaResetLabel ? ` · ${quotaResetLabel}` : '';
+      return `${t('circle_quota_remaining', { count: dailyRemaining })}${reset}`;
+    }
+    return `${t('messages_author_system')} напоминает: переписка синхронизируется между устройствами, так что друзья увидят ваши сообщения мгновенно. Ctrl + K → быстрый переход между кругами.`;
+  })();
+
+  const handleComposerChange = useCallback(
+    (value: string) => {
+      setComposerValue(value);
+      emitTyping();
+    },
+    [emitTyping],
+  );
 
   const interestConfig = circle ? INTERESTS_MAP[circle.interest as keyof typeof INTERESTS_MAP] : null;
   const fallbackInterest = interestConfig ? t(interestConfig.labelKey) : null;
@@ -756,64 +869,32 @@ export default function CirclePage() {
           )}
         </section>
 
-        <section className="flex flex-1 min-h-0 flex-col gap-3 rounded-3xl border border-slate-200/70 bg-white/95 p-4 shadow-[0_18px_55px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-slate-900/70">
-          <div className="flex-1 min-h-0 overflow-hidden rounded-2xl bg-white/50 shadow-inner shadow-white/80 dark:bg-slate-900/40 dark:shadow-black/20">
-            <MessageList
-              messages={messages}
-              currentDeviceId={currentDeviceId}
-              isLoading={Boolean(circle && messagesLoading)}
-              preamble={messagePreamble}
-              className="p-4 sm:p-6"
-            />
-          </div>
-          <form
+        <section className="flex flex-1 min-h-0">
+          <ChatWindow
+            messages={liveMessages}
+            reactions={reactions}
+            typing={typingUsers?.filter((entry) => entry.deviceId !== currentDeviceId)}
+            currentDeviceId={currentDeviceId}
+            composerValue={composerValue}
+            onComposerChange={handleComposerChange}
             onSubmit={handleSendMessage}
-            className="sticky bottom-0 space-y-2 rounded-2xl border border-slate-200/70 bg-white/95 p-3 shadow-[0_10px_30px_rgba(15,23,42,0.08)] backdrop-blur dark:border-white/10 dark:bg-slate-900/70"
-          >
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <textarea
-                ref={composerRef}
-                rows={1}
-                value={composerValue}
-                onChange={(event) => setComposerValue(event.target.value)}
-                onKeyDown={handleComposerKeyDown}
-                placeholder={composerPlaceholder}
-                aria-label={composerPlaceholder}
-                className="flex-1 resize-none rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-white/10 dark:bg-slate-900/70 dark:text-white"
-                disabled={composerDisabled}
-              />
-              <button
-                type="submit"
-                className="rounded-2xl bg-brand px-6 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(127,90,240,0.25)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
-                disabled={!canSubmitMessage}
-              >
-                {isSending ? t('composer_submitting') : t('composer_submit')}
-              </button>
-            </div>
-            {sendError && (
-              <p
-                className="inline-flex items-center gap-2 rounded-2xl bg-red-50/80 px-3 py-2 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-200"
-                role="status"
-                aria-live="assertive"
-              >
-                <span className="text-sm">⚠️</span>
-                <span>{sendError}</span>
-              </p>
-            )}
-            {typeof dailyRemaining === 'number' && typeof dailyLimit === 'number' && (
-              !isLimitReached ? (
-                <div className="text-xs text-slate-500 dark:text-slate-400">
-                  <p>{t('circle_quota_remaining', { count: dailyRemaining })}</p>
-                  {quotaResetLabel && <p className="mt-1">{quotaResetLabel}</p>}
-                </div>
-              ) : (
-                <div className="rounded-2xl bg-amber-50/80 p-3 text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-100">
-                  <p className="font-medium">{t('circle_quota_exhausted')}</p>
-                  {quotaResetLabel && <p className="mt-1">{quotaResetLabel}</p>}
-                </div>
-              )
-            )}
-          </form>
+            onSendClick={() => {
+              if (canSubmitMessage) {
+                void attemptSendMessage();
+              }
+            }}
+            placeholder={composerPlaceholder}
+            isSending={isSending}
+            disabled={composerDisabled}
+            loading={Boolean(circle && messagesLoading)}
+            headerLabel={selectionInterest ?? t('circle_rules_title')}
+            supportingText={composerSupport}
+            errorText={sendError}
+            preamble={messagePreamble}
+            onKeyDown={handleComposerKeyDown}
+            textareaRef={composerRef}
+            onReact={handleReact}
+          />
         </section>
 
         <p className="text-center text-xs text-slate-500 dark:text-slate-400">{t('landing_test_mode_hint')}</p>

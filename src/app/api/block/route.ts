@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
 import { getOrCreateDevice } from '@/lib/server/device';
 import { findUserByDeviceId } from '@/lib/server/users';
 
@@ -12,7 +12,13 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { id: deviceId } = await getOrCreateDevice(request);
+    const prisma = getPrismaClient();
+
+    if (!prisma) {
+      return NextResponse.json({ error: 'BACKEND_DISABLED' }, { status: 503 });
+    }
+
+    const { id: deviceId } = await getOrCreateDevice(request, prisma);
     const user = await findUserByDeviceId(deviceId);
 
     if (!user) {
