@@ -90,6 +90,7 @@
     background-attachment: fixed;
     background-size: cover;
     color: var(--text-primary);
+    overflow-x: hidden; /* не даём полотну растягиваться по ширине */
   }
 
   ::selection {
@@ -108,7 +109,7 @@
     margin-left: auto;
     margin-right: auto;
     width: 100%;
-    max-width: 72rem; /* ~max-w-5xl */
+    max-width: 72rem; /* ~max-w-5xl/6xl */
   }
 
   @screen sm {
@@ -250,6 +251,15 @@
      ============================ */
 
   @media (max-width: 640px) {
+    /* Сужаем сами карточки и центрируем их —
+       чтобы при отдалении всё было строго по центру */
+    .app-hero,
+    .app-panel {
+      max-width: 24rem; /* ~384px */
+      margin-left: auto;
+      margin-right: auto;
+    }
+
     .steps-list {
       font-size: 0.95rem;
     }
