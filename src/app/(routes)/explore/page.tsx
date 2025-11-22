@@ -183,14 +183,11 @@ export default function ExplorePage() {
 
   return (
     <div className="space-y-10 py-6 sm:py-10">
-      <section className="app-hero relative overflow-hidden px-6 py-10 text-white sm:px-10 sm:py-12">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute inset-0 bg-[radial-gradient(120%_140%_at_15%_10%,rgba(255,255,255,0.14),transparent_55%),radial-gradient(120%_140%_at_85%_18%,rgba(94,234,212,0.12),transparent_55%)]" />
-          <div className="absolute inset-x-10 bottom-10 h-px bg-gradient-to-r from-white/0 via-white/40 to-white/0" />
-        </div>
+      <section className="app-hero relative px-6 py-10 text-white sm:px-10 sm:py-12">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-brand/10" />
         <div className="relative space-y-3">
-          <p className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/75 backdrop-blur">
-            <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-300 shadow-[0_0_0_8px_rgba(16,185,129,0.24)]" />
+          <p className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/75 backdrop-blur">
+            <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-300" />
             {t('explore_intro_label')}
           </p>
           <h1 className="text-[1.85rem] font-semibold leading-tight sm:text-[2.25rem]">{t('explore_page_title')}</h1>
@@ -199,7 +196,7 @@ export default function ExplorePage() {
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2">
-        <div className="flex flex-col gap-3 rounded-2xl border border-[var(--surface-muted-border)] bg-[var(--surface-muted)] p-4 shadow-[var(--surface-muted-shadow)] dark:text-white">
+        <div className="flex flex-col gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] p-4 shadow-[var(--shadow-soft)] dark:text-white">
           <div className="flex items-start gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/70 to-brand/70 text-lg text-white shadow-lg">
               📡
@@ -209,14 +206,14 @@ export default function ExplorePage() {
               <p className="text-sm text-slate-600 dark:text-slate-300">{t('explore_sync_subtitle')}</p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2 rounded-xl bg-white/70 px-3 py-2 text-xs text-slate-600 shadow-inner shadow-white/40 backdrop-blur dark:bg-white/5 dark:text-slate-200">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/90 px-3 py-1 font-semibold uppercase tracking-[0.12em] text-slate-900 shadow-sm dark:bg-white/10 dark:text-white">
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-white/70 px-3 py-2 text-xs text-slate-600 backdrop-blur dark:border-white/10 dark:bg-white/5 dark:text-slate-200">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/90 px-3 py-1 font-semibold uppercase tracking-[0.08em] text-slate-900 dark:bg-white/10 dark:text-white">
               🛰️ {t('messages_author_system')}
             </span>
             <span className="text-left text-[13px] leading-relaxed">{t('explore_sync_hint')}</span>
           </div>
         </div>
-        <div className="flex flex-col gap-3 rounded-2xl border border-[var(--surface-muted-border)] bg-[var(--surface-muted)] p-4 shadow-[var(--surface-muted-shadow)] dark:text-white">
+        <div className="flex flex-col gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] p-4 shadow-[var(--shadow-soft)] dark:text-white">
           <div className="flex items-start gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400/70 to-sky-400/70 text-lg text-white shadow-lg">
               🤝
@@ -226,22 +223,22 @@ export default function ExplorePage() {
               <p className="text-sm text-slate-600 dark:text-slate-300">{t('landing_logo_tagline')}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2 text-xs text-slate-600 shadow-inner shadow-white/40 backdrop-blur dark:bg-white/5 dark:text-slate-200">
-            <span className="inline-flex h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_0_6px_rgba(52,211,153,0.28)]" />
+          <div className="flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-white/70 px-3 py-2 text-xs text-slate-600 backdrop-blur dark:border-white/10 dark:bg-white/5 dark:text-slate-200">
+            <span className="inline-flex h-2 w-2 rounded-full bg-emerald-400" />
             <span className="text-left text-[13px] leading-relaxed">{t('explore_page_subtitle')}</span>
           </div>
         </div>
       </section>
 
       {!accepted && (
-        <section className="rounded-3xl border border-amber-200/70 bg-amber-50/90 p-5 text-amber-900 shadow-[0_16px_40px_rgba(245,158,11,0.18)] dark:border-amber-400/40 dark:bg-amber-500/10 dark:text-amber-100">
+        <section className="rounded-3xl border border-amber-200/70 bg-amber-50/90 p-5 text-amber-900 shadow-none dark:border-amber-400/40 dark:bg-amber-500/10 dark:text-amber-100">
           <p className="text-sm font-semibold">{t('explore_rules_notice')}</p>
           <p className="mt-1 text-xs text-amber-800/80 dark:text-amber-100/70">{t('explore_rules_required')}</p>
           <div className="mt-3">
             <button
               type="button"
               onClick={() => setShowRulesModal(true)}
-              className="inline-flex items-center rounded-full border border-transparent bg-amber-500 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-sm transition hover:bg-amber-600 dark:bg-amber-400 dark:text-slate-900"
+              className="inline-flex items-center rounded-full border border-transparent bg-amber-500 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-amber-600 dark:bg-amber-400 dark:text-slate-900"
             >
               {t('explore_rules_button')}
             </button>
@@ -250,7 +247,7 @@ export default function ExplorePage() {
       )}
 
       <section className="app-panel p-6 sm:p-7">
-        <div className="inline-flex items-center gap-2 rounded-full border border-slate-200/70 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-600 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/5 dark:text-slate-100">
+        <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-white/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-600 dark:border-white/10 dark:bg-white/10 dark:text-slate-100">
           <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500/80 to-brand/70 text-[10px] text-white">1</span>
           {t('explore_step_one_title')}
         </div>
@@ -265,10 +262,10 @@ export default function ExplorePage() {
                 type="button"
                 onClick={() => setSelectedMood((prev) => (prev === mood.key ? null : mood.key))}
                 className={clsx(
-                  'app-chip px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
+                  'rounded-full border px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
                   active
-                    ? 'border-brand/70 bg-brand/20 text-brand-foreground shadow-[0_12px_30px_rgba(124,92,245,0.35)] dark:bg-brand/25 dark:text-white'
-                    : 'text-slate-700 hover:-translate-y-0.5 hover:border-brand/35 hover:text-brand-foreground dark:text-slate-200',
+                    ? 'border-brand/70 bg-brand/15 text-brand-foreground dark:bg-brand/20 dark:text-white'
+                    : 'border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-slate-700 hover:border-brand/30 hover:text-brand-foreground dark:text-slate-200',
                 )}
                 aria-pressed={active}
               >
@@ -285,7 +282,7 @@ export default function ExplorePage() {
       </section>
 
       <section className="app-panel space-y-4 p-6 sm:p-7">
-        <div className="inline-flex items-center gap-2 rounded-full border border-slate-200/70 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-600 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/5 dark:text-slate-100">
+        <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-white/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-600 dark:border-white/10 dark:bg-white/10 dark:text-slate-100">
           <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500/80 to-brand/70 text-[10px] text-white">2</span>
           {t('explore_step_two_title')}
         </div>
@@ -303,8 +300,8 @@ export default function ExplorePage() {
                   'rounded-3xl border px-5 py-4 text-left transition',
                   motionTimingClass,
                   active
-                    ? 'border-brand/60 bg-brand/20 text-brand-foreground shadow-[0_12px_30px_rgba(124,92,245,0.28)] dark:bg-brand/25 dark:text-white'
-                    : 'border-[var(--surface-muted-border)] bg-[var(--surface-muted)] text-slate-700 shadow-[var(--surface-muted-shadow)] hover:-translate-y-0.5 hover:border-brand/35 dark:text-slate-100',
+                    ? 'border-brand/60 bg-brand/15 text-brand-foreground dark:bg-brand/20 dark:text-white'
+                    : 'border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-slate-700 shadow-[var(--shadow-soft)] hover:-translate-y-0.5 hover:border-brand/30 dark:text-slate-100',
                 )}
                 aria-pressed={active}
               >
@@ -324,8 +321,8 @@ export default function ExplorePage() {
           className={clsx(
             'w-full rounded-3xl border border-dashed px-5 py-3 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
             randomInterest
-              ? 'border-brand bg-brand/20 text-brand-foreground shadow-[0_10px_30px_rgba(124,92,245,0.22)]'
-              : 'border-slate-300 text-slate-500 hover:border-brand/35 hover:text-brand-foreground dark:border-white/20 dark:text-slate-300',
+              ? 'border-brand bg-brand/15 text-brand-foreground'
+              : 'border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-slate-500 hover:border-brand/30 hover:text-brand-foreground dark:border-white/15 dark:text-slate-300',
           )}
         >
           {t('explore_random_button')}
@@ -333,7 +330,7 @@ export default function ExplorePage() {
       </section>
 
       <section className="app-panel space-y-4 p-6 sm:p-7">
-        <div className="flex flex-col gap-3 rounded-3xl border border-[var(--surface-secondary-border)] bg-[var(--surface-secondary)] p-4 shadow-[var(--surface-secondary-shadow)] backdrop-blur-sm">
+        <div className="flex flex-col gap-3 rounded-3xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] p-4 shadow-[var(--shadow-soft)]">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 via-brand to-sky-500 text-lg text-white shadow-lg">
               {joining ? '⌛' : '💬'}
@@ -344,7 +341,7 @@ export default function ExplorePage() {
             </div>
           </div>
           {error && (
-            <div className="rounded-2xl border border-red-200/70 bg-white/90 p-3 text-xs text-red-800 shadow-inner shadow-red-100 dark:border-red-400/40 dark:bg-red-500/10 dark:text-red-100">
+            <div className="rounded-2xl border border-red-200/70 bg-white/90 p-3 text-xs text-red-800 shadow-none dark:border-red-400/40 dark:bg-red-500/10 dark:text-red-100">
               <p className="font-semibold">{error}</p>
               {errorHint && <p className="mt-1 text-red-700/80 dark:text-red-50/80">{errorHint}</p>}
             </div>
@@ -355,11 +352,11 @@ export default function ExplorePage() {
             onClick={handleStartCircle}
             className={clsx(
               primaryCtaClass,
-              'group flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-base font-semibold shadow-[0_20px_60px_rgba(112,89,255,0.35)] disabled:shadow-none',
+              'group flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-base font-semibold',
               joining && 'cursor-wait',
             )}
           >
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/25 text-lg text-white shadow-inner shadow-white/40">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-lg text-white">
               {joining ? '⏳' : '🚀'}
             </span>
             <span className="grow text-left">

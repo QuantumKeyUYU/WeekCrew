@@ -17,6 +17,8 @@ import { blockUser, sendReport } from '@/lib/api/moderation';
 import { useAppStore } from '@/store/useAppStore';
 import type { CircleMessage } from '@/types';
 
+type ScrollBehaviorType = 'auto' | 'smooth';
+
 interface Props {
   circleId?: string | null;
   messages: CircleMessage[];
@@ -151,7 +153,7 @@ export const MessageList = ({
     [blockedUserIds, liveMessages],
   );
 
-  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
+  const scrollToBottom = useCallback((behavior: ScrollBehaviorType = 'auto') => {
     const node = containerRef.current;
     if (!node) return;
     node.scrollTo({ top: node.scrollHeight, behavior });
@@ -346,12 +348,12 @@ export const MessageList = ({
             <div className={clsx('flex', isOwn ? 'justify-end' : 'justify-start')}>
               <article
                 className={clsx(
-                  'relative max-w-[88%] rounded-3xl border px-5 py-4 text-[15px] shadow-xl backdrop-blur transition duration-200',
+                  'relative max-w-[88%] rounded-3xl border px-5 py-4 text-[15px] transition duration-200',
                   isSystem
-                    ? 'border-slate-200/70 bg-white/80 text-slate-700 shadow-[0_10px_40px_rgba(148,163,184,0.25)] dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100'
+                    ? 'border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-slate-700 dark:text-slate-100'
                     : isOwn
-                    ? 'border-brand/80 bg-gradient-to-br from-brand to-indigo-500 text-white shadow-[0_14px_50px_rgba(99,102,241,0.35)]'
-                    : 'border-slate-200/80 bg-gradient-to-br from-white to-slate-50 text-slate-900 shadow-[0_16px_48px_rgba(15,23,42,0.08)] dark:border-slate-700 dark:from-slate-800/80 dark:to-slate-900/60 dark:text-slate-100',
+                    ? 'border-brand/40 bg-brand/15 text-slate-900 dark:border-brand/50 dark:bg-brand/20 dark:text-white'
+                    : 'border-[var(--border-subtle)] bg-white/85 text-slate-900 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100',
                 )}
               >
                 {isSystem ? (
@@ -373,7 +375,7 @@ export const MessageList = ({
                 ) : (
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-2">
-                      <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white/40 text-lg shadow-inner shadow-black/5 dark:bg-white/10">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white/60 text-lg dark:bg-white/10">
                         {avatarEmoji}
                       </span>
                       <div className="leading-tight">

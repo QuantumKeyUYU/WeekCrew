@@ -1,25 +1,25 @@
-const motionTiming = 'transition-all duration-200 ease-\[cubic-bezier\(0.16,1,0.3,1\)\]';
+const motionTiming = 'transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]';
 
 export const primaryCtaClass = [
-  'inline-flex items-center justify-center rounded-full px-6 py-2.5 text-sm font-semibold text-white sm:text-base',
-  'bg-[linear-gradient(115deg,#7b5cf4,#8f7ffb_55%,#5eead4)]',
-  'shadow-[0_18px_45px_rgba(112,89,255,0.35)] ring-1 ring-white/30 dark:ring-white/10',
+  'inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold text-white sm:text-base',
+  'bg-[linear-gradient(120deg,#6f7cf7,#5c9dee_55%,#4ade80)]',
+  'ring-1 ring-white/40 dark:ring-white/15 shadow-[0_18px_45px_rgba(80,100,255,0.3)]',
   motionTiming,
-  'hover:-translate-y-0.5 hover:shadow-[0_0_45px_rgba(142,97,255,0.65)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent active:translate-y-0',
+  'hover:-translate-y-0.5 hover:shadow-[0_24px_54px_rgba(80,100,255,0.38)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent active:translate-y-0 disabled:opacity-60',
 ].join(' ');
 
 export const secondaryCtaClass = [
-  'inline-flex items-center justify-center rounded-full border border-white/40 px-6 py-2.5 text-sm font-medium sm:text-base',
-  'text-white/90 hover:text-white',
+  'inline-flex items-center justify-center rounded-full border border-white/35 px-6 py-3 text-sm font-medium sm:text-base',
+  'text-white/90 hover:text-white bg-white/10 backdrop-blur',
   motionTiming,
   'hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
 ].join(' ');
 
 export const cardMotionClass = [
-  'rounded-[1.75rem] border border-white/10 bg-white/5 p-5 text-left',
-  'shadow-[0_18px_40px_rgba(3,5,20,0.35)]',
+  'rounded-[1.5rem] border border-[var(--border-subtle)] bg-[var(--surface-subtle)] p-5 text-left',
+  'shadow-[var(--shadow-soft)]',
   motionTiming,
-  'hover:-translate-y-0.5 hover:shadow-[0_26px_60px_rgba(3,5,20,0.55)]',
+  'hover:-translate-y-0.5 hover:shadow-[0_22px_60px_rgba(15,23,42,0.16)] dark:hover:shadow-[0_22px_60px_rgba(0,0,0,0.6)]',
 ].join(' ');
 
 export const motionTimingClass = motionTiming;

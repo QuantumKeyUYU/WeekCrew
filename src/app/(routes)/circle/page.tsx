@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import type { JSX } from 'react';
 import { useRouter } from 'next/navigation';
 import { CircleEmptyState } from '@/components/circle/empty-state';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -26,6 +27,7 @@ import { getOrCreateDeviceId, resetDeviceId } from '@/lib/device';
 import type { CircleMessage, DailyQuotaSnapshot } from '@/types';
 import { useCircleMessagesPolling } from '@/hooks/useCircleMessagesPolling';
 import { getCircleWeekPhase } from '@/lib/circle-week-phase';
+import { primaryCtaClass } from '@/styles/tokens';
 
 const DAY_MS = 1000 * 60 * 60 * 24;
 
@@ -567,10 +569,6 @@ export default function CirclePage() {
     return 'circle_host_final';
   })();
 
-  const sessionFingerprint = currentDeviceId
-    ? `${currentDeviceId.slice(0, 4)}…${currentDeviceId.slice(-4)}`
-    : '—';
-
   let pageContent: JSX.Element;
 
   if (!circle && !loadingCircle) {
@@ -602,19 +600,19 @@ export default function CirclePage() {
     const messagePreamble = (
       <div className="space-y-4">
         {circle.icebreaker && (
-          <div className="rounded-2xl border border-amber-200/80 bg-gradient-to-r from-amber-50 via-white to-violet-50 px-4 py-4 text-amber-900 shadow-lg shadow-amber-100/60 dark:border-amber-500/30 dark:from-amber-500/20 dark:via-slate-900 dark:to-violet-500/10 dark:text-amber-50">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-700/80 dark:text-amber-100/80">{t('circle_icebreaker_title')}</p>
+          <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-4 py-4 text-amber-900 dark:text-amber-50">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-700/80 dark:text-amber-100/80">{t('circle_icebreaker_title')}</p>
             <p className="mt-1 text-lg font-semibold leading-snug text-slate-900 dark:text-white">{circle.icebreaker}</p>
             <p className="text-xs text-amber-700/90 dark:text-amber-100/70">{t('circle_icebreaker_hint')} ✨</p>
           </div>
         )}
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-4 text-sm text-slate-600 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200">
+        <div className="rounded-2xl border border-dashed border-[var(--border-subtle)] bg-[var(--surface-subtle)] p-4 text-sm text-slate-600 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200">
           {systemMessageLines.map((line) => (
             <p key={line}>{line}</p>
           ))}
         </div>
         {notMember && (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50/90 p-4 text-sm text-amber-900 shadow-sm dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
+          <div className="rounded-2xl border border-amber-200 bg-amber-50/90 p-4 text-sm text-amber-900 shadow-none dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
             <p className="font-semibold">{t('circle_not_member_notice')}</p>
             <button
               type="button"
@@ -626,13 +624,13 @@ export default function CirclePage() {
           </div>
         )}
         {isCircleExpired && (
-          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-sm text-slate-600 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200">
+          <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] p-4 text-sm text-slate-600 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200">
             <p className="font-semibold text-slate-900 dark:text-white">{t('circle_expired_notice_title')}</p>
             <p className="mt-1">{t('circle_expired_notice_subtitle')}</p>
             <button
               type="button"
               onClick={handleStartMatching}
-              className="mt-3 inline-flex items-center justify-center rounded-full border border-transparent bg-brand px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-sm transition hover:-translate-y-0.5"
+              className={`${primaryCtaClass} mt-3 px-4 py-2 text-xs`}
             >
               {t('circle_expired_start_new')}
             </button>
@@ -643,10 +641,10 @@ export default function CirclePage() {
 
     pageContent = (
       <div className="flex min-h-screen flex-col gap-4 py-4">
-        <section className="rounded-[2.5rem] border border-slate-200/70 bg-white/95 p-6 shadow-[0_28px_80px_rgba(15,23,42,0.12)] dark:border-white/10 dark:bg-slate-900/70">
+        <section className="app-panel p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400 dark:text-slate-400">{t('circle_header_topic_label')}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-400">{t('circle_header_topic_label')}</p>
               <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">{circleTitle}</h1>
               <p className="text-sm text-slate-500 dark:text-slate-300">{t('circle_header_subtitle')}</p>
               {timerLabel && (
@@ -663,10 +661,10 @@ export default function CirclePage() {
                 </span>
               </div>
               <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                <span className="rounded-full border border-slate-200 px-3 py-1 text-slate-600 dark:border-white/10 dark:text-white/80">
+                <span className="rounded-full border border-[var(--border-subtle)] px-3 py-1 text-slate-600 dark:border-white/10 dark:text-white/80">
                   {timerChipText}
                 </span>
-                <span className="rounded-full border border-slate-200 px-3 py-1 text-slate-600 dark:border-white/10 dark:text-white/80">
+                <span className="rounded-full border border-[var(--border-subtle)] px-3 py-1 text-slate-600 dark:border-white/10 dark:text-white/80">
                   {t('circle_members_chip', { count: membersCount })}
                 </span>
               </div>
@@ -726,7 +724,7 @@ export default function CirclePage() {
                 ))}
               </ul>
             </div>
-            <div className="flex flex-col justify-between gap-3 rounded-2xl bg-white/70 p-4 shadow-sm dark:bg-slate-900/50">
+              <div className="flex flex-col justify-between gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] p-4 dark:border-white/10 dark:bg-slate-900/50">
               <div className="space-y-1">
                 <p className="text-[13px] font-semibold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">{t('circle_quota_label')}</p>
                 {typeof dailyRemaining === 'number' && typeof dailyLimit === 'number' ? (
@@ -738,20 +736,20 @@ export default function CirclePage() {
                   <p className="text-sm text-slate-500 dark:text-slate-300">{t('circle_quota_unknown')}</p>
                 )}
               </div>
-              <div className="rounded-2xl bg-gradient-to-r from-brand/10 via-white to-slate-50 px-4 py-3 text-xs text-slate-600 shadow-inner shadow-white/70 dark:from-brand/30 dark:via-slate-900 dark:to-slate-800 dark:text-slate-200">
+              <div className="rounded-2xl border border-[var(--border-subtle)] bg-white/80 px-4 py-3 text-xs text-slate-600 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200">
                 <p className="font-semibold">{t('circle_pace_tip_title')}</p>
                 <p className="mt-1 leading-relaxed">{t('circle_pace_tip_body')}</p>
               </div>
             </div>
           </div>
           {circleHostKey && (
-            <div className="mt-4 rounded-2xl bg-gradient-to-r from-brand/10 via-white to-slate-50 px-4 py-3 text-sm text-slate-700 shadow-inner shadow-white/70 dark:from-brand/30 dark:via-slate-900 dark:to-slate-800 dark:text-slate-200">
+            <div className="mt-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-4 py-3 text-sm text-slate-700 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200">
               <p className="font-semibold">{t('circle_host_label')}</p>
               <p className="leading-relaxed">{t(circleHostKey)}</p>
             </div>
           )}
-          <div className="mt-4 flex items-start gap-3 rounded-2xl bg-white/70 p-4 text-sm text-slate-700 shadow-inner shadow-white/70 dark:bg-slate-900/60 dark:text-slate-100">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-lg text-white shadow-inner shadow-black/30">🔐</div>
+          <div className="mt-4 flex items-start gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] p-4 text-sm text-slate-700 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-100">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-lg text-white">🔐</div>
             <div className="space-y-1">
               <p className="text-sm font-semibold text-slate-800 dark:text-white">{t('circle_privacy_title')}</p>
               <p className="leading-relaxed text-slate-600 dark:text-slate-200">{t('circle_privacy_body')}</p>
@@ -759,7 +757,7 @@ export default function CirclePage() {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-slate-200/70 bg-white/95 p-5 shadow-[0_18px_55px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-slate-900/70">
+        <section className="app-panel p-5">
           <button
             type="button"
             className="flex w-full items-center justify-between text-left"
@@ -780,8 +778,8 @@ export default function CirclePage() {
           )}
         </section>
 
-        <section className="flex flex-1 min-h-0 flex-col gap-3 rounded-3xl border border-slate-200/70 bg-white/95 p-4 shadow-[0_18px_55px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-slate-900/70">
-          <div className="flex-1 min-h-0 overflow-hidden rounded-2xl bg-white/50 shadow-inner shadow-white/80 dark:bg-slate-900/40 dark:shadow-black/20">
+        <section className="flex flex-1 min-h-0 flex-col gap-3 rounded-3xl border border-[var(--border-subtle)] bg-[var(--surface-elevated)] p-4 shadow-[var(--shadow-soft)] dark:border-white/10">
+          <div className="flex-1 min-h-0 overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] dark:border-white/10">
             <MessageList
               circleId={circleId}
               messages={messages}
@@ -793,7 +791,7 @@ export default function CirclePage() {
           </div>
           <form
             onSubmit={handleSendMessage}
-            className="sticky bottom-0 space-y-3 rounded-3xl border border-slate-200/80 bg-gradient-to-r from-white/90 via-slate-50/90 to-slate-100/80 p-4 shadow-[0_18px_50px_rgba(15,23,42,0.12)] backdrop-blur-md dark:border-white/10 dark:from-slate-900/90 dark:via-slate-900/70 dark:to-slate-950/80"
+            className="sticky bottom-0 space-y-3 rounded-3xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] p-4 shadow-[var(--shadow-soft)] backdrop-blur-sm dark:border-white/10"
           >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
               <textarea
@@ -804,12 +802,12 @@ export default function CirclePage() {
                 onKeyDown={handleComposerKeyDown}
                 placeholder={composerPlaceholder}
                 aria-label={composerPlaceholder}
-                className="flex-1 min-h-[82px] resize-none rounded-2xl border border-slate-200/80 bg-white/80 px-4 py-3 text-sm text-slate-900 outline-none ring-2 ring-transparent transition focus:border-brand focus:ring-brand/25 dark:border-white/10 dark:bg-slate-900/70 dark:text-white"
+                className="flex-1 min-h-[82px] resize-none rounded-2xl border border-[var(--border-subtle)] bg-white/90 px-4 py-3 text-sm text-slate-900 outline-none ring-2 ring-transparent transition focus:border-brand focus:ring-brand/25 dark:border-white/10 dark:bg-slate-900/70 dark:text-white"
                 disabled={composerDisabled}
               />
               <button
                 type="submit"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-brand via-indigo-500 to-sky-500 px-6 py-3 text-sm font-semibold text-white shadow-[0_16px_40px_rgba(99,102,241,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_48px_rgba(99,102,241,0.38)] disabled:cursor-not-allowed disabled:opacity-50"
+                className={`${primaryCtaClass} inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm disabled:cursor-not-allowed`}
                 disabled={!canSubmitMessage}
               >
                 <span aria-hidden>{isSending ? '⌛' : '🚀'}</span>

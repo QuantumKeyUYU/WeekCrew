@@ -33,10 +33,12 @@ const createStorage = () =>
 
     let useMemoryFallback = false;
 
-    const withStorage = <T>(
-      handler: (storage: Storage) => T,
-      fallback: () => T,
-    ): T => {
+      /* eslint-disable no-unused-vars */
+      const withStorage = <T>(
+        handler: (_storage: Storage) => T,
+        fallback: () => T,
+      ): T => {
+      /* eslint-enable no-unused-vars */
       if (useMemoryFallback) {
         return fallback();
       }
