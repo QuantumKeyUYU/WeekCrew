@@ -4,36 +4,42 @@
 
 :root {
   color-scheme: light;
-  --app-bg: linear-gradient(to bottom, #f5f3ff 0%, #f9fafb 45%, #eef2ff 100%);
-  --surface-card-bg: rgba(255, 255, 255, 0.98);
-  --surface-card-border: rgba(226, 232, 240, 0.8);
-  --surface-card-shadow: 0 24px 80px rgba(15, 23, 42, 0.08);
-  --surface-secondary-bg: rgba(255, 255, 255, 0.96);
-  --surface-secondary-border: rgba(226, 232, 240, 0.6);
-  --surface-secondary-shadow: 0 18px 60px rgba(15, 23, 42, 0.08);
-  --surface-hero-bg: linear-gradient(135deg, #4338ca 0%, #6d28d9 55%, #a78bfa 100%);
-  --surface-hero-border: rgba(255, 255, 255, 0.75);
-  --surface-hero-shadow: 0 24px 110px rgba(64, 55, 134, 0.3);
-  --chip-bg: rgba(255, 255, 255, 0.9);
-  --chip-border: rgba(148, 163, 184, 0.6);
-  --chip-shadow: 0 16px 45px rgba(15, 23, 42, 0.08);
+  --app-bg: radial-gradient(circle at 16% 20%, rgba(99, 102, 241, 0.14), transparent 28%),
+    radial-gradient(circle at 78% 12%, rgba(16, 185, 129, 0.12), transparent 28%),
+    radial-gradient(circle at 30% 75%, rgba(14, 165, 233, 0.16), transparent 30%),
+    linear-gradient(180deg, #f8fafc 0%, #f5f3ff 36%, #e0f2fe 100%);
+  --surface-card-bg: rgba(255, 255, 255, 0.85);
+  --surface-card-border: rgba(148, 163, 184, 0.22);
+  --surface-card-shadow: 0 30px 90px rgba(15, 23, 42, 0.08);
+  --surface-secondary-bg: rgba(255, 255, 255, 0.78);
+  --surface-secondary-border: rgba(148, 163, 184, 0.2);
+  --surface-secondary-shadow: 0 18px 70px rgba(15, 23, 42, 0.06);
+  --surface-hero-bg: linear-gradient(130deg, #0f172a 0%, #111827 32%, #1e1b4b 70%, #0f172a 100%);
+  --surface-hero-border: rgba(255, 255, 255, 0.24);
+  --surface-hero-shadow: 0 30px 120px rgba(15, 23, 42, 0.7);
+  --chip-bg: rgba(255, 255, 255, 0.82);
+  --chip-border: rgba(148, 163, 184, 0.35);
+  --chip-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --app-bg: radial-gradient(circle at 20% 20%, #050816 0%, #020617 60%, #01030f 100%);
-  --surface-card-bg: rgba(2, 6, 23, 0.9);
-  --surface-card-border: rgba(255, 255, 255, 0.08);
-  --surface-card-shadow: 0 24px 120px rgba(8, 7, 20, 0.9);
-  --surface-secondary-bg: rgba(5, 8, 22, 0.75);
-  --surface-secondary-border: rgba(148, 163, 184, 0.25);
-  --surface-secondary-shadow: 0 28px 120px rgba(3, 5, 20, 0.75);
-  --surface-hero-bg: linear-gradient(180deg, #050816 0%, #020617 65%, rgba(2, 6, 23, 0.95));
-  --surface-hero-border: rgba(255, 255, 255, 0.1);
-  --surface-hero-shadow: 0 24px 120px rgba(8, 7, 20, 0.9);
-  --chip-bg: rgba(2, 6, 23, 0.65);
-  --chip-border: rgba(148, 163, 184, 0.35);
-  --chip-shadow: 0 20px 70px rgba(3, 5, 20, 0.8);
+  --app-bg: radial-gradient(circle at 18% 18%, rgba(129, 140, 248, 0.14), transparent 28%),
+    radial-gradient(circle at 82% 20%, rgba(16, 185, 129, 0.12), transparent 28%),
+    radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.16), transparent 30%),
+    linear-gradient(180deg, #020617 0%, #040716 38%, #0a0f1f 100%);
+  --surface-card-bg: rgba(5, 8, 22, 0.7);
+  --surface-card-border: rgba(148, 163, 184, 0.2);
+  --surface-card-shadow: 0 30px 120px rgba(0, 0, 0, 0.65);
+  --surface-secondary-bg: rgba(8, 11, 26, 0.65);
+  --surface-secondary-border: rgba(148, 163, 184, 0.18);
+  --surface-secondary-shadow: 0 28px 120px rgba(0, 0, 0, 0.6);
+  --surface-hero-bg: linear-gradient(135deg, rgba(5, 8, 22, 0.9), rgba(30, 27, 75, 0.82), rgba(30, 64, 175, 0.7));
+  --surface-hero-border: rgba(255, 255, 255, 0.12);
+  --surface-hero-shadow: 0 30px 140px rgba(0, 0, 0, 0.8);
+  --chip-bg: rgba(8, 11, 26, 0.78);
+  --chip-border: rgba(148, 163, 184, 0.32);
+  --chip-shadow: 0 22px 70px rgba(0, 0, 0, 0.72);
 }
 
 body {
