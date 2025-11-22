@@ -1,12 +1,11 @@
 'use client';
 
-import type { MouseEvent } from 'react';
 import clsx from 'clsx';
 import { useAppStore } from '@/store/useAppStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export const LanguageSwitch = () => {
-  // просто чтобы i18n подтянулся, даже если текстов тут нет
+  // просто чтобы переводы инициализировались, даже если тут текстов нет
   useTranslation();
 
   const language = useAppStore((state) => state.settings.language ?? 'ru');
@@ -17,65 +16,31 @@ export const LanguageSwitch = () => {
     updateSettings({ language: next });
   };
 
-  const handleContainerClick = (event: MouseEvent<HTMLDivElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const mid = rect.width / 2;
-
-    const next: 'ru' | 'en' = x < mid ? 'ru' : 'en';
-    handleChange(next);
-  };
-
   return (
-    <div
-      onClick={handleContainerClick}
-      className="relative inline-flex h-9 w-[96px] cursor-pointer items-center rounded-full border border-white/30 bg-white/12 px-1 text-[11px] font-semibold uppercase shadow-[0_10px_30px_rgba(15,23,42,0.5)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/70"
-    >
-      {/* Слайдер-подложка */}
-      <div
-        className={clsx(
-          'pointer-events-none absolute inset-y-1 left-1 w-[40px] rounded-full bg-white shadow-[0_8px_20px_rgba(15,23,42,0.45)] transition-transform duration-200 ease-out'
-        )}
-        style={{
-          transform: language === 'ru' ? 'translateX(0)' : 'translateX(44px)'
-        }}
-      />
+    <div className="inline-flex h-8 items-center rounded-full border border-white/22 bg-white/10 px-0.5 backdrop-blur-md dark:border-white/12 dark:bg-slate-900/70">
+      {(['ru', 'en'] as const).map((locale) => {
+        const active = locale === language;
 
-      {/* Кнопка RU */}
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          handleChange('ru');
-        }}
-        className={clsx(
-          'relative z-10 flex flex-1 items-center justify-center rounded-full px-1 py-1 transition-colors duration-150',
-          language === 'ru'
-            ? 'text-slate-900 dark:text-slate-900'
-            : 'text-white/70 hover:text-white'
-        )}
-        aria-pressed={language === 'ru'}
-      >
-        RU
-      </button>
-
-      {/* Кнопка EN */}
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          handleChange('en');
-        }}
-        className={clsx(
-          'relative z-10 flex flex-1 items-center justify-center rounded-full px-1 py-1 transition-colors duration-150',
-          language === 'en'
-            ? 'text-slate-900 dark:text-slate-900'
-            : 'text-white/70 hover:text-white'
-        )}
-        aria-pressed={language === 'en'}
-      >
-        EN
-      </button>
+        return (
+          <button
+            key={locale}
+            type="button"
+            onClick={() => handleChange(locale)}
+            className={clsx(
+              // ВЕСЬ этот овал — кликабельная зона
+              'flex-1 rounded-full px-3 py-1 text-[11px] font-semibold uppercase leading-none',
+              'flex items-center justify-center',
+              'transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-0',
+              active
+                ? 'bg-white text-slate-900 dark:bg-slate-100 dark:text-slate-900'
+                : 'bg-transparent text-white/70 hover:text-white'
+            )}
+            aria-pressed={active}
+          >
+            {locale === 'ru' ? 'RU' : 'EN'}
+          </button>
+        );
+      })}
     </div>
   );
 };
