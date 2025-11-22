@@ -41,14 +41,14 @@ export default function HomePage() {
 
   return (
     <>
-      <div className="space-y-12 py-10 sm:space-y-16 sm:py-16">
+      <div className="space-y-10 py-8 sm:space-y-16 sm:py-14">
         {/* Верхняя карточка-бренд */}
-        <section className="relative overflow-hidden rounded-[32px] border border-slate-200/60 bg-gradient-to-r from-slate-50/90 via-white/90 to-slate-50/90 p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)] backdrop-blur-md dark:border-white/10 dark:from-slate-900/70 dark:via-slate-900/55 dark:to-slate-900/80">
-          <div className="pointer-events-none absolute inset-0 rounded-[30px] bg-[radial-gradient(circle_at_0%_0%,rgba(56,189,248,0.16),transparent_55%),radial-gradient(circle_at_100%_0%,rgba(129,140,248,0.16),transparent_55%)] opacity-70 dark:opacity-90" />
+        <section className="app-panel relative overflow-hidden p-6 sm:p-8">
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(124,86,255,0.06),rgba(56,189,248,0.06)_46%,rgba(16,185,129,0.04))]" />
           <div className="relative flex flex-col items-center gap-3 text-center sm:flex-row sm:justify-between sm:text-left">
             <div className="flex flex-col items-center gap-2 sm:items-start">
-              <span className="inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-1.5 text-xs font-semibold text-slate-900 shadow-sm ring-1 ring-slate-200/80 backdrop-blur dark:bg-slate-900/80 dark:text-white dark:ring-white/15">
-                <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_0_6px_rgba(52,211,153,0.35)]" />
+              <span className="inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-1.5 text-xs font-semibold text-slate-900 shadow-sm ring-1 ring-slate-200/80 backdrop-blur dark:bg-white/10 dark:text-white dark:ring-white/15">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_0_6px_rgba(52,211,153,0.32)]" />
                 WeekCrew
               </span>
               <p className="max-w-xl text-sm text-slate-600 dark:text-slate-300">
@@ -59,13 +59,10 @@ export default function HomePage() {
         </section>
 
         {/* Hero-блок */}
-        <section className="app-hero relative overflow-hidden px-6 py-16 text-center text-white sm:px-12">
-          {/* Мягкий фон без «шишек» */}
+        <section className="app-hero relative overflow-hidden px-5 py-14 text-center text-white sm:px-12 sm:py-16">
           <div className="pointer-events-none absolute inset-0">
-            <div className="absolute -inset-x-10 -top-40 h-72 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.18),transparent_60%)] opacity-80 blur-[80px]" />
-            <div className="absolute -left-40 bottom-[-80px] h-72 w-80 bg-[radial-gradient(circle_at_20%_70%,rgba(45,212,191,0.3),transparent_60%)] opacity-70 blur-[96px]" />
-            <div className="absolute -right-40 top-10 h-80 w-96 bg-[radial-gradient(circle_at_80%_20%,rgba(129,140,248,0.32),transparent_65%)] opacity-80 blur-[110px]" />
-            <div className="absolute inset-x-10 bottom-8 h-px bg-gradient-to-r from-white/0 via-white/45 to-white/0 opacity-80" />
+            <div className="absolute inset-0 bg-[radial-gradient(140%_120%_at_50%_10%,rgba(255,255,255,0.12),transparent_55%),radial-gradient(140%_140%_at_25%_60%,rgba(94,234,212,0.14),transparent_58%)]" />
+            <div className="absolute inset-x-10 bottom-10 h-px bg-gradient-to-r from-white/0 via-white/35 to-white/0" />
           </div>
 
           <motion.div
@@ -79,7 +76,7 @@ export default function HomePage() {
               {t('landing_more_link')}
             </div>
 
-            <h1 className="text-3xl font-semibold leading-tight sm:text-[2.9rem]">
+            <h1 className="text-[2.05rem] font-semibold leading-tight sm:text-[2.9rem]">
               {t('landing_hero_title')}
             </h1>
 
@@ -124,7 +121,7 @@ export default function HomePage() {
           id="how-it-works"
           className="app-panel relative overflow-hidden scroll-mt-24 p-7 md:scroll-mt-28"
         >
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_22%_24%,rgba(59,130,246,0.08),transparent_40%),radial-gradient(circle_at_82%_10%,rgba(16,185,129,0.08),transparent_38%)] dark:bg-[radial-gradient(circle_at_22%_24%,rgba(59,130,246,0.16),transparent_45%),radial-gradient(circle_at_82%_10%,rgba(16,185,129,0.16),transparent_45%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(140deg,rgba(124,86,255,0.05),rgba(56,189,248,0.06)_50%,rgba(16,185,129,0.05))]" />
 
           <div className="relative space-y-3 text-center">
             <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
@@ -139,18 +136,14 @@ export default function HomePage() {
             {steps.map((step, index) => (
               <article
                 key={step.title}
-                className="group relative overflow-hidden rounded-2xl border border-slate-200/70 bg-gradient-to-br from-white/90 via-white/80 to-slate-50/80 p-5 shadow-[0_18px_60px_rgba(15,23,42,0.06)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-brand/45 hover:shadow-[0_26px_70px_rgba(15,23,42,0.12)] dark:border-white/10 dark:from-slate-900/80 dark:via-slate-900/70 dark:to-slate-900/60"
+                className="group relative overflow-hidden rounded-2xl border border-[var(--surface-muted-border)] bg-[var(--surface-muted)] p-5 shadow-[var(--surface-muted-shadow)] transition duration-300 hover:-translate-y-1 hover:border-brand/45 hover:shadow-[0_26px_70px_rgba(15,23,42,0.12)]"
               >
-                <div className="absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-100">
-                  <div className="absolute -left-16 top-0 h-40 w-40 rounded-full bg-gradient-to-br from-brand/45 via-indigo-400/25 to-transparent blur-3xl" />
-                </div>
-
                 <div className="relative flex flex-col gap-3">
-                  <div className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
-                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[11px] font-semibold text-slate-700 shadow-sm dark:bg-slate-800 dark:text-slate-100">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-slate-200/70 bg-white/70 px-3 py-1 text-[11px] font-semibold text-slate-600 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/5 dark:text-slate-100">
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500/80 to-brand/70 text-[11px] font-semibold text-white shadow-inner shadow-black/20">
                       {index + 1}
                     </span>
-                    {t('landing_how_title')}
+                    {step.title}
                   </div>
                   <h3 className="text-base font-semibold text-slate-900 dark:text-white">
                     {step.title}

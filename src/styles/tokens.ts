@@ -2,8 +2,8 @@ const motionTiming = 'transition-all duration-200 ease-\[cubic-bezier\(0.16,1,0.
 
 export const primaryCtaClass = [
   'inline-flex items-center justify-center rounded-full px-6 py-2.5 text-sm font-semibold text-white sm:text-base',
-  'bg-[linear-gradient(120deg,#7f5af0,#9d7bff)]',
-  'shadow-[0_0_30px_rgba(142,97,255,0.45)] ring-1 ring-white/30 dark:ring-white/10',
+  'bg-[linear-gradient(115deg,#7b5cf4,#8f7ffb_55%,#5eead4)]',
+  'shadow-[0_18px_45px_rgba(112,89,255,0.35)] ring-1 ring-white/30 dark:ring-white/10',
   motionTiming,
   'hover:-translate-y-0.5 hover:shadow-[0_0_45px_rgba(142,97,255,0.65)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent active:translate-y-0',
 ].join(' ');
