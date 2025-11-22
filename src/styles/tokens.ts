@@ -1,5 +1,11 @@
 const motionTiming = 'transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]';
 
+export const colors = {
+  appBackgroundBase: '#020617',
+  appBackgroundAccent1: '#1d2b64',
+  appBackgroundAccent2: '#0f766e',
+};
+
 export const primaryCtaClass = [
   'inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-semibold text-white sm:text-base',
   'bg-[linear-gradient(115deg,#6178ff,#5cb0ff_55%,#3ddc97)]',
