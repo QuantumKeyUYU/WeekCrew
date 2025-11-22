@@ -48,15 +48,16 @@ export const Header = () => {
             <span className="ml-2 hidden sm:inline">{t('nav_profile') ?? 'Профиль'}</span>
           </button>
 
-          {/* Переключатель языка */}
+          {/* Переключатель языка (текст пока как есть) */}
           <LanguageSwitch />
 
-          {/* Настройки */}
+          {/* Настройки — только иконка */}
           <Link
             href="/settings"
-            className="inline-flex items-center rounded-full border border-white/40 bg-white/15 px-3 py-1.5 text-xs font-semibold text-slate-50 shadow-[0_8px_20px_rgba(15,23,42,0.45)] transition-all duration-200 hover:-translate-y-[1px] hover:shadow-[0_12px_28px_rgba(15,23,42,0.6)] sm:border-white/50 sm:bg-white/80 sm:px-4 sm:py-2 sm:text-sm sm:text-slate-800 sm:shadow-[0_10px_30px_rgba(15,23,42,0.12)] dark:border-white/20 dark:sm:bg-white/10 dark:sm:text-white"
+            aria-label={t('nav_settings') ?? 'Настройки'}
+            className="inline-flex items-center justify-center rounded-full border border-white/40 bg-white/15 p-1.5 text-lg font-semibold text-slate-50 shadow-[0_8px_20px_rgba(15,23,42,0.45)] transition-all duration-200 hover:-translate-y-[1px] hover:shadow-[0_12px_28px_rgba(15,23,42,0.6)] sm:border-white/50 sm:bg-white/80 sm:px-3 sm:py-2 sm:text-base sm:text-slate-800 sm:shadow-[0_10px_30px_rgba(15,23,42,0.12)] dark:border-white/20 dark:sm:bg-white/10 dark:sm:text-white"
           >
-            {t('nav_settings')}
+            <span aria-hidden>⚙️</span>
           </Link>
         </div>
       </div>
