@@ -25,6 +25,7 @@ export default function SettingsPage() {
   const updateSettings = useAppStore((state) => state.updateSettings);
   const resetStore = useAppStore((state) => state.reset);
   const setDevice = useAppStore((state) => state.setDevice);
+
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [clearing, setClearing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -92,8 +93,14 @@ export default function SettingsPage() {
     }
   };
 
-  const modeDescription = isDemoMode ? t('settings_mode_description_demo') : t('settings_mode_description_live');
-  const resetButtonLabel = clearing ? t('settings_reset_pending') : t('settings_reset_button');
+  const modeDescription = isDemoMode
+    ? t('settings_mode_description_demo')
+    : t('settings_mode_description_live');
+
+  const resetButtonLabel = clearing
+    ? t('settings_reset_pending')
+    : t('settings_reset_button');
+
   const deviceResetButtonLabel = resettingDevice
     ? t('settings_device_reset_pending')
     : t('settings_device_reset_button');
@@ -115,22 +122,24 @@ export default function SettingsPage() {
   };
 
   return (
-    <main className="space-y-6 py-6">
-      {/* Hero-блок настроек */}
-      <section className="app-hero relative overflow-hidden p-6 text-[var(--text-primary)] sm:p-8">
-        <div className="pointer-events-none absolute inset-0 opacity-85">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_24%,rgba(124,136,255,0.18),transparent_40%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(45,212,191,0.16),transparent_45%)]" />
-          <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.85),transparent_26%,rgba(255,255,255,0.9))]" />
+    <main className="app-shell space-y-6 py-6">
+      {/* Hero */}
+      <section className="app-hero relative overflow-hidden p-6 sm:p-8">
+        <div className="pointer-events-none absolute inset-0 opacity-80">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_24%,rgba(129,140,248,0.22),transparent_45%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(45,212,191,0.16),transparent_50%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.65),transparent_40%,rgba(255,255,255,0.4))]" />
         </div>
         <div className="relative space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]/80">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)]">
             WeekCrew
           </p>
           <h1 className="text-2xl font-semibold tracking-tight text-[var(--text-primary)] sm:text-3xl">
             {t('settings_title')}
           </h1>
-          <p className="text-sm text-[var(--text-secondary)]">{t('settings_intro')}</p>
+          <p className="text-sm text-[var(--text-secondary)]">
+            {t('settings_intro')}
+          </p>
         </div>
       </section>
 
@@ -140,16 +149,16 @@ export default function SettingsPage() {
           {t('settings_mode_title')}
         </h2>
         <p className="mt-1 text-sm">{modeDescription}</p>
-        <p className="mt-3 text-xs text-[var(--text-secondary)]/80">{t('settings_mode_future')}</p>
+        <p className="mt-3 text-xs text-[var(--text-secondary)]/80">
+          {t('settings_mode_future')}
+        </p>
       </section>
 
       {/* Тема интерфейса */}
       <section className="app-panel p-6 text-sm text-[var(--text-secondary)]">
-        <div>
-          <h2 className="text-base font-semibold tracking-tight text-[var(--text-primary)]">
-            {t('settings_theme_title')}
-          </h2>
-        </div>
+        <h2 className="text-base font-semibold tracking-tight text-[var(--text-primary)]">
+          {t('settings_theme_title')}
+        </h2>
         <div className="mt-4 flex flex-wrap gap-2">
           {themeOptions.map((option) => {
             const active = themePreference === option;
@@ -159,17 +168,10 @@ export default function SettingsPage() {
                 type="button"
                 onClick={() => handleThemeChange(option)}
                 className={clsx(
-                  'rounded-full border px-4 py-2.5 text-sm font-semibold transition ' +
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 ' +
-                    'focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
+                  'rounded-full border px-4 py-2.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
                   active
-                    ? // Активная тема — контрастная: тёмная таблетка на светлой теме, светлая на тёмной
-                      'border-slate-900/80 bg-slate-900 text-white shadow-[0_14px_32px_rgba(15,23,42,0.55)] ' +
-                      'dark:border-white/85 dark:bg-white dark:text-slate-900'
-                    : // Неактивные — мягкие, но читаемые
-                      'border-[var(--border-subtle)] bg-[var(--surface-subtle)]/90 text-[var(--text-primary)] ' +
-                      'hover:-translate-y-0.5 hover:border-slate-300/90 hover:bg-white/80 ' +
-                      'dark:border-white/15 dark:bg-slate-900/60 dark:text-white/85 dark:hover:border-white/30'
+                    ? 'border-transparent bg-[var(--accent-soft)] text-[var(--accent-foreground)] shadow-[var(--shadow-accent)]'
+                    : 'border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-[var(--text-primary)] hover:-translate-y-0.5 hover:bg-white/80',
                 )}
                 aria-pressed={active}
               >
@@ -180,13 +182,13 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      {/* Сброс данных */}
+      {/* Сброс */}
       <section className="app-panel space-y-4 p-6 text-sm text-[var(--text-secondary)]">
         <h2 className="text-base font-semibold tracking-tight text-[var(--text-primary)]">
           {t('settings_reset_title')}
         </h2>
         <p className="text-sm">{t('settings_reset_description')}</p>
-        <div className="mt-4">
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row">
           <button
             type="button"
             onClick={handleClearLocalData}
@@ -201,8 +203,10 @@ export default function SettingsPage() {
             {message}
           </p>
         )}
-        <div className="mt-6 rounded-3xl border border-dashed border-[var(--border-card)] bg-[var(--surface-subtle)]/90 p-4 text-sm text-[var(--text-secondary)] dark:border-white/10 dark:bg-white/5 dark:text-white/85">
-          <p className="text-sm">{t('settings_device_reset_description')}</p>
+        <div className="mt-6 rounded-3xl border border-dashed border-[var(--border-card)] bg-[var(--surface-subtle)]/95 p-4 text-sm text-[var(--text-secondary)]">
+          <p className="text-sm">
+            {t('settings_device_reset_description')}
+          </p>
           <button
             type="button"
             onClick={handleResetDevice}
@@ -229,14 +233,14 @@ export default function SettingsPage() {
           <button
             type="button"
             onClick={() => setShowRules(true)}
-            className="inline-flex items-center rounded-full border border-[var(--border-subtle)] px-5 py-2.5 text-sm font-semibold text-[var(--text-primary)] transition hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/5 dark:border-white/10 dark:bg-white/5 dark:text-white/85"
+            className="inline-flex items-center rounded-full border border-[var(--border-subtle)] px-5 py-2.5 text-sm font-semibold text-[var(--text-primary)] transition hover:-translate-y-0.5 hover:bg-white/70"
           >
             {t('settings_rules_button')}
           </button>
           <button
             type="button"
             onClick={handleResetRules}
-            className="inline-flex items-center rounded-full border border-dashed border-amber-300 px-5 py-2.5 text-sm font-semibold text-amber-800 transition hover:-translate-y-0.5 hover:border-amber-400 hover:bg-amber-50/40 hover:text-amber-900 dark:border-amber-300/70 dark:text-amber-200"
+            className="inline-flex items-center rounded-full border border-dashed border-amber-300 px-5 py-2.5 text-sm font-semibold text-amber-800 transition hover:-translate-y-0.5 hover:border-amber-400 hover:bg-amber-50/60"
           >
             {t('settings_rules_reset_button')}
           </button>
@@ -249,19 +253,19 @@ export default function SettingsPage() {
       </section>
 
       {/* Технические детали */}
-      <details className="app-panel border border-dashed border-[var(--border-subtle)] p-6 text-sm text-slate-700 shadow-none dark:border-white/20 dark:text-slate-200">
-        <summary className="cursor-pointer text-base font-semibold text-slate-900 dark:text-white">
+      <details className="app-panel border border-dashed border-[var(--border-subtle)] p-6 text-sm text-[var(--text-secondary)] shadow-none">
+        <summary className="cursor-pointer text-base font-semibold text-[var(--text-primary)]">
           {t('settings_technical_title')}
         </summary>
-        <p className="mt-2 text-sm text-slate-500 dark:text-slate-300">
+        <p className="mt-2 text-sm text-[var(--text-secondary)]">
           {t('settings_technical_description')}
         </p>
-        <div className="mt-4 space-y-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] p-4 text-xs text-slate-600 dark:border-white/10 dark:bg-slate-950/40 dark:text-slate-200">
+        <div className="mt-4 space-y-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] p-4 text-xs text-[var(--text-secondary)]">
           <div>
             <p className="text-[11px] uppercase tracking-wide text-slate-400">
               {t('settings_device_current_label')}
             </p>
-            <p className="mt-1 break-all font-mono text-[12px] text-slate-800 dark:text-white">
+            <p className="mt-1 break-all font-mono text-[12px] text-[var(--text-primary)]">
               {deviceId ?? t('settings_device_loading')}
             </p>
           </div>
@@ -269,7 +273,7 @@ export default function SettingsPage() {
             <p className="text-[11px] uppercase tracking-wide text-slate-400">
               {t('settings_device_storage_key_label')}
             </p>
-            <p className="mt-1 font-mono text-[12px] text-slate-600 dark:text-slate-300">
+            <p className="mt-1 font-mono text-[12px] text-[var(--text-secondary)]">
               {DEVICE_ID_KEY}
             </p>
           </div>
