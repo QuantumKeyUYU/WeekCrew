@@ -30,28 +30,34 @@ export const Header = () => {
   }, []);
 
   return (
-    <header
-      className={clsx(
-        'sticky top-0 z-50 border-b border-transparent transition-all duration-300 ease-out',
-        'backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-[#050816]/60',
-        isScrolled
-          ? 'bg-white/85 text-slate-900 shadow-[0_18px_45px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-[#050816]/90 dark:text-white'
-          : 'bg-transparent text-slate-900 dark:text-white',
-      )}
-    >
-      <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+    <header className="sticky top-3 z-50 px-4 sm:top-4 sm:px-6">
+      <div
+        className={clsx(
+          'mx-auto flex w-full max-w-5xl items-center justify-between gap-3 rounded-full border px-3 py-2.5 sm:px-4',
+          'backdrop-blur-2xl transition-all duration-300 ease-out',
+          'shadow-[0_14px_45px_rgba(15,23,42,0.12)] dark:shadow-[0_18px_55px_rgba(0,0,0,0.55)]',
+          isScrolled
+            ? 'border-white/30 bg-white/80 text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-white'
+            : 'border-white/40 bg-white/60 text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-white',
+        )}
+      >
         <Link
           href="/"
           aria-label="WeekCrew — на главную"
-          className="inline-flex items-center rounded-full px-3 py-1.5 text-base font-semibold tracking-tight text-slate-900 transition-all duration-200 ease-out hover:text-brand-foreground hover:shadow-[0_0_24px_rgba(111,91,233,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent dark:text-white"
+          className="group inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-base font-semibold tracking-[0.08em] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
         >
-          WeekCrew
+          <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500/80 to-emerald-400/80 text-white shadow-[0_10px_30px_rgba(79,70,229,0.35)]">
+            <span className="h-2 w-2 rounded-full bg-white/90 shadow-[0_0_0_4px_rgba(255,255,255,0.15)]" />
+          </span>
+          <span className="text-slate-900 transition-colors group-hover:text-slate-700 dark:text-white dark:group-hover:text-white/80">
+            WeekCrew
+          </span>
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={() => openProfileModal()}
-            className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/90 px-3 py-2 text-sm font-medium text-slate-700 shadow-[0_18px_45px_rgba(15,23,42,0.12)] transition hover:-translate-y-0.5 hover:text-brand-foreground dark:border-white/20 dark:bg-white/10 dark:text-white"
+            className="inline-flex items-center gap-2 rounded-full border border-white/50 bg-white/80 px-3 py-2 text-sm font-semibold text-slate-800 shadow-[0_10px_30px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-[1px] hover:shadow-[0_16px_45px_rgba(79,70,229,0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent dark:border-white/15 dark:bg-white/10 dark:text-white"
             aria-label="Открыть профиль"
           >
             <span className="text-lg" aria-hidden>
@@ -62,7 +68,7 @@ export const Header = () => {
           <LanguageSwitch />
           <Link
             href="/settings"
-            className="inline-flex items-center rounded-full border border-white/70 bg-white/90 px-4 py-2 text-sm font-medium text-slate-700 shadow-[0_18px_45px_rgba(15,23,42,0.12)] transition hover:-translate-y-0.5 hover:text-brand-foreground dark:border-white/20 dark:bg-white/10 dark:text-white"
+            className="inline-flex items-center rounded-full border border-white/50 bg-white/80 px-4 py-2 text-sm font-semibold text-slate-800 shadow-[0_10px_30px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-[1px] hover:shadow-[0_16px_45px_rgba(79,70,229,0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent dark:border-white/15 dark:bg-white/10 dark:text-white"
           >
             {t('nav_settings')}
           </Link>
