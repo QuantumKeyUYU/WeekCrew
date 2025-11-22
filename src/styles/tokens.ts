@@ -1,36 +1,241 @@
-const motionTiming = 'transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-export const colors = {
-  appBackgroundBase: '#0b1120',
-  appBackgroundAccent1: '#111827',
-  appBackgroundAccent2: '#1f2937',
-  accentIndigo: '#c7d2fe',
-  accentEmerald: '#34d399',
-  accentCyan: '#67e8f9',
-};
+/* ============================
+   Базовые CSS-переменные
+   ============================ */
 
-export const primaryCtaClass = [
-  'relative inline-flex min-h-[46px] items-center justify-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold text-white sm:text-base',
-  'bg-[length:200%_200%] bg-[linear-gradient(120deg,#4f46e5,#22c55e)] shadow-[0_10px_30px_rgba(79,70,229,0.35)] ring-1 ring-white/10',
-  'before:absolute before:inset-0 before:-z-10 before:rounded-full before:bg-[radial-gradient(circle_at_20%_30%,rgba(255,255,255,0.18),transparent_35%),radial-gradient(circle_at_80%_70%,rgba(255,255,255,0.12),transparent_30%)] before:opacity-60',
-  'after:absolute after:inset-[-1px] after:rounded-full after:border after:border-white/20 after:opacity-70',
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
-  motionTiming,
-  'hover:-translate-y-[2px] hover:bg-[position:80%_50%] hover:shadow-[0_16px_40px_rgba(79,70,229,0.38)] active:translate-y-0 active:shadow-[0_10px_26px_rgba(79,70,229,0.32)] disabled:opacity-70 disabled:cursor-not-allowed',
-].join(' ');
+:root {
+  color-scheme: light;
 
-export const secondaryCtaClass = [
-  'inline-flex min-h-[44px] items-center justify-center rounded-full border border-[var(--border-strong)] px-5 py-2.5 text-sm font-semibold text-[var(--text-primary)] shadow-[0_10px_28px_rgba(15,23,42,0.08)] transition-all sm:text-base dark:text-white',
-  'bg-white/80 backdrop-blur dark:border-white/10 dark:bg-white/5',
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
-  'hover:-translate-y-[2px] hover:border-transparent hover:bg-[radial-gradient(circle_at_20%_20%,rgba(79,70,229,0.14),transparent_40%),radial-gradient(circle_at_80%_60%,rgba(34,197,94,0.12),transparent_38%),rgba(255,255,255,0.9)] hover:text-slate-900 dark:hover:bg-white/10',
-].join(' ');
+  /* Фон приложения */
+  --bg-body: radial-gradient(circle at 0% 0%, #f5f3ff 0, #f3f6ff 24%, #eef9ff 48%, #f7f5ff 100%);
 
-export const cardMotionClass = [
-  'rounded-3xl border border-[var(--border-card)] bg-[var(--surface-elevated)] p-5 text-left sm:p-6',
-  'shadow-[var(--shadow-card)]',
-  motionTiming,
-  'hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-strong)]',
-].join(' ');
+  /* Поверхности */
+  --surface-elevated: rgba(255, 255, 255, 0.98);
+  --surface-subtle: rgba(255, 255, 255, 0.85);
 
-export const motionTimingClass = motionTiming;
+  /* Бордеры */
+  --border-card: rgba(15, 23, 42, 0.06);
+  --border-subtle: rgba(15, 23, 42, 0.08);
+
+  /* Текст */
+  --text-primary: rgba(15, 23, 42, 0.88);
+  --text-secondary: rgba(15, 23, 42, 0.6);
+
+  /* Акценты */
+  --accent: #4f46e5;
+  --accent-soft: rgba(79, 70, 229, 0.08);
+  --accent-foreground: #0b1120;
+
+  /* Тени */
+  --shadow-soft: 0 18px 55px rgba(15, 23, 42, 0.08);
+  --shadow-card-strong: 0 24px 80px rgba(15, 23, 42, 0.18);
+  --shadow-accent: 0 18px 38px rgba(79, 70, 229, 0.45);
+
+  /* Радиусы */
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2.25rem;
+
+  /* Прозрачный белый шум для светлых поверхностей */
+  --surface-glow: radial-gradient(circle at 0% 0%, rgba(255, 255, 255, 0.86), transparent 52%),
+    radial-gradient(circle at 100% 0%, rgba(240, 249, 255, 0.82), transparent 52%),
+    radial-gradient(circle at 0% 100%, rgba(244, 244, 255, 0.85), transparent 52%);
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg-body: radial-gradient(circle at 0% 0%, #020617 0, #020617 35%, #020617 60%, #020617 100%);
+
+  --surface-elevated: rgba(15, 23, 42, 0.96);
+  --surface-subtle: rgba(15, 23, 42, 0.88);
+
+  --border-card: rgba(148, 163, 184, 0.35);
+  --border-subtle: rgba(51, 65, 85, 0.85);
+
+  --text-primary: rgba(248, 250, 252, 0.96);
+  --text-secondary: rgba(148, 163, 184, 0.82);
+
+  --accent: #60a5fa;
+  --accent-soft: rgba(56, 189, 248, 0.18);
+  --accent-foreground: #e5f2ff;
+
+  --shadow-soft: 0 22px 80px rgba(0, 0, 0, 0.9);
+  --shadow-card-strong: 0 26px 120px rgba(0, 0, 0, 0.95);
+  --shadow-accent: 0 0 40px rgba(96, 165, 250, 0.7);
+
+  --surface-glow: radial-gradient(circle at 0% 0%, rgba(15, 23, 42, 0.95), transparent 55%),
+    radial-gradient(circle at 100% 0%, rgba(30, 64, 175, 0.65), transparent 55%),
+    radial-gradient(circle at 40% 120%, rgba(15, 23, 42, 0.9), transparent 55%);
+}
+
+/* ============================
+   Базовая типографика + фон
+   ============================ */
+
+@layer base {
+  html,
+  body {
+    @apply h-full;
+  }
+
+  body {
+    @apply antialiased;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', sans-serif;
+    background-image: var(--bg-body);
+    background-attachment: fixed;
+    background-size: cover;
+    color: var(--text-primary);
+  }
+
+  ::selection {
+    background-color: rgba(129, 140, 248, 0.3);
+  }
+}
+
+/* ============================
+   Shell приложения
+   ============================ */
+
+@layer components {
+  .app-shell {
+    min-height: 100vh;
+    padding: 1.25rem 0.75rem 2.75rem;
+  }
+
+  @screen sm {
+    .app-shell {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+  }
+
+  @screen lg {
+    .app-shell {
+      padding-top: 1.75rem;
+    }
+  }
+
+  /* Панели / карточки */
+
+  .app-panel {
+    position: relative;
+    border-radius: var(--radius-3xl);
+    border: 1px solid var(--border-card);
+    background-color: var(--surface-elevated);
+    background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.5), transparent 40%),
+      var(--surface-glow);
+    box-shadow: var(--shadow-soft);
+    backdrop-filter: blur(22px);
+  }
+
+  [data-theme='dark'] .app-panel {
+    background-color: rgba(15, 23, 42, 0.96);
+    background-image: radial-gradient(circle at 0% 0%, rgba(37, 99, 235, 0.18), transparent 52%),
+      radial-gradient(circle at 100% 0%, rgba(45, 212, 191, 0.09), transparent 55%),
+      linear-gradient(to bottom, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.96));
+  }
+
+  /* Hero-панель */
+
+  .app-hero {
+    border-radius: var(--radius-3xl);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    background-color: rgba(255, 255, 255, 0.96);
+    background-image: radial-gradient(circle at 0% 20%, rgba(129, 140, 248, 0.18), transparent 55%),
+      radial-gradient(circle at 80% 0%, rgba(45, 212, 191, 0.16), transparent 55%),
+      linear-gradient(120deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.96));
+    box-shadow: 0 22px 70px rgba(15, 23, 42, 0.18);
+    backdrop-filter: blur(26px);
+  }
+
+  [data-theme='dark'] .app-hero {
+    border-color: rgba(148, 163, 184, 0.5);
+    background-color: rgba(15, 23, 42, 0.9);
+    background-image: radial-gradient(circle at 0% 20%, rgba(96, 165, 250, 0.46), transparent 60%),
+      radial-gradient(circle at 80% 0%, rgba(45, 212, 191, 0.34), transparent 60%),
+      linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.92));
+    box-shadow: 0 30px 120px rgba(0, 0, 0, 0.85);
+  }
+
+  /* Hero-заголовки */
+
+  .app-hero h1 {
+    color: var(--text-primary);
+  }
+
+  .app-hero p {
+    color: var(--text-secondary);
+  }
+
+  /* Список шагов (landing) */
+
+  .steps-list {
+    @apply space-y-3;
+  }
+
+  @screen sm {
+    .steps-list {
+      @apply space-y-4;
+    }
+  }
+
+  .step-index {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 9999px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #ffffff;
+    background-image: radial-gradient(circle at 0% 0%, #4f46e5, #22c55e);
+    box-shadow: 0 12px 26px rgba(79, 70, 229, 0.45);
+  }
+
+  [data-theme='dark'] .step-index {
+    box-shadow: 0 0 35px rgba(96, 165, 250, 0.7);
+  }
+
+  /* Маленькая плашка WeekCrew над хиро */
+
+  .tagline-pill {
+    border-radius: 9999px;
+    border: 1px solid rgba(15, 23, 42, 0.04);
+    background: radial-gradient(circle at 0% 50%, rgba(16, 185, 129, 0.2), transparent 52%),
+      linear-gradient(120deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.96));
+    box-shadow: 0 14px 35px rgba(15, 23, 42, 0.15);
+    backdrop-filter: blur(18px);
+    padding: 0.4rem 0.85rem;
+  }
+
+  [data-theme='dark'] .tagline-pill {
+    border-color: rgba(148, 163, 184, 0.4);
+    background: radial-gradient(circle at 0% 50%, rgba(52, 211, 153, 0.18), transparent 55%),
+      linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.92));
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.85);
+  }
+
+  .tagline-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: radial-gradient(circle at 30% 30%, #6ee7b7, #22c55e);
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.25);
+  }
+
+  .tagline-text {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(15, 23, 42, 0.72);
+  }
+
+  [data-theme='dark'] .tagline-text {
+    color: rgba(226, 232, 240, 0.9);
+  }
+}
