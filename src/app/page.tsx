@@ -31,75 +31,92 @@ export default function HomePage() {
 
   const handleCloseModal = () => setShowModal(false);
 
-  const steps = [
-    { title: t('landing_step_one_title'), description: t('landing_step_one_description') },
-    { title: t('landing_step_two_title'), description: t('landing_step_two_description') },
-    { title: t('landing_step_three_title'), description: t('landing_step_three_description') },
+  const stepTitles = [
+    t('landing_step_one_title'),
+    t('landing_step_two_title'),
+    t('landing_step_three_title'),
+  ];
+
+  const stepDescriptions = [
+    t('landing_step_one_description'),
+    t('landing_step_two_description'),
+    t('landing_step_three_description'),
   ];
 
   return (
     <>
-      <div className="space-y-8 py-6 sm:space-y-14 sm:py-10">
+      <div className="space-y-10 py-8 sm:space-y-16 sm:py-12">
         {/* Hero-блок */}
-        <section className="app-hero relative px-5 py-10 text-center text-white sm:px-10 sm:py-12">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: 'easeOut' }}
-            className="relative mx-auto max-w-3xl space-y-6"
-          >
-            <div className="mx-auto inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[12px] font-semibold text-white/85">
+        <section className="space-y-4">
+          <div className="flex justify-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[12px] font-semibold text-white/85 shadow-[0_12px_30px_rgba(59,130,246,0.15)] backdrop-blur">
               <span className="inline-flex h-2 w-2 rounded-full bg-emerald-300" />
               WeekCrew · {t('landing_logo_tagline')}
             </div>
+          </div>
 
-            <h1 className="text-[2.05rem] font-semibold leading-tight sm:text-[2.9rem]">
-              {t('landing_hero_title')}
-            </h1>
-
-            <p className="text-base text-white/80 sm:text-lg">
-              {t('landing_hero_subtitle')}
-            </p>
-
-            <div className="flex flex-col items-center justify-center gap-2 sm:gap-3">
-              <button type="button" onClick={handleStart} className={primaryCtaClass}>
-                {t('landing_hero_cta')}
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })
-                }
-                className="text-sm font-semibold text-white/80 underline-offset-4 transition hover:text-white"
-              >
-                {t('landing_more_link')} →
-              </button>
+          <motion.section
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+            className="app-hero relative overflow-hidden px-6 py-10 text-left text-white sm:px-10 sm:py-14"
+          >
+            <div className="pointer-events-none absolute inset-0 opacity-70">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.08),transparent_40%)]" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_90%_10%,rgba(96,165,250,0.14),transparent_45%)]" />
             </div>
-          </motion.div>
+
+            <div className="relative mx-auto flex max-w-4xl flex-col gap-6 sm:gap-8">
+              <div className="space-y-3 sm:space-y-4">
+                <h1 className="text-[2.1rem] font-semibold leading-tight sm:text-[2.9rem]">
+                  {t('landing_hero_title')}
+                </h1>
+                <p className="max-w-2xl text-base text-white/85 sm:text-lg">
+                  {t('landing_hero_subtitle')}
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                <button type="button" onClick={handleStart} className={primaryCtaClass}>
+                  {t('landing_hero_cta')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="text-sm font-semibold text-white/80 underline-offset-4 transition hover:text-white"
+                >
+                  {t('landing_more_link')} →
+                </button>
+              </div>
+            </div>
+          </motion.section>
         </section>
 
         {/* Как устроен проект */}
-        <section id="how-it-works" className="app-panel relative space-y-8 scroll-mt-24 p-6 md:scroll-mt-28 md:p-8">
-          <div className="relative space-y-3 text-center">
-            <h2 className="text-2xl font-semibold text-[var(--text-primary)]">
+        <section
+          id="how-it-works"
+          className="app-panel relative space-y-8 scroll-mt-24 p-6 md:scroll-mt-28 md:p-8"
+          aria-labelledby="how-title"
+        >
+          <div className="space-y-2 text-center">
+            <h2 id="how-title" className="text-2xl font-semibold text-[var(--text-primary)]">
               {t('landing_how_title')}
             </h2>
             <p className="text-sm text-[var(--text-secondary)]">{t('landing_how_subtitle')}</p>
           </div>
 
-          <ol className="space-y-4">
-            {steps.map((step, index) => (
+          <ol className="steps-list">
+            {stepTitles.map((title, index) => (
               <li
-                key={step.title}
-                className="flex items-start gap-3 border-b border-[var(--border-subtle)] pb-4 last:border-b-0 last:pb-0"
+                key={title}
+                className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] p-4 sm:p-5"
               >
-                <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--surface-subtle)] text-sm font-semibold text-[var(--text-primary)]">
-                  {index + 1}
-                </div>
-                <div className="space-y-1">
-                  <div className="text-sm font-semibold text-[var(--text-primary)]">Шаг {index + 1}</div>
-                  <p className="text-base font-semibold text-[var(--text-primary)]">{step.title}</p>
-                  <p className="text-sm leading-relaxed text-[var(--text-secondary)]">{step.description}</p>
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <span className="step-index text-base leading-none">{index + 1}</span>
+                  <div className="space-y-1">
+                    <h3 className="text-base font-semibold text-[var(--text-primary)]">{title}</h3>
+                    <p className="text-sm leading-relaxed text-[var(--text-secondary)]">{stepDescriptions[index]}</p>
+                  </div>
                 </div>
               </li>
             ))}

@@ -16,13 +16,13 @@ export const copy = {
     landing_test_mode_hint: 'Пока WeekCrew работает в тестовом режиме: сообщения живут только на этом устройстве.',
     landing_how_title: 'Как устроен наш проект',
     landing_how_subtitle: 'Всё очень просто.',
-    landing_step_one_title: 'Шаг 1',
+    landing_step_one_title: 'Отметь настрой недели.',
     landing_step_one_description:
-      'Выбери настрой недели — спокойный, поддерживающий, вдохновляющий или про хобби.',
-    landing_step_two_title: 'Шаг 2',
+      'Спокойный, поддерживающий, вдохновляющий или про хобби.',
+    landing_step_two_title: 'Выбери тему.',
     landing_step_two_description:
-      'Выбери тему: K-pop, кино, игры, книги, языки и другие. Или доверь случайному подбору.',
-    landing_step_three_title: 'Шаг 3',
+      'K-pop, кино, игры, книги, языки и другие. Или доверь случайному подбору.',
+    landing_step_three_title: 'Мы собираем круг.',
     landing_step_three_description:
       'Мы собираем маленький анонимный круг на неделю. В любой момент можно попробовать новый.',
     hero_intro_label: 'Неделя общения по настроению',
@@ -395,13 +395,13 @@ export const copy = {
     landing_test_mode_hint: 'WeekCrew is in test mode: messages stay only on this device.',
     landing_how_title: 'How our project works',
     landing_how_subtitle: 'It’s very simple.',
-    landing_step_one_title: 'Step 1',
+    landing_step_one_title: 'Mark your weekly mood.',
     landing_step_one_description:
-      'Choose your mood for the week: calm, supportive, inspiring, or hobby-talk.',
-    landing_step_two_title: 'Step 2',
+      'Calm, supportive, inspiring, or hobby-centered.',
+    landing_step_two_title: 'Choose a topic.',
     landing_step_two_description:
-      'Pick a topic: K-pop, movies, games, books, languages and more. Or let it be random.',
-    landing_step_three_title: 'Step 3',
+      'K-pop, movies, games, books, languages and more. Or let it be random.',
+    landing_step_three_title: 'We build the circle.',
     landing_step_three_description:
       'We create a small anonymous circle for seven days. Switch anytime.',
     hero_intro_label: 'A week of calm conversations',

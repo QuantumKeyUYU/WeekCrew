@@ -179,8 +179,8 @@ export default function ExplorePage() {
   };
 
   return (
-    <div className="space-y-8 py-6 sm:space-y-10 sm:py-10">
-      <section className="app-hero space-y-3 p-6 text-left text-white sm:p-8">
+    <div className="space-y-10 py-8 sm:space-y-12 sm:py-12">
+      <section className="app-hero space-y-4 p-7 text-left text-white sm:space-y-5 sm:p-10">
         <h1 className="text-[1.85rem] font-semibold leading-tight sm:text-[2.05rem]">
           {t('explore_page_title')}
         </h1>
@@ -188,13 +188,15 @@ export default function ExplorePage() {
       </section>
 
       <section className="app-panel space-y-5 p-5 sm:p-6">
-        <div className="inline-flex w-fit items-center gap-2 rounded-full bg-[var(--surface-subtle)] px-3 py-1 text-xs font-semibold text-[var(--text-primary)]">
-          <span className="h-2 w-2 rounded-full bg-emerald-400" aria-hidden />
-          {t('explore_step_one_title')}
-        </div>
-        <div className="space-y-2">
-          <h2 className="text-lg font-semibold text-[var(--text-primary)]">{t('explore_step_one_heading')}</h2>
-          <p className="text-sm text-[var(--text-secondary)]">{t('explore_step_one_description')}</p>
+        <div className="flex items-start gap-3 sm:gap-4">
+          <span className="step-index text-base leading-none">1</span>
+          <div className="space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+              {t('explore_step_one_title')}
+            </p>
+            <h2 className="text-lg font-semibold text-[var(--text-primary)]">{t('explore_step_one_heading')}</h2>
+            <p className="text-sm text-[var(--text-secondary)]">{t('explore_step_one_description')}</p>
+          </div>
         </div>
         <div className="mt-2 flex flex-wrap gap-2">
           {MOOD_OPTIONS.map((mood) => {
@@ -223,13 +225,15 @@ export default function ExplorePage() {
       </section>
 
       <section className="app-panel space-y-5 p-5 sm:p-6">
-        <div className="inline-flex w-fit items-center gap-2 rounded-full bg-[var(--surface-subtle)] px-3 py-1 text-xs font-semibold text-[var(--text-primary)]">
-          <span className="h-2 w-2 rounded-full bg-emerald-400" aria-hidden />
-          {t('explore_step_two_title')}
-        </div>
-        <div className="space-y-2">
-          <h2 className="text-lg font-semibold text-[var(--text-primary)]">{t('explore_step_two_heading')}</h2>
-          <p className="text-sm text-[var(--text-secondary)]">{t('explore_step_two_description')}</p>
+        <div className="flex items-start gap-3 sm:gap-4">
+          <span className="step-index text-base leading-none">2</span>
+          <div className="space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+              {t('explore_step_two_title')}
+            </p>
+            <h2 className="text-lg font-semibold text-[var(--text-primary)]">{t('explore_step_two_heading')}</h2>
+            <p className="text-sm text-[var(--text-secondary)]">{t('explore_step_two_description')}</p>
+          </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           {interestsToRender.map((card) => {
