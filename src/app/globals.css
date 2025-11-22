@@ -76,6 +76,10 @@
    ============================ */
 
 @layer base {
+  html {
+    font-size: 16px; /* чтобы браузер не мудрил с авто-зумом */
+  }
+
   html,
   body {
     @apply h-full;
@@ -244,25 +248,25 @@
      ============================ */
 
   @media (max-width: 640px) {
-    /* Чуть увеличиваем шрифт и плотность именно в hero */
+    /* Чуть плотнее, но без гигантских размеров */
+
     .app-hero {
       padding-top: 1.5rem;
-      padding-bottom: 1.7rem;
+      padding-bottom: 1.6rem;
     }
 
     .app-hero h1 {
-      font-size: 2.2rem;     /* крупнее заголовок */
-      line-height: 1.15;
+      font-size: 1.75rem; /* около 28px, комфортно на мобиле */
+      line-height: 1.2;
     }
 
     .app-hero p {
-      font-size: 1rem;       /* текст под заголовком поувесистее */
-      line-height: 1.45;
+      font-size: 0.95rem;
+      line-height: 1.5;
     }
 
-    /* Шаги под hero — читаемее */
     .steps-list {
-      font-size: 0.97rem;
+      font-size: 0.95rem;
     }
 
     .steps-list p {
@@ -270,9 +274,9 @@
     }
 
     .step-index {
-      width: 2.3rem;
-      height: 2.3rem;
-      font-size: 0.95rem;
+      width: 2.1rem;
+      height: 2.1rem;
+      font-size: 0.9rem;
     }
 
     /* Чуть меньше боковые отступы, чтобы карточки занимали больше экрана */
