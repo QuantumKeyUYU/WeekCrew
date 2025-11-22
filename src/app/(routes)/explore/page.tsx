@@ -213,8 +213,8 @@ export default function ExplorePage() {
                 className={clsx(
                   'rounded-full border px-4 py-2.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
                   active
-                    ? 'border-white/30 bg-white/10 text-white shadow-[0_16px_36px_rgba(0,0,0,0.45)]'
-                    : 'border-[var(--border-subtle)] bg-[var(--surface-subtle)]/80 text-[var(--text-primary)] hover:border-white/20 hover:bg-white/5 hover:text-[var(--text-primary)] dark:border-white/10 dark:bg-white/5 dark:text-white/85',
+                    ? 'border-indigo-200 bg-gradient-to-r from-indigo-50 to-emerald-50 text-slate-900 shadow-[0_4px_12px_rgba(0,0,0,0.06)] dark:border-white/20 dark:bg-white/5 dark:text-white'
+                    : 'border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:border-white/10 dark:bg-slate-900/40 dark:text-white/85 dark:hover:bg-slate-800/60',
                 )}
                 aria-pressed={active}
               >
@@ -251,16 +251,16 @@ export default function ExplorePage() {
                   'rounded-3xl border px-5 py-4 text-left transition',
                   motionTimingClass,
                   active
-                    ? 'border-white/30 bg-white/10 text-white shadow-[0_18px_44px_rgba(0,0,0,0.45)]'
-                    : 'border-[var(--border-card)] bg-[var(--surface-subtle)]/90 text-[var(--text-primary)] hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/5 dark:border-white/10 dark:bg-white/5 dark:text-white/85',
+                    ? 'border-transparent bg-gradient-to-r from-indigo-500 to-emerald-500 text-white shadow-[0_6px_18px_rgba(16,185,129,0.28)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.55)]'
+                    : 'border-slate-200 bg-white/90 text-slate-900 shadow-[0_4px_12px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[var(--shadow-card-strong)] dark:border-white/10 dark:bg-white/5 dark:text-white/85',
                 )}
                 aria-pressed={active}
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-[1.7rem]" aria-hidden>
+                  <span className="text-[1.45rem] leading-none" aria-hidden>
                     {card.emoji}
                   </span>
-                  <span className="text-base font-semibold tracking-tight">{card.label}</span>
+                  <span className="text-base font-semibold leading-snug tracking-tight text-slate-900 dark:text-white">{card.label}</span>
                 </div>
               </button>
             );
@@ -272,18 +272,18 @@ export default function ExplorePage() {
           className={clsx(
             'w-full rounded-3xl border border-dashed px-5 py-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
             randomInterest
-              ? 'border-white/30 bg-white/10 text-white shadow-[0_14px_32px_rgba(0,0,0,0.38)]'
-              : 'border-[var(--border-card)] bg-[var(--surface-subtle)]/90 text-[var(--text-secondary)] hover:border-white/20 hover:bg-white/5 hover:text-[var(--text-primary)] dark:border-white/10 dark:bg-white/5 dark:text-white/80',
+              ? 'border-indigo-200 bg-gradient-to-r from-indigo-50 to-emerald-50 text-slate-900 shadow-[0_4px_12px_rgba(0,0,0,0.06)] dark:border-white/20 dark:bg-white/5 dark:text-white'
+              : 'border-slate-200 bg-white text-slate-700 shadow-none hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 dark:border-white/10 dark:bg-slate-900/40 dark:text-white/80 dark:hover:bg-slate-800/60',
           )}
         >
           {t('explore_random_button')}
         </button>
       </section>
 
-      <section className="app-panel space-y-5 p-5 sm:p-6">
-        <div className="space-y-1">
-          <p className="text-base font-semibold tracking-tight text-[var(--text-primary)]">{t('explore_ready_title')}</p>
-          <p className="text-sm text-[var(--text-secondary)]">{t('explore_ready_description')}</p>
+      <section className="app-panel flex flex-col gap-4 p-5 sm:p-6">
+        <div className="space-y-2 text-left">
+          <p className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white">{t('explore_ready_title')}</p>
+          <p className="text-sm text-slate-600 dark:text-slate-200">{t('explore_ready_description')}</p>
         </div>
         {error && (
           <div className="rounded-lg bg-red-500/10 p-3 text-xs text-red-800 dark:text-red-100">
@@ -291,20 +291,22 @@ export default function ExplorePage() {
             {errorHint && <p className="mt-1 text-red-700/80 dark:text-red-50/80">{errorHint}</p>}
           </div>
         )}
-        <button
-          type="button"
-          disabled={!canStart || joining}
-          onClick={handleStartCircle}
-          className={clsx(
-            primaryCtaClass,
-            'flex w-full items-center justify-center gap-2 rounded-full py-3 text-base font-semibold',
-            joining && 'cursor-wait',
-          )}
-        >
-          {joining ? t('explore_starting_state') : t('explore_start_button')}
-        </button>
+        <div className="mt-auto flex justify-center sm:justify-start">
+          <button
+            type="button"
+            disabled={!canStart || joining}
+            onClick={handleStartCircle}
+            className={clsx(
+              primaryCtaClass,
+              'flex w-full items-center justify-center gap-2 rounded-full py-3 text-base font-semibold sm:w-auto',
+              joining && 'cursor-wait',
+            )}
+          >
+            {joining ? t('explore_starting_state') : t('explore_start_button')}
+          </button>
+        </div>
         {!accepted && (
-          <p className="text-xs text-[var(--text-secondary)]">{t('explore_rules_required')}</p>
+          <p className="text-xs text-slate-600 dark:text-slate-200">{t('explore_rules_required')}</p>
         )}
       </section>
 

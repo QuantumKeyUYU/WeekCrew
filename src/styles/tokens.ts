@@ -10,26 +10,26 @@ export const colors = {
 };
 
 export const primaryCtaClass = [
-  'relative inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white/90 sm:text-base',
-  'bg-[radial-gradient(circle_at_30%_30%,rgba(99,102,241,0.18),transparent_45%),radial-gradient(circle_at_70%_70%,rgba(16,185,129,0.18),transparent_50%),#0f172a]',
-  'shadow-[0_20px_40px_rgba(0,0,0,0.45)] ring-1 ring-white/5 dark:ring-white/10',
-  'before:absolute before:inset-0 before:rounded-full before:bg-[radial-gradient(circle_at_50%_20%,rgba(226,232,240,0.06),transparent_50%)] before:opacity-90 before:transition-opacity',
+  'relative inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white sm:text-base',
+  'bg-gradient-to-r from-indigo-500 to-emerald-500',
+  'shadow-[0_4px_14px_rgba(16,185,129,0.25)] ring-1 ring-emerald-300/30 dark:ring-white/10',
+  'before:absolute before:inset-0 before:rounded-full before:bg-white/10 before:opacity-0 before:transition-opacity',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
   motionTiming,
-  'hover:-translate-y-0.5 hover:shadow-[0_24px_48px_rgba(0,0,0,0.55)] hover:ring-indigo-200/40 hover:before:opacity-100 active:translate-y-0 active:shadow-[0_14px_30px_rgba(0,0,0,0.42)] disabled:opacity-60 disabled:hover:translate-y-0',
+  'hover:-translate-y-0.5 hover:shadow-[0_6px_18px_rgba(16,185,129,0.32)] hover:before:opacity-100 active:translate-y-0 active:shadow-[0_4px_12px_rgba(16,185,129,0.24)] disabled:opacity-60 disabled:hover:translate-y-0',
 ].join(' ');
 
 export const secondaryCtaClass = [
-  'inline-flex min-h-[44px] items-center justify-center rounded-full px-4 py-2 text-sm font-semibold text-[var(--text-secondary)] sm:text-base',
-  'transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
-  'hover:text-[var(--text-primary)] hover:bg-[var(--surface-subtle)]/60 dark:hover:bg-white/5',
+  'inline-flex min-h-[44px] items-center justify-center rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-none transition-colors sm:text-base',
+  'duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
+  'hover:bg-slate-50 hover:text-slate-900 dark:border-white/15 dark:bg-white/5 dark:text-white/90 dark:hover:bg-white/10',
 ].join(' ');
 
 export const cardMotionClass = [
-  'rounded-3xl border border-[var(--border-card)] bg-[var(--surface-subtle)] p-5 text-left sm:p-6',
-  'shadow-[0_20px_40px_rgba(0,0,0,0.45)]',
+  'rounded-3xl border border-[var(--border-card)] bg-[var(--surface-elevated)] p-5 text-left sm:p-6',
+  'shadow-[var(--shadow-card)]',
   motionTiming,
-  'hover:-translate-y-0.5 hover:shadow-[0_24px_54px_rgba(0,0,0,0.5)]',
+  'hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-strong)]',
 ].join(' ');
 
 export const motionTimingClass = motionTiming;
