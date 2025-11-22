@@ -4,40 +4,41 @@
 
 :root {
   color-scheme: light;
-  --app-bg: linear-gradient(140deg, #f7f9ff 0%, #eff4ff 40%, #e8f0ff 100%);
+  --app-bg: #f5f7fb;
   --surface-elevated: #ffffff;
-  --surface-subtle: #f7f8fb;
-  --surface-hero: linear-gradient(130deg, #0f1729, #0e1626 55%, #0b1324);
-  --border-subtle: rgba(15, 23, 42, 0.08);
-  --border-strong: rgba(15, 23, 42, 0.16);
-  --shadow-soft: 0 18px 44px rgba(15, 23, 42, 0.12);
-  --chip-bg: rgba(255, 255, 255, 0.9);
-  --chip-border: rgba(15, 23, 42, 0.08);
+  --surface-subtle: #eef2f9;
+  --surface-hero: linear-gradient(145deg, #0c1224, #0b142a);
+  --border-subtle: rgba(15, 23, 42, 0.06);
+  --border-strong: rgba(15, 23, 42, 0.1);
+  --border-card: rgba(15, 23, 42, 0.08);
+  --shadow-soft: 0 16px 48px rgba(15, 23, 42, 0.12);
+  --chip-bg: rgba(255, 255, 255, 0.92);
   --text-primary: #0f172a;
   --text-secondary: #475569;
+  --radius-card: 1.5rem;
+  --radius-pill: 9999px;
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --app-bg: radial-gradient(circle at 18% 18%, rgba(63, 93, 145, 0.18) 0%, transparent 32%),
-    linear-gradient(150deg, #050915 0%, #071020 48%, #090f1f 100%);
-  --surface-elevated: rgba(15, 23, 42, 0.8);
-  --surface-subtle: rgba(18, 27, 48, 0.72);
-  --surface-hero: linear-gradient(140deg, #0b1324, #0c1931 60%, #0a1223);
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.14);
-  --shadow-soft: 0 24px 70px rgba(0, 0, 0, 0.55);
-  --chip-bg: rgba(18, 27, 48, 0.9);
-  --chip-border: rgba(255, 255, 255, 0.08);
+  --app-bg: #050814;
+  --surface-elevated: #0b0f1d;
+  --surface-subtle: #0d1224;
+  --surface-hero: linear-gradient(150deg, #0c1324, #0b162c);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --border-card: rgba(255, 255, 255, 0.06);
+  --shadow-soft: 0 20px 60px rgba(0, 0, 0, 0.5);
+  --chip-bg: rgba(255, 255, 255, 0.06);
   --text-primary: #e2e8f0;
   --text-secondary: #cbd5e1;
+  --radius-card: 1.5rem;
+  --radius-pill: 9999px;
 }
 
 body {
   min-height: 100vh;
-  background-image: var(--app-bg);
-  background-attachment: fixed;
-  background-size: cover;
+  background: var(--app-bg);
   @apply text-slate-900 antialiased selection:bg-brand selection:text-brand-foreground;
 }
 
@@ -70,29 +71,29 @@ body[data-animations='off'] * {
 
 @layer components {
   .app-panel {
-    border-radius: 1.75rem;
-    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-card);
+    border: 1px solid var(--border-card);
     background: var(--surface-elevated);
     box-shadow: var(--shadow-soft);
   }
 
   .app-panel-muted {
-    border-radius: 1.25rem;
+    border-radius: var(--radius-card);
     border: 1px solid var(--border-subtle);
     background: var(--surface-subtle);
     box-shadow: var(--shadow-soft);
   }
 
   .app-hero {
-    border-radius: 2rem;
+    border-radius: calc(var(--radius-card) + 0.25rem);
     border: 1px solid var(--border-strong);
     background-image: var(--surface-hero);
     box-shadow: var(--shadow-soft);
   }
 
   .app-chip {
-    border-radius: 9999px;
-    border: 1px solid var(--chip-border);
+    border-radius: var(--radius-pill);
+    border: 1px solid transparent;
     background-color: var(--chip-bg);
     box-shadow: none;
   }
