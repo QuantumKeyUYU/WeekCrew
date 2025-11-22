@@ -1,6 +1,5 @@
 // src/styles/tokens.ts
-// Design tokens как удобные бандлы Tailwind-классов.
-// Используем так: className={`${primaryCtaClass} w-full`}
+// Набор готовых className для кнопок и плашек, чтобы не засорять JSX.
 
 export const primaryCtaClass =
   'inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-500 via-indigo-500 to-violet-500 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-slate-900/25 transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900/0 disabled:cursor-not-allowed disabled:opacity-60 dark:shadow-black/60';
