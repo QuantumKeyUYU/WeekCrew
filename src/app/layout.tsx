@@ -15,16 +15,20 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   appleWebApp: {
     title: 'WeekCrew',
-    statusBarStyle: 'default'
+    statusBarStyle: 'default',
   },
   icons: {
     icon: '/icon.svg',
-    apple: '/icon.svg'
-  }
+    apple: '/icon.svg',
+  },
 };
 
+// НОРМАЛЬНЫЙ viewport, чтобы не было странного масштаба
 export const viewport: Viewport = {
-  themeColor: '#7F5AF0'
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#7F5AF0',
 };
 
 const themeInitScript = `(() => {
@@ -52,18 +56,17 @@ const themeInitScript = `(() => {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ru" className="h-full">
-      <body className="min-h-screen text-slate-900 transition-colors duration-300 dark:text-slate-50">
+      <body className="min-h-screen transition-colors duration-300">
         <Script id="weekcrew-theme-init" strategy="beforeInteractive">
           {themeInitScript}
         </Script>
+
         <ClientProviders>
           <div className="flex min-h-screen flex-col">
             <Header />
             <main className="flex-1">
-              {/* Чуть меньше отступы на мобиле, чтобы всё казалось крупнее */}
-              <div className="mx-auto w-full max-w-5xl px-3 py-6 sm:px-6 sm:py-12">
-                {children}
-              </div>
+              {/* Вся центровка и паддинги теперь в .app-shell внутри page.tsx */}
+              {children}
             </main>
             <Footer />
           </div>
