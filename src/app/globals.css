@@ -4,30 +4,33 @@
 
 :root {
   color-scheme: light;
-  --app-bg: radial-gradient(circle at 12% 20%, #eff3ff 0%, transparent 34%),
-    linear-gradient(140deg, #f7f9ff 0%, #edf3ff 48%, #e7f3ff 100%);
-  --surface-elevated: rgba(255, 255, 255, 0.9);
-  --surface-subtle: rgba(255, 255, 255, 0.7);
-  --surface-hero: linear-gradient(135deg, #141a2f, #0e1528 55%, #0b1123);
-  --border-subtle: rgba(148, 163, 184, 0.28);
-  --border-strong: rgba(15, 23, 42, 0.12);
-  --shadow-soft: 0 20px 70px rgba(15, 23, 42, 0.12);
-  --chip-bg: rgba(255, 255, 255, 0.85);
-  --chip-border: rgba(148, 163, 184, 0.26);
+  --app-bg: linear-gradient(140deg, #f7f9ff 0%, #eff4ff 40%, #e8f0ff 100%);
+  --surface-elevated: #ffffff;
+  --surface-subtle: #f7f8fb;
+  --surface-hero: linear-gradient(130deg, #0f1729, #0e1626 55%, #0b1324);
+  --border-subtle: rgba(15, 23, 42, 0.08);
+  --border-strong: rgba(15, 23, 42, 0.16);
+  --shadow-soft: 0 18px 44px rgba(15, 23, 42, 0.12);
+  --chip-bg: rgba(255, 255, 255, 0.9);
+  --chip-border: rgba(15, 23, 42, 0.08);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --app-bg: radial-gradient(circle at 18% 18%, rgba(43, 75, 125, 0.18) 0%, transparent 32%),
-    linear-gradient(160deg, #040815 0%, #050b1c 40%, #09132a 100%);
-  --surface-elevated: rgba(10, 14, 30, 0.7);
-  --surface-subtle: rgba(11, 16, 32, 0.55);
-  --surface-hero: linear-gradient(150deg, #0b1226, #0c1a36 50%, #0a1124);
-  --border-subtle: rgba(148, 163, 184, 0.28);
-  --border-strong: rgba(255, 255, 255, 0.08);
-  --shadow-soft: 0 28px 90px rgba(0, 0, 0, 0.68);
-  --chip-bg: rgba(12, 16, 32, 0.8);
-  --chip-border: rgba(148, 163, 184, 0.32);
+  --app-bg: radial-gradient(circle at 18% 18%, rgba(63, 93, 145, 0.18) 0%, transparent 32%),
+    linear-gradient(150deg, #050915 0%, #071020 48%, #090f1f 100%);
+  --surface-elevated: rgba(15, 23, 42, 0.8);
+  --surface-subtle: rgba(18, 27, 48, 0.72);
+  --surface-hero: linear-gradient(140deg, #0b1324, #0c1931 60%, #0a1223);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --shadow-soft: 0 24px 70px rgba(0, 0, 0, 0.55);
+  --chip-bg: rgba(18, 27, 48, 0.9);
+  --chip-border: rgba(255, 255, 255, 0.08);
+  --text-primary: #e2e8f0;
+  --text-secondary: #cbd5e1;
 }
 
 body {
@@ -67,21 +70,21 @@ body[data-animations='off'] * {
 
 @layer components {
   .app-panel {
-    border-radius: 2rem;
+    border-radius: 1.75rem;
     border: 1px solid var(--border-strong);
     background: var(--surface-elevated);
     box-shadow: var(--shadow-soft);
   }
 
   .app-panel-muted {
-    border-radius: 1.5rem;
+    border-radius: 1.25rem;
     border: 1px solid var(--border-subtle);
     background: var(--surface-subtle);
     box-shadow: var(--shadow-soft);
   }
 
   .app-hero {
-    border-radius: 2.5rem;
+    border-radius: 2rem;
     border: 1px solid var(--border-strong);
     background-image: var(--surface-hero);
     box-shadow: var(--shadow-soft);
