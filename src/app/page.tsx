@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -15,70 +15,71 @@ export default function HomePage() {
   const { accepted, markAccepted } = useSafetyRules();
   const [showModal, setShowModal] = useState(false);
 
-  const handleStart = () => {
+  const handleScrollToHow = useCallback(() => {
+    const target = document.getElementById('how-it-works');
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
+
+  const handleStart = useCallback(() => {
     if (accepted) {
       router.push('/explore');
       return;
     }
     setShowModal(true);
-  };
+  }, [accepted, router]);
 
-  const handleAcceptRules = () => {
+  const handleAcceptRules = useCallback(() => {
     markAccepted();
     setShowModal(false);
     router.push('/explore');
-  };
+  }, [markAccepted, router]);
 
-  const handleCloseModal = () => setShowModal(false);
+  const handleCloseModal = useCallback(() => setShowModal(false), []);
 
-  const stepTitles = [
-    t('landing_step_one_title'),
-    t('landing_step_two_title'),
-    t('landing_step_three_title'),
-  ];
+  const stepTitles = useMemo(
+    () => [
+      t('landing_step_one_title'),
+      t('landing_step_two_title'),
+      t('landing_step_three_title'),
+    ],
+    [t],
+  );
 
-  const stepDescriptions = [
-    t('landing_step_one_description'),
-    t('landing_step_two_description'),
-    t('landing_step_three_description'),
-  ];
+  const stepDescriptions = useMemo(
+    () => [
+      t('landing_step_one_description'),
+      t('landing_step_two_description'),
+      t('landing_step_three_description'),
+    ],
+    [t],
+  );
 
   return (
     <>
-      <div className="space-y-10 py-8 sm:space-y-16 sm:py-12">
-        {/* Hero-блок */}
-        <section className="space-y-4">
-          {/* Верхний бейдж: читаемый и в светлой, и в тёмной теме */}
+      <main className="app-shell space-y-10 sm:space-y-16">
+        {/* Hero-секция */}
+        <section className="space-y-6 sm:space-y-8">
           <div className="flex justify-center">
-            <div
-              className="
-                inline-flex items-center gap-2 rounded-full
-                border border-[var(--border-card)]
-                bg-white/85 px-4 py-1.5
-                text-[11px] font-medium text-[var(--text-primary)]
-                shadow-[0_16px_40px_rgba(15,23,42,0.16)]
-                backdrop-blur-md
-                dark:border-white/10 dark:bg-white/5 dark:text-white/90
-              "
-            >
-              <span className="inline-flex h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_0_4px_rgba(52,211,153,0.32)]" />
-              <span className="tracking-wide">
+            <div className="tagline-pill inline-flex items-center gap-2">
+              <span className="tagline-dot" />
+              <span className="tagline-text">
                 WeekCrew · {t('landing_logo_tagline')}
               </span>
             </div>
           </div>
 
           <motion.section
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: 'easeOut' }}
-            className="app-hero relative overflow-hidden px-6 py-10 text-left text-[var(--text-primary)] sm:px-10 sm:py-14"
+            transition={{ duration: 0.45, ease: 'easeOut' }}
+            className="app-hero relative overflow-hidden px-6 py-9 text-left sm:px-10 sm:py-12"
           >
-            {/* Фоновые градиенты — мягкие, не мешают тексту */}
-            <div className="pointer-events-none absolute inset-0 opacity-90">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_24%,rgba(124,136,255,0.22),transparent_40%)]" />
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_82%_14%,rgba(34,197,94,0.18),transparent_42%)]" />
-              <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.08),transparent_26%,rgba(255,255,255,0.08))]" />
+            <div className="pointer-events-none absolute inset-0 opacity-70">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_24%,rgba(129,140,248,0.22),transparent_45%)]" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_82%_10%,rgba(45,212,191,0.18),transparent_45%)]" />
+              <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.5),transparent_40%,rgba(255,255,255,0.35))]" />
             </div>
 
             <div className="relative mx-auto flex max-w-4xl flex-col gap-6 sm:gap-8">
@@ -101,11 +102,7 @@ export default function HomePage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() =>
-                    document
-                      .getElementById('how-it-works')
-                      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                  }
+                  onClick={handleScrollToHow}
                   className={secondaryCtaClass}
                 >
                   {t('landing_more_link')} →
@@ -137,28 +134,14 @@ export default function HomePage() {
             {stepTitles.map((title, index) => (
               <li
                 key={title}
-                className="
-                  group relative overflow-hidden rounded-3xl
-                  border border-[var(--border-card)]
-                  bg-[var(--surface-elevated)]/95 p-4
-                  shadow-[var(--shadow-soft)]
-                  transition-all duration-200
-                  hover:-translate-y-1 hover:shadow-[var(--shadow-card-strong)]
-                  sm:p-5
-                "
+                className="group relative overflow-hidden rounded-3xl border border-[var(--border-card)] bg-[var(--surface-elevated)]/96 p-4 shadow-[var(--shadow-soft)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[var(--shadow-card-strong)] sm:p-5"
               >
                 <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_10%,rgba(79,70,229,0.08),transparent_35%),radial-gradient(circle_at_90%_40%,rgba(34,197,94,0.08),transparent_32%)]" />
                 </div>
+
                 <div className="relative flex items-start gap-3 sm:gap-4">
-                  <span
-                    className="
-                      step-index text-base leading-none
-                      transition-transform duration-200
-                      group-hover:scale-[1.05]
-                      group-hover:shadow-[0_12px_28px_rgba(79,70,229,0.25)]
-                    "
-                  >
+                  <span className="step-index group-hover:scale-[1.05] group-hover:shadow-[0_18px_42px_rgba(79,70,229,0.5)] transition-transform duration-200">
                     {index + 1}
                   </span>
                   <div className="space-y-1">
@@ -174,7 +157,7 @@ export default function HomePage() {
             ))}
           </ol>
 
-          <div className="relative flex justify-center">
+          <div className="relative flex justify-center pt-2">
             <button
               type="button"
               onClick={handleStart}
@@ -186,7 +169,7 @@ export default function HomePage() {
         </section>
 
         <TestModeHint />
-      </div>
+      </main>
 
       <SafetyRulesModal
         open={showModal}
