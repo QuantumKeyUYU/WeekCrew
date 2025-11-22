@@ -2,10 +2,10 @@ export type AppMode = 'demo' | 'live';
 
 const resolveMode = (): AppMode => {
   const envValue = process.env.NEXT_PUBLIC_WEEKCREW_MODE;
-  if (envValue === 'live') {
-    return 'live';
+  if (envValue === 'demo') {
+    return 'demo';
   }
-  return 'demo';
+  return 'live';
 };
 
 const APP_MODE = resolveMode();

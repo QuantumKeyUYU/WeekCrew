@@ -1,116 +1,102 @@
-import Link from 'next/link';
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { useTranslation } from '@/i18n/useTranslation';
+import { primaryCtaClass } from '@/styles/tokens';
+import { SafetyRulesModal } from '@/components/modals/safety-rules-modal';
+import { useSafetyRules } from '@/hooks/useSafetyRules';
+import { useAppStore } from '@/store/useAppStore';
+import { TestModeHint } from '@/components/shared/test-mode-hint';
 
 export default function HomePage() {
+  const router = useRouter();
+  const t = useTranslation();
+  const { accepted, markAccepted } = useSafetyRules();
+  const currentCircle = useAppStore((state) => state.circle);
+  const [showModal, setShowModal] = useState(false);
+
+  const handleStart = () => {
+    if (accepted) {
+      router.push('/explore');
+      return;
+    }
+    setShowModal(true);
+  };
+
+  const handleAcceptRules = () => {
+    markAccepted();
+    setShowModal(false);
+    router.push('/explore');
+  };
+
+  const handleCloseModal = () => setShowModal(false);
+
+  const steps = [
+    { title: t('landing_step_one_title'), description: t('landing_step_one_description') },
+    { title: t('landing_step_two_title'), description: t('landing_step_two_description') },
+    { title: t('landing_step_three_title'), description: t('landing_step_three_description') },
+  ];
+
   return (
-    <main className="px-4 py-10 sm:py-14">
-      <section className="mx-auto flex max-w-4xl flex-col gap-6 rounded-3xl border border-slate-200/80 bg-slate-900/40 p-6 text-slate-100 shadow-[0_24px_80px_rgba(15,23,42,0.75)] dark:border-white/10 sm:p-10">
-        <div className="space-y-4">
-          <h1 className="text-2xl font-semibold sm:text-3xl">
-            WeekCrew — новый кружок каждую неделю.
-          </h1>
-          <p className="max-w-2xl text-sm text-slate-200/90 sm:text-base">
-            Выбирай интерес — и попадай в уютную мини-команду без лент, лайков и лишнего
-            шума. Семь дней тёплого общения, потом новая команда. Общение идёт в чатах
-            WeekCrew, без перехода в личные мессенджеры.
-          </p>
-        </div>
+    <>
+      <div className="space-y-16 py-10 sm:py-16">
+        <section className="flex flex-col items-center gap-3 text-center">
+          <span className="text-lg font-semibold text-slate-900 dark:text-white">WeekCrew</span>
+          <p className="text-sm text-slate-500 dark:text-slate-300">{t('landing_logo_tagline')}</p>
+        </section>
 
-        <div className="flex flex-wrap gap-3">
-          <Link
-            href="/safety"
-            className="inline-flex items-center justify-center rounded-full bg-brand px-6 py-2.5 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(129,140,248,0.45)] transition hover:-translate-y-0.5"
-          >
-            Начать подбор
-          </Link>
-          <a
-            href="#how-it-works"
-            className="inline-flex items-center justify-center rounded-full border border-slate-500/80 bg-transparent px-5 py-2.5 text-sm font-medium text-slate-200 transition hover:-translate-y-0.5 hover:border-slate-300 hover:text-white"
-          >
-            Как всё работает
-          </a>
-        </div>
-      </section>
+        <section className="app-hero px-6 py-12 text-center text-white shadow-[0_28px_120px_rgba(8,7,20,0.85)] sm:px-12">
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: 'easeOut' }}>
+            <h1 className="text-3xl font-semibold leading-tight sm:text-[2.9rem]">{t('landing_hero_title')}</h1>
+            <p className="mt-4 text-base text-white/80">{t('landing_hero_subtitle')}</p>
+            <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+              <button type="button" onClick={handleStart} className={primaryCtaClass}>
+                {t('landing_hero_cta')}
+              </button>
+              <button
+                type="button"
+                onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
+                className="text-sm font-medium text-white/80 transition hover:text-white"
+              >
+                {t('landing_more_link')}
+              </button>
+            </div>
+            {currentCircle && (
+              <button
+                type="button"
+                onClick={() => router.push('/circle')}
+                className="mt-4 text-sm font-medium text-white/70 underline-offset-4 transition hover:text-white"
+              >
+                {t('landing_go_to_circle')}
+              </button>
+            )}
+          </motion.div>
+        </section>
 
-      {/* Как всё работает */}
-      <section
-        id="how-it-works"
-        className="mx-auto mt-10 flex max-w-4xl flex-col gap-6 rounded-3xl border border-slate-200/60 bg-slate-900/30 p-6 text-sm text-slate-100 shadow-[0_20px_60px_rgba(15,23,42,0.6)] dark:border-white/10 sm:mt-12 sm:p-8"
-      >
-        <h2 className="text-base font-semibold sm:text-lg">Как проходит неделя</h2>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200/60 bg-slate-900/40 p-4 text-xs sm:text-sm dark:border-white/10">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-300">
-              1 шаг
-            </p>
-            <p className="mt-2 font-medium">Выбери настроение</p>
-            <p className="mt-1 text-slate-300/90">
-              K-pop, книги, фильмы или что-то новое — интерес можно менять в любой момент.
-            </p>
+        <section id="how-it-works" className="app-panel scroll-mt-24 p-6 md:scroll-mt-28">
+          <div className="space-y-4 text-center">
+            <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">{t('landing_how_title')}</h2>
+            <p className="text-sm text-slate-600 dark:text-slate-300">{t('landing_how_subtitle')}</p>
           </div>
-          <div className="rounded-2xl border border-slate-200/60 bg-slate-900/40 p-4 text-xs sm:text-sm dark:border-white/10">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-300">
-              2 шаг
-            </p>
-            <p className="mt-2 font-medium">Присоединяйся к кружку</p>
-            <p className="mt-1 text-slate-300/90">
-              Мы собираем 3–8 человек с похожим настроением — никто не остаётся без
-              внимания.
-            </p>
+          <div className="mt-8 grid gap-4 sm:grid-cols-3">
+            {steps.map((step) => (
+              <article key={step.title} className="app-panel-muted p-5 text-left">
+                <h3 className="text-base font-semibold text-slate-900 dark:text-white">{step.title}</h3>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{step.description}</p>
+              </article>
+            ))}
           </div>
-          <div className="rounded-2xl border border-slate-200/60 bg-slate-900/40 p-4 text-xs sm:text-sm dark:border-white/10">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-300">
-              3 шаг
-            </p>
-            <p className="mt-2 font-medium">Семь дней тепла</p>
-            <p className="mt-1 text-slate-300/90">
-              Мемы, истории, плейлисты. Неделя заканчивается — начинается новый круг.
-            </p>
+          <div className="mt-10 flex justify-center">
+            <button type="button" onClick={handleStart} className={primaryCtaClass}>
+              {t('landing_hero_cta')}
+            </button>
           </div>
-        </div>
-
-        <h2 className="mt-2 text-base font-semibold sm:text-lg">Почему здесь спокойно</h2>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="rounded-2xl border border-slate-200/60 bg-slate-900/40 p-4 text-xs sm:text-sm dark:border-white/10">
-            <p className="font-medium">Недель хватает</p>
-            <p className="mt-1 text-slate-300/90">
-              Неделя — комфортный срок, чтобы познакомиться, но не устать от чата.
-            </p>
-          </div>
-          <div className="rounded-2xl border border-slate-200/60 bg-slate-900/40 p-4 text-xs sm:text-sm dark:border-white/10">
-            <p className="font-medium">Маленькая группа</p>
-            <p className="mt-1 text-slate-300/90">
-              Мини-команда даёт время каждому, без больших анонимных чатов.
-            </p>
-          </div>
-          <div className="rounded-2xl border border-slate-200/60 bg-slate-900/40 p-4 text-xs sm:text-sm dark:border-white/10">
-            <p className="font-medium">Мягкие подсказки</p>
-            <p className="mt-1 text-slate-300/90">
-              Если сложно начать разговор — помогут маленькие вопросы и темы.
-            </p>
-          </div>
-          <div className="rounded-2xl border border-slate-200/60 bg-slate-900/40 p-4 text-xs sm:text-sm dark:border-white/10">
-            <p className="font-medium">Без гонок</p>
-            <p className="mt-1 text-slate-300/90">
-              Никаких лайков и лент. Только живые слова и безопасное общение.
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-4 rounded-2xl border border-slate-200/60 bg-slate-900/50 p-4 text-center text-sm dark:border-white/10">
-          <p className="font-medium">Готов к новой неделе?</p>
-          <p className="mt-1 text-slate-300/90">
-            Нажми кнопку — и мы подберём уютный круг за пару секунд.
-          </p>
-          <div className="mt-3">
-            <Link
-              href="/safety"
-              className="inline-flex items-center justify-center rounded-full bg-brand px-6 py-2.5 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(129,140,248,0.45)] transition hover:-translate-y-0.5"
-            >
-              Начать подбор
-            </Link>
-          </div>
-        </div>
-      </section>
-    </main>
+        </section>
+        <TestModeHint />
+      </div>
+      <SafetyRulesModal open={showModal} onAccept={handleAcceptRules} onClose={handleCloseModal} />
+    </>
   );
 }

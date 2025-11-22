@@ -1,4 +1,5 @@
 export const DEVICE_ID_KEY = 'weekcrew:device-id';
+export const DEVICE_HEADER_NAME = 'X-Device-Id';
 
 const generateDeviceId = () => {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -7,22 +8,68 @@ const generateDeviceId = () => {
   return Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
 };
 
-export const getOrCreateDeviceId = (): string => {
+const memoryStorage = (() => {
+  let storage: Record<string, string> = {};
+  return {
+    getItem: (name: string) => storage[name] ?? null,
+    setItem: (name: string, value: string) => {
+      storage[name] = value;
+    },
+    removeItem: (name: string) => {
+      delete storage[name];
+    },
+    clear: () => {
+      storage = {};
+    },
+    key: (index: number) => Object.keys(storage)[index] ?? null,
+    get length() {
+      return Object.keys(storage).length;
+    },
+  } as Storage;
+})();
+
+const getDeviceStorage = (): Storage => {
   if (typeof window === 'undefined') {
-    return generateDeviceId();
+    return memoryStorage;
   }
-  const existing = window.localStorage.getItem(DEVICE_ID_KEY);
+
+  try {
+    return window.sessionStorage;
+  } catch (error) {
+    console.warn('Session storage unavailable, falling back to localStorage', error);
+  }
+
+  try {
+    return window.localStorage;
+  } catch (error) {
+    console.warn('Local storage unavailable, falling back to in-memory storage', error);
+  }
+
+  return memoryStorage;
+};
+
+export const getOrCreateDeviceId = (): string => {
+  const storage = getDeviceStorage();
+  const existing = storage.getItem(DEVICE_ID_KEY);
   if (existing) {
     return existing;
   }
   const id = generateDeviceId();
-  window.localStorage.setItem(DEVICE_ID_KEY, id);
+  storage.setItem(DEVICE_ID_KEY, id);
   return id;
 };
 
 export const resetDeviceId = () => {
+  const storage = getDeviceStorage();
+  storage.removeItem(DEVICE_ID_KEY);
+
   if (typeof window === 'undefined') {
     return;
   }
-  window.localStorage.removeItem(DEVICE_ID_KEY);
+
+  try {
+    window.localStorage.removeItem(DEVICE_ID_KEY);
+  } catch (error) {
+    console.warn('Failed to clear device id from localStorage', error);
+  }
 };

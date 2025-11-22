@@ -1,5 +1,3 @@
-import type { Timestamp } from 'firebase/firestore';
-
 export type InterestTag =
   | 'kpop'
   | 'anime'
@@ -12,37 +10,47 @@ export type InterestTag =
   | 'movies'
   | 'custom';
 
-export type CircleStatus = 'active' | 'archived';
+export type InterestId = InterestTag | string;
+
+export type CircleStatus = 'active' | 'finished' | 'archived';
 
 export interface UserProfile {
   id: string;
-  nickname?: string;
-  interests: InterestTag[];
-  currentCircleId?: string | null;
-  locale: 'ru' | 'en';
-  theme: 'light' | 'dark' | 'system';
-  notificationsEnabled: boolean;
+  deviceId: string;
+  nickname: string;
+  avatarKey: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface Circle {
+export interface CircleSummary {
   id: string;
-  interest: InterestTag;
-  title: string;
+  mood: string;
+  interest: InterestId;
+  startsAt: string;
+  expiresAt: string;
   status: CircleStatus;
-  capacity: number;
-  memberIds: string[];
-  createdAt: Timestamp;
-  expiresAt: Timestamp;
-  icebreakerSeed?: string;
+  maxMembers: number;
+  memberCount: number;
+  remainingMs: number;
+  isExpired: boolean;
+  icebreaker: string;
+}
+
+export interface MessageAuthor {
+  id: string | null;
+  nickname?: string | null;
+  avatarKey?: string | null;
 }
 
 export interface CircleMessage {
   id: string;
   circleId: string;
-  authorDeviceId: string;
-  text: string;
-  createdAt: Timestamp;
-  authorAlias?: string;
+  deviceId: string | null;
+  author?: MessageAuthor | null;
+  content: string;
+  isSystem: boolean;
+  createdAt: string;
 }
 
 export interface AppSettings {
@@ -54,4 +62,11 @@ export interface AppSettings {
 export interface DeviceInfo {
   deviceId: string;
   createdAt: string;
+}
+
+export interface DailyQuotaSnapshot {
+  dailyLimit: number;
+  usedToday: number;
+  remainingToday: number;
+  resetAtIso: string;
 }

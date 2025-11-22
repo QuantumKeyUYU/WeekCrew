@@ -6,20 +6,11 @@ import { getOrCreateDeviceId } from '@/lib/device';
 import { ensureAnonymousAuth, getFirebaseStatus } from '@/config/firebase';
 import { useHydrated } from '@/hooks/useHydrated';
 import { ErrorBoundary } from '@/components/shared/error-boundary';
+import { applyThemePreference, persistThemePreference } from '@/constants/theme';
 
 interface Props {
   children: ReactNode;
 }
-
-const resolveTheme = (theme: 'light' | 'dark' | 'system') => {
-  if (theme !== 'system') {
-    return theme;
-  }
-  if (typeof window === 'undefined') {
-    return 'light';
-  }
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-};
 
 export const ClientProviders = ({ children }: Props) => {
   const hydrated = useHydrated();
@@ -101,20 +92,22 @@ export const ClientProviders = ({ children }: Props) => {
   }, [updateUser, settings.language, settings.theme, setFirebaseReady]);
 
   useEffect(() => {
+    persistThemePreference(settings.theme);
+  }, [settings.theme]);
+
+  useEffect(() => {
     const applyTheme = () => {
-      if (typeof document === 'undefined') {
-        return;
+      applyThemePreference(settings.theme);
+      if (typeof document !== 'undefined') {
+        document.body.dataset.animations = settings.animationsEnabled ? 'on' : 'off';
       }
-      const theme = resolveTheme(settings.theme);
-      document.body.dataset.theme = theme;
-      document.body.dataset.animations = settings.animationsEnabled ? 'on' : 'off';
     };
 
     applyTheme();
 
     if (settings.theme === 'system' && typeof window !== 'undefined') {
       const matcher = window.matchMedia('(prefers-color-scheme: dark)');
-      const handler = () => applyTheme();
+      const handler = () => applyThemePreference('system');
       matcher.addEventListener('change', handler);
       return () => matcher.removeEventListener('change', handler);
     }
