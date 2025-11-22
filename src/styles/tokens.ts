@@ -15,7 +15,7 @@ export const secondaryCtaClass = [
 ].join(' ');
 
 export const cardMotionClass = [
-  'rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] p-5 text-left',
+  'rounded-2xl border border-[var(--border-card)] bg-[var(--surface-subtle)] p-5 text-left',
   'shadow-[var(--shadow-soft)]',
   motionTiming,
   'hover:-translate-y-0.5 hover:shadow-[0_16px_44px_rgba(15,23,42,0.16)] dark:hover:shadow-[0_16px_44px_rgba(0,0,0,0.5)]',

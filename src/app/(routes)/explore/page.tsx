@@ -180,26 +180,22 @@ export default function ExplorePage() {
 
   return (
     <div className="space-y-8 py-6 sm:space-y-10 sm:py-10">
-      <section className="flex flex-col gap-3">
-        <span className="app-chip inline-flex w-fit items-center gap-2 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">
-          <span className="h-2 w-2 rounded-full bg-emerald-400" />
-          {t('explore_intro_label')}
-        </span>
-        <div className="app-panel p-5 sm:p-6">
-          <h1 className="text-[1.85rem] font-semibold leading-tight text-[var(--text-primary)] sm:text-[2.05rem]">
-            {t('explore_page_title')}
-          </h1>
-          <p className="mt-2 text-sm text-[var(--text-secondary)] sm:text-base">{t('explore_page_subtitle')}</p>
-        </div>
+      <section className="app-hero space-y-3 p-6 text-left text-white sm:p-8">
+        <h1 className="text-[1.85rem] font-semibold leading-tight sm:text-[2.05rem]">
+          {t('explore_page_title')}
+        </h1>
+        <p className="max-w-2xl text-sm text-white/80 sm:text-base">{t('explore_page_subtitle')}</p>
       </section>
 
-      <section className="app-panel space-y-4 p-5 sm:p-6">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-secondary)]">
+      <section className="app-panel space-y-5 p-5 sm:p-6">
+        <div className="inline-flex w-fit items-center gap-2 rounded-full bg-[var(--surface-subtle)] px-3 py-1 text-xs font-semibold text-[var(--text-primary)]">
           <span className="h-2 w-2 rounded-full bg-emerald-400" aria-hidden />
           {t('explore_step_one_title')}
         </div>
-        <h2 className="text-lg font-semibold text-[var(--text-primary)]">{t('explore_step_one_heading')}</h2>
-        <p className="text-sm text-[var(--text-secondary)]">{t('explore_step_one_description')}</p>
+        <div className="space-y-2">
+          <h2 className="text-lg font-semibold text-[var(--text-primary)]">{t('explore_step_one_heading')}</h2>
+          <p className="text-sm text-[var(--text-secondary)]">{t('explore_step_one_description')}</p>
+        </div>
         <div className="mt-2 flex flex-wrap gap-2">
           {MOOD_OPTIONS.map((mood) => {
             const active = selectedMood === mood.key;
@@ -226,13 +222,15 @@ export default function ExplorePage() {
         )}
       </section>
 
-      <section className="app-panel space-y-4 p-5 sm:p-6">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-secondary)]">
+      <section className="app-panel space-y-5 p-5 sm:p-6">
+        <div className="inline-flex w-fit items-center gap-2 rounded-full bg-[var(--surface-subtle)] px-3 py-1 text-xs font-semibold text-[var(--text-primary)]">
           <span className="h-2 w-2 rounded-full bg-emerald-400" aria-hidden />
           {t('explore_step_two_title')}
         </div>
-        <h2 className="text-lg font-semibold text-[var(--text-primary)]">{t('explore_step_two_heading')}</h2>
-        <p className="text-sm text-[var(--text-secondary)]">{t('explore_step_two_description')}</p>
+        <div className="space-y-2">
+          <h2 className="text-lg font-semibold text-[var(--text-primary)]">{t('explore_step_two_heading')}</h2>
+          <p className="text-sm text-[var(--text-secondary)]">{t('explore_step_two_description')}</p>
+        </div>
         <div className="grid gap-3 sm:grid-cols-2">
           {interestsToRender.map((card) => {
             const active = selectedInterest === card.id;
@@ -274,19 +272,14 @@ export default function ExplorePage() {
         </button>
       </section>
 
-      <section className="app-panel space-y-4 p-5 sm:p-6">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand/15 text-lg text-brand-foreground">
-            {joining ? '⌛' : '💬'}
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-[var(--text-primary)]">{t('explore_ready_title')}</p>
-            <p className="text-xs text-[var(--text-secondary)]">{t('explore_ready_description')}</p>
-          </div>
+      <section className="app-panel space-y-5 p-5 sm:p-6">
+        <div className="space-y-1">
+          <p className="text-base font-semibold text-[var(--text-primary)]">{t('explore_ready_title')}</p>
+          <p className="text-sm text-[var(--text-secondary)]">{t('explore_ready_description')}</p>
         </div>
         {error && (
-          <div className="rounded-2xl border border-red-200/70 bg-white/90 p-3 text-xs text-red-800 shadow-none dark:border-red-400/40 dark:bg-red-500/10 dark:text-red-100">
-            <p className="font-semibold">{error}</p>
+          <div className="rounded-lg bg-red-500/10 p-3 text-xs text-red-800 dark:text-red-100">
+            <p className="font-semibold text-red-700 dark:text-red-50">{error}</p>
             {errorHint && <p className="mt-1 text-red-700/80 dark:text-red-50/80">{errorHint}</p>}
           </div>
         )}
@@ -296,15 +289,11 @@ export default function ExplorePage() {
           onClick={handleStartCircle}
           className={clsx(
             primaryCtaClass,
-            'flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-base font-semibold',
+            'flex w-full items-center justify-center gap-2 rounded-full py-3 text-base font-semibold',
             joining && 'cursor-wait',
           )}
         >
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-lg text-white">
-            {joining ? '⏳' : '🚀'}
-          </span>
-          <span className="grow text-left">{joining ? t('explore_starting_state') : t('explore_start_button')}</span>
-          <span aria-hidden className="text-lg transition-transform">→</span>
+          {joining ? t('explore_starting_state') : t('explore_start_button')}
         </button>
         {!accepted && (
           <p className="text-xs text-[var(--text-secondary)]">{t('explore_rules_required')}</p>
