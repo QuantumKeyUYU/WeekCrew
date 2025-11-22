@@ -33,11 +33,12 @@ export const Header = () => {
   }, []);
 
   return (
-    <header className="sticky top-3 z-50 px-4 sm:top-4 sm:px-6">
+    // px-3 — те же отступы, что у app-shell (0.75rem), чтобы всё легло ровно
+    <header className="sticky top-3 z-50 px-3 sm:top-4 sm:px-6">
       <div
         className={clsx(
-          // ВАЖНО: header-shell — чтобы на мобиле сузить и центрировать шапку
-          'header-shell mx-auto flex w-full max-w-5xl items-center justify-between gap-3 rounded-full border px-3 py-2.5 sm:px-4',
+          // Основная «таблетка» шапки
+          'mx-auto flex w-full max-w-5xl items-center justify-between gap-3 rounded-full border px-3 py-2.5 sm:px-4',
           'backdrop-blur-2xl transition-all duration-300 ease-out',
           'shadow-[0_14px_45px_rgba(15,23,42,0.12)] dark:shadow-[0_18px_55px_rgba(0,0,0,0.55)]',
           isScrolled
@@ -49,7 +50,7 @@ export const Header = () => {
         <Link
           href="/"
           aria-label="WeekCrew — на главную"
-          className="group inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-base font-semibold tracking-[0.08em] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent dark:focus-visible:ring-slate-500"
+          className="group inline-flex items-center gap-2 rounded-full px-2.5 py-1.5 text-base font-semibold tracking-[0.08em] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent dark:focus-visible:ring-slate-500"
         >
           <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500/80 to-emerald-400/80 text-white shadow-[0_12px_30px_rgba(37,99,235,0.65)]">
             <span className="h-2 w-2 rounded-full bg-white/90 shadow-[0_0_0_4px_rgba(255,255,255,0.18)]" />
