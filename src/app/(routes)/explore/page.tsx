@@ -32,12 +32,13 @@ export default function ExplorePage() {
   const clearSession = useAppStore((state) => state.clearSession);
   const { accepted, hydrated, markAccepted } = useSafetyRules();
 
-  type InterestCard = { id: InterestId; label: string; emoji: string };
+  type InterestCard = { id: InterestId; label: string; emoji: string; description?: string };
 
   const defaultInterestCards: InterestCard[] = INTERESTS.map((interest) => ({
     id: interest.key,
     label: t(interest.labelKey),
     emoji: interest.emoji ?? '✨',
+    description: t(interest.descriptionKey),
   }));
 
   const languageInterestCards: InterestCard[] = LANGUAGE_INTERESTS.map((interest) => ({

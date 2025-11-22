@@ -139,7 +139,6 @@ export default function StepStart({
           </span>
           <span className="grow text-left">
             {joining ? t('explore_starting_state') : t('explore_start_button')}
-            <span className="block text-xs font-normal text-white/85">{t('explore_ready_description')}</span>
           </span>
           <span aria-hidden className="text-lg transition-transform group-hover:translate-x-1 group-hover:animate-pulse">→</span>
           <span className="absolute inset-0 rounded-2xl border border-white/20 opacity-0 transition group-hover:opacity-100" aria-hidden />

@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import { motion, type Variants } from 'framer-motion';
 import type { InterestId } from '@/types';
 
-type InterestCard = { id: InterestId; label: string; emoji: string };
+type InterestCard = { id: InterestId; label: string; emoji: string; description?: string };
 
 type StepInterestProps = {
   t: (key: string, options?: Record<string, unknown>) => string;
@@ -58,10 +58,11 @@ export default function StepInterest({
             {t('explore_step_two_badge')}
           </span>
         </div>
-        <div className="grid grid-cols-3 gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
           {interests.map((card, index) => {
             const active = selectedInterest === card.id;
             const glowClass = glowPalette[index % glowPalette.length];
+            const description = card.description ?? (isLanguageMood ? t('explore_sync_hint') : t('explore_interest_hint'));
             return (
               <motion.button
                 key={card.id}
@@ -76,15 +77,15 @@ export default function StepInterest({
                     : 'bg-white/5 border-white/15 text-white/80 hover:-translate-y-1 hover:border-white/30 hover:shadow-[0_0_25px_rgba(94,92,241,0.25)]',
                 )}
                 aria-pressed={active}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-xl" aria-hidden>
-                    {card.emoji}
-                  </span>
-                  <span className="text-lg font-semibold leading-tight">{card.label}</span>
-                </div>
-                <p className="text-xs text-white/60">{isLanguageMood ? t('explore_sync_hint') : t('explore_ready_description')}</p>
-              </motion.button>
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-xl" aria-hidden>
+                      {card.emoji}
+                    </span>
+                    <span className="text-lg font-semibold leading-tight">{card.label}</span>
+                  </div>
+                  <p className="text-xs text-white/60">{description}</p>
+                </motion.button>
             );
           })}
         </div>

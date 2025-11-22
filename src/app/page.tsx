@@ -45,24 +45,6 @@ export default function HomePage() {
     { label: t('hero_stat_feed_label'), description: t('hero_stat_feed_description') },
   ];
 
-  const essentials = [
-    {
-      title: t('home_essentials_single_circle_title'),
-      description: t('home_essentials_single_circle_description'),
-      icon: '🎛️'
-    },
-    {
-      title: t('home_essentials_fresh_mood_title'),
-      description: t('home_essentials_fresh_mood_description'),
-      icon: '✨'
-    },
-    {
-      title: t('home_essentials_soft_finish_title'),
-      description: t('home_essentials_soft_finish_description'),
-      icon: '🌙'
-    },
-  ];
-
   const vibes = [
     t('explore_mood_chip_calm'),
     t('explore_mood_chip_support'),
@@ -76,7 +58,6 @@ export default function HomePage() {
     { title: t('feature_small_group_title'), description: t('feature_small_group_description') },
     { title: t('feature_daily_icebreaker_title'), description: t('feature_daily_icebreaker_description') },
     { title: t('feature_no_likes_title'), description: t('feature_no_likes_description') },
-    { title: t('feature_one_circle_title'), description: t('feature_one_circle_description') },
   ];
 
   return (
@@ -167,66 +148,6 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="grid gap-3 rounded-[24px] border border-white/10 bg-white/5 p-4 shadow-[0_18px_65px_rgba(3,5,20,0.35)] backdrop-blur-lg sm:grid-cols-3">
-                {steps.map((step) => (
-                  <div
-                    key={`${step.badge}-${step.title}`}
-                    className="group relative flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 p-3 shadow-inner shadow-white/5 transition duration-200 hover:-translate-y-1 hover:border-white/30"
-                  >
-                    <div className="inline-flex w-fit items-center gap-2 rounded-full bg-white/10 px-3 py-[0.45rem] text-[clamp(0.72rem,0.12vw+0.7rem,0.8rem)] font-semibold uppercase tracking-[0.1em] text-white/80">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-400/80 to-indigo-400/80 text-[clamp(0.7rem,0.1vw+0.68rem,0.78rem)] font-semibold text-white shadow-[0_12px_30px_rgba(124,58,237,0.4)]">
-                        {step.badge}
-                      </span>
-                      {t('home_how_it_works_label')}
-                    </div>
-                    <p className="text-[clamp(1rem,0.3vw+0.95rem,1.1rem)] font-semibold text-white leading-snug">{step.title}</p>
-                    <p className="text-[clamp(0.88rem,0.2vw+0.84rem,0.98rem)] text-white/80 leading-relaxed">{step.description}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="app-panel relative overflow-hidden bg-white/70 p-6 shadow-[0_24px_90px_rgba(8,7,20,0.06)] backdrop-blur sm:p-8 lg:p-10 dark:bg-slate-900/60">
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-indigo-100/30 via-white/40 to-fuchsia-100/30 opacity-70 dark:from-indigo-950/30 dark:via-slate-900/30 dark:to-fuchsia-900/20" />
-          <div className="grid items-start gap-10 lg:grid-cols-[1.1fr_0.95fr]">
-            <div className="space-y-3 text-left">
-              <p className="text-[clamp(0.78rem,0.14vw+0.75rem,0.9rem)] font-semibold uppercase tracking-[0.18em] text-brand">{t('home_essentials_label')}</p>
-              <h2 className="text-[clamp(1.9rem,0.9vw+1.6rem,2.35rem)] font-semibold text-slate-900 dark:text-white leading-[1.1]">{t('home_essentials_title')}</h2>
-              <p className="text-[clamp(0.98rem,0.3vw+0.92rem,1.08rem)] leading-relaxed text-slate-600 dark:text-slate-300">{t('home_essentials_description')}</p>
-            </div>
-            <div className="-mx-1 flex flex-nowrap gap-2 overflow-x-auto pb-1 scroll-smooth scroll-snap-x sm:mx-0 sm:flex-wrap sm:overflow-visible">
-              {vibes.map((vibe) => (
-                <span
-                  key={vibe}
-                  className="app-chip scroll-snap-align-start whitespace-nowrap px-4 py-2 text-[clamp(0.8rem,0.18vw+0.76rem,0.94rem)] font-semibold text-slate-800 shadow-[0_14px_35px_rgba(15,23,42,0.1)] dark:text-white"
-                >
-                  {vibe}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-8 grid gap-4 rounded-[28px] border border-slate-200/70 bg-gradient-to-br from-white via-slate-50 to-purple-50/50 p-4 shadow-[0_18px_70px_rgba(15,23,42,0.06)] dark:border-slate-800/70 dark:from-slate-900/50 dark:via-slate-900 dark:to-indigo-950/40">
-            <div className="hidden items-center justify-between rounded-2xl border border-slate-200/80 bg-white/70 px-5 py-3 text-[clamp(0.86rem,0.16vw+0.83rem,0.96rem)] font-semibold uppercase tracking-[0.14em] text-slate-500 shadow-[0_12px_40px_rgba(15,23,42,0.07)] md:flex dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-300">
-              <span>{t('home_step_select_interest_title')}</span>
-              <span className="h-px w-16 rounded-full bg-gradient-to-r from-indigo-400 to-fuchsia-400" />
-              <span>{t('home_step_join_circle_title')}</span>
-              <span className="h-px w-16 rounded-full bg-gradient-to-r from-indigo-400 to-fuchsia-400" />
-              <span>{t('home_step_week_of_warmth_title')}</span>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-3">
-              {essentials.map((item) => (
-                <div key={item.title} className="app-panel-muted flex h-full flex-col gap-3 rounded-3xl p-5 shadow-[0_16px_60px_rgba(15,23,42,0.08)] dark:border-slate-800/70 dark:bg-slate-900/60">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-lg shadow-[0_12px_30px_rgba(15,23,42,0.16)] dark:bg-slate-800">{item.icon}</span>
-                    <h3 className="text-[clamp(1.05rem,0.22vw+1rem,1.2rem)] font-semibold text-slate-900 dark:text-white leading-tight">{item.title}</h3>
-                  </div>
-                  <p className="text-[clamp(0.96rem,0.2vw+0.92rem,1.08rem)] leading-relaxed text-slate-600 dark:text-slate-300">{item.description}</p>
-                </div>
-              ))}
             </div>
           </div>
         </section>
@@ -251,7 +172,10 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="space-y-6 rounded-[28px] border border-slate-200/70 bg-gradient-to-br from-slate-50 via-white to-violet-50 p-6 shadow-[0_26px_110px_rgba(15,23,42,0.05)] sm:p-8 md:rounded-[30px] md:p-10 dark:border-slate-800 dark:from-slate-900 dark:via-slate-950 dark:to-indigo-950/40">
+        <section
+          id="why-calm"
+          className="space-y-6 rounded-[28px] border border-slate-200/70 bg-gradient-to-br from-slate-50 via-white to-violet-50 p-6 shadow-[0_26px_110px_rgba(15,23,42,0.05)] sm:p-8 md:rounded-[30px] md:p-10 dark:border-slate-800 dark:from-slate-900 dark:via-slate-950 dark:to-indigo-950/40"
+        >
           <div className="space-y-3 text-left md:text-center">
             <p className="text-[clamp(0.78rem,0.14vw+0.75rem,0.9rem)] font-semibold uppercase tracking-[0.2em] text-brand">{t('home_why_cozy_label')}</p>
             <h2 className="text-[clamp(1.95rem,0.9vw+1.6rem,2.4rem)] font-semibold text-slate-900 dark:text-white leading-[1.1]">{t('home_why_cozy_title')}</h2>
@@ -284,13 +208,13 @@ export default function HomePage() {
             >
               {t('landing_more_link')}
             </button>
-            <div className="-mx-1 flex flex-nowrap justify-center gap-2 overflow-x-auto rounded-full border border-slate-200/70 bg-white/70 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-600 shadow-[0_16px_50px_rgba(15,23,42,0.05)] scroll-snap-x dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-200 sm:mx-0 sm:flex-wrap sm:justify-start sm:overflow-visible">
-              {vibes.slice(0, 3).map((vibe) => (
-                <span key={`cta-${vibe}`} className="scroll-snap-align-start rounded-full bg-gradient-to-r from-indigo-500/15 to-fuchsia-500/15 px-3 py-1 text-[clamp(0.82rem,0.16vw+0.79rem,0.94rem)] font-semibold text-slate-700 dark:text-white">
-                  {vibe}
-                </span>
-              ))}
-            </div>
+            <button
+              type="button"
+              onClick={() => document.getElementById('why-calm')?.scrollIntoView({ behavior: 'smooth' })}
+              className="text-[clamp(0.98rem,0.2vw+0.94rem,1.08rem)] font-semibold text-slate-800 underline-offset-4 transition hover:text-indigo-600 dark:text-white dark:hover:text-indigo-200"
+            >
+              {t('hero_secondary_cta')}
+            </button>
           </div>
         </section>
         <TestModeHint />
