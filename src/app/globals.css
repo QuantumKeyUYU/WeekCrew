@@ -4,20 +4,20 @@
 
 :root {
   color-scheme: light;
-  --app-bg-base: #020617;
-  --app-bg-accent-1: #1d2b64;
-  --app-bg-accent-2: #0f766e;
-  --app-bg-accent-3: #3b82f6;
-  --app-bg-accent-1-rgb: 29 43 100;
-  --app-bg-accent-2-rgb: 15 118 110;
-  --app-bg-accent-3-rgb: 59 130 246;
+  --app-bg-base: #f6f7fb;
+  --app-bg-accent-1: #e8ebf6;
+  --app-bg-accent-2: #dfe3ee;
+  --app-bg-accent-3: #d6e3e8;
+  --app-bg-accent-1-rgb: 232 235 246;
+  --app-bg-accent-2-rgb: 223 227 238;
+  --app-bg-accent-3-rgb: 214 227 232;
   --surface-elevated: #ffffff;
-  --surface-subtle: #eef2f9;
-  --surface-hero: linear-gradient(145deg, #0c1224, #0b142a);
-  --border-subtle: rgba(15, 23, 42, 0.06);
-  --border-strong: rgba(15, 23, 42, 0.1);
-  --border-card: rgba(15, 23, 42, 0.08);
-  --shadow-soft: 0 16px 48px rgba(15, 23, 42, 0.12);
+  --surface-subtle: #f3f5f9;
+  --surface-hero: linear-gradient(145deg, #f5f7fb, #e9ecf5);
+  --border-subtle: rgba(0, 0, 0, 0.05);
+  --border-strong: rgba(0, 0, 0, 0.08);
+  --border-card: rgba(0, 0, 0, 0.08);
+  --shadow-soft: 0 16px 40px rgba(15, 23, 42, 0.12);
   --chip-bg: rgba(255, 255, 255, 0.92);
   --text-primary: #0f172a;
   --text-secondary: #475569;
@@ -27,22 +27,22 @@
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --app-bg-base: #020617;
-  --app-bg-accent-1: #1d2b64;
-  --app-bg-accent-2: #0f766e;
-  --app-bg-accent-3: #3b82f6;
-  --app-bg-accent-1-rgb: 29 43 100;
-  --app-bg-accent-2-rgb: 15 118 110;
-  --app-bg-accent-3-rgb: 59 130 246;
-  --surface-elevated: #0b0f1d;
-  --surface-subtle: #0d1224;
-  --surface-hero: linear-gradient(150deg, #0c1324, #0b162c);
-  --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-strong: rgba(255, 255, 255, 0.12);
+  --app-bg-base: #0b1120;
+  --app-bg-accent-1: #111827;
+  --app-bg-accent-2: #1b263b;
+  --app-bg-accent-3: #10213f;
+  --app-bg-accent-1-rgb: 17 24 39;
+  --app-bg-accent-2-rgb: 27 38 59;
+  --app-bg-accent-3-rgb: 16 33 63;
+  --surface-elevated: #0f172a;
+  --surface-subtle: #0c1424;
+  --surface-hero: linear-gradient(160deg, #0b1223, #0c1529 45%, #0f1a33);
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-strong: rgba(255, 255, 255, 0.1);
   --border-card: rgba(255, 255, 255, 0.06);
-  --shadow-soft: 0 20px 60px rgba(0, 0, 0, 0.5);
+  --shadow-soft: 0 20px 50px rgba(0, 0, 0, 0.52);
   --chip-bg: rgba(255, 255, 255, 0.06);
-  --text-primary: #e2e8f0;
+  --text-primary: #e5e7eb;
   --text-secondary: #cbd5e1;
   --radius-card: 1.5rem;
   --radius-pill: 9999px;
@@ -51,14 +51,30 @@
 body {
   min-height: 100vh;
   background:
-    radial-gradient(circle at 0% 0%, rgb(var(--app-bg-accent-1-rgb) / 0.55), transparent 55%),
-    radial-gradient(circle at 100% 100%, rgb(var(--app-bg-accent-2-rgb) / 0.35), transparent 55%),
-    radial-gradient(circle at 100% 0%, rgb(var(--app-bg-accent-3-rgb) / 0.16), transparent 60%),
-    var(--app-bg-base);
-  @apply text-slate-900 antialiased selection:bg-brand selection:text-brand-foreground;
+    radial-gradient(circle at 12% 18%, rgb(99 102 241 / 0.08), transparent 40%),
+    radial-gradient(circle at 86% 14%, rgb(52 211 153 / 0.08), transparent 38%),
+    radial-gradient(circle at 24% 88%, rgb(103 232 249 / 0.06), transparent 42%),
+    linear-gradient(160deg, rgb(var(--app-bg-accent-1-rgb) / 0.75), rgb(var(--app-bg-accent-2-rgb) / 0.9) 45%, var(--app-bg-base));
+  background-blend-mode: normal, normal, normal, multiply;
+  background-attachment: fixed;
+  color: var(--text-primary);
+  @apply antialiased selection:bg-brand selection:text-brand-foreground;
 }
 
 :root[data-theme='dark'] body {
+  background:
+    radial-gradient(circle at 12% 18%, rgb(99 102 241 / 0.09), transparent 42%),
+    radial-gradient(circle at 86% 14%, rgb(52 211 153 / 0.08), transparent 40%),
+    radial-gradient(circle at 24% 88%, rgb(103 232 249 / 0.07), transparent 44%),
+    linear-gradient(165deg, #0b1120, #0c1426 48%, #0f172a);
+  background-image:
+    radial-gradient(circle at 12% 18%, rgb(99 102 241 / 0.09), transparent 42%),
+    radial-gradient(circle at 86% 14%, rgb(52 211 153 / 0.08), transparent 40%),
+    radial-gradient(circle at 24% 88%, rgb(103 232 249 / 0.07), transparent 44%),
+    linear-gradient(165deg, #0b1120, #0c1426 48%, #0f172a),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Crect width='160' height='160' fill='rgba(255,255,255,0.02)'/%3E%3C/svg%3E");
+  background-blend-mode: normal;
+  background-attachment: fixed;
   @apply text-slate-50;
 }
 
@@ -89,22 +105,23 @@ body[data-animations='off'] * {
   .app-panel {
     border-radius: var(--radius-card);
     border: 1px solid var(--border-card);
-    background: var(--surface-elevated);
-    box-shadow: var(--shadow-soft);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0)) padding-box,
+      var(--surface-elevated);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
   }
 
   .app-panel-muted {
     border-radius: var(--radius-card);
     border: 1px solid var(--border-subtle);
     background: var(--surface-subtle);
-    box-shadow: var(--shadow-soft);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
   }
 
   .app-hero {
     border-radius: calc(var(--radius-card) + 0.25rem);
     border: 1px solid var(--border-strong);
     background-image: var(--surface-hero);
-    box-shadow: var(--shadow-soft);
+    box-shadow: 0 28px 64px rgba(0, 0, 0, 0.55);
   }
 
   .app-chip {
@@ -135,8 +152,8 @@ body[data-animations='off'] * {
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    background: radial-gradient(circle at 30% 0%, #6366f1, #22c55e);
-    color: white;
-    box-shadow: 0 12px 30px rgba(59, 130, 246, 0.18);
+    background: radial-gradient(circle at 25% 20%, rgba(99, 102, 241, 0.3), rgba(34, 197, 94, 0.6));
+    color: #f8fafc;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
   }
 }
