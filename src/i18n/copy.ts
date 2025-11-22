@@ -22,9 +22,9 @@ export const copy = {
     landing_step_two_title: 'Выбери тему.',
     landing_step_two_description:
       'K-pop, кино, игры, книги, языки и другие. Или доверь случайному подбору.',
-    landing_step_three_title: 'Мы собираем круг.',
+    landing_step_three_title: 'Собираем круг недели.',
     landing_step_three_description:
-      'Мы собираем маленький анонимный круг на неделю. В любой момент можно попробовать новый.',
+      'Создаём маленький анонимный круг на неделю. В любой момент можно попробовать новый.',
     hero_intro_label: 'Неделя общения по настроению',
     hero_title: 'Один круг. Семь дней рядом.',
     hero_description:
