@@ -1,132 +1,98 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ApiError } from '@/lib/api-client';
 import { getCircleMessages } from '@/lib/api/circles';
-import { mergeMessages } from '@/lib/messages';
 import { useAppStore } from '@/store/useAppStore';
-import type { CircleMessage } from '@/types';
 
-const POLL_INTERVAL_MS = 5000;
+const POLL_INTERVAL_MS = 4000; // 4 секунды – можно потом подкрутить
 
-export const useCircleMessagesPolling = (circleId: string | null | undefined) => {
+type UseCircleMessagesPollingResult = {
+  notMember: boolean;
+};
+
+export function useCircleMessagesPolling(
+  circleId: string | null,
+): UseCircleMessagesPollingResult {
   const setMessages = useAppStore((state) => state.setMessages);
-  const setQuotaFromApi = useAppStore((state) => state.setQuotaFromApi);
-  const updateCircle = useAppStore((state) => state.updateCircle);
+  const getState = useAppStore; // чтобы доставать текущие messages через getState()
   const [notMember, setNotMember] = useState(false);
-
-  const haveMessagesChanged = (
-    prev: CircleMessage[],
-    next: CircleMessage[],
-  ) => {
-    if (prev.length !== next.length) return true;
-    if (prev.length === 0 && next.length === 0) return false;
-
-    for (let index = 0; index < next.length; index += 1) {
-      const current = next[index];
-      const previous = prev[index];
-
-      if (current.id !== previous.id) return true;
-      if (current.content !== previous.content) return true;
-      if (current.createdAt !== previous.createdAt) return true;
-      if (current.isSystem !== previous.isSystem) return true;
-      if (current.deviceId !== previous.deviceId) return true;
-
-      const currentAuthor = current.author ?? null;
-      const previousAuthor = previous.author ?? null;
-
-      if (Boolean(currentAuthor) !== Boolean(previousAuthor)) return true;
-      if (currentAuthor && previousAuthor) {
-        if (currentAuthor.id !== previousAuthor.id) return true;
-        if (currentAuthor.nickname !== previousAuthor.nickname) return true;
-        if (currentAuthor.avatarKey !== previousAuthor.avatarKey) return true;
-      }
-    }
-
-    return false;
-  };
-
-  useEffect(() => {
-    setNotMember(false);
-  }, [circleId]);
 
   useEffect(() => {
     if (!circleId) {
-      return undefined;
+      setNotMember(false);
+      return;
     }
 
     let cancelled = false;
-    let intervalId: ReturnType<typeof setInterval> | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let lastTimestamp: string | null = null;
 
-    const poll = async () => {
-      if (cancelled || !circleId) {
+    const tick = async () => {
+      if (cancelled) return;
+
+      // Не дёргаем сеть, пока таб скрыт – меньше лагов на десктопе
+      if (typeof document !== 'undefined' && document.hidden) {
+        timeoutId = setTimeout(tick, POLL_INTERVAL_MS);
         return;
       }
 
       try {
-        const currentMessages = useAppStore.getState().messages;
-        const last = currentMessages[currentMessages.length - 1];
-        const { messages: incoming, quota, memberCount } = await getCircleMessages({
+        const response = await getCircleMessages({
           circleId,
-          since: last?.createdAt,
+          since: lastTimestamp ?? undefined,
         });
 
-        const state = useAppStore.getState();
-        if (state.circle?.id !== circleId || cancelled) {
+        if (cancelled) return;
+
+        if (response.notMember) {
+          setNotMember(true);
           return;
         }
 
-        setQuotaFromApi(quota ?? null);
-        if (typeof memberCount === 'number') {
-          updateCircle((prev) => {
-            if (!prev || prev.id !== circleId) {
-              return prev;
-            }
-            return { ...prev, memberCount };
-          });
-        }
+        const incoming = response.messages ?? [];
 
-        if (incoming.length === 0) {
-          return;
-        }
+        if (incoming.length > 0) {
+          // Берём текущие сообщения из стора
+          const prev = getState.getState().messages;
 
-        const merged = mergeMessages(state.messages, incoming);
-        const prevMessages = state.messages;
+          // Мапой по id, чтобы не было дублей
+          const byId = new Map<string, (typeof prev)[number]>();
+          for (const msg of prev) {
+            byId.set(msg.id, msg);
+          }
+          for (const msg of incoming) {
+            byId.set(msg.id, msg);
+          }
 
-        if (haveMessagesChanged(prevMessages, merged)) {
+          const merged = Array.from(byId.values()).sort(
+            (a, b) =>
+              new Date(a.createdAt).getTime() -
+              new Date(b.createdAt).getTime(),
+          );
+
           setMessages(merged);
+
+          lastTimestamp =
+            incoming[incoming.length - 1]?.createdAt ?? lastTimestamp;
         }
       } catch (error) {
-        if (error instanceof ApiError && error.status === 403) {
-          const details = (error.data as { error?: string } | null) ?? null;
-          if (details?.error === 'not_member') {
-            if (!cancelled) {
-              setNotMember(true);
-            }
-            cancelled = true;
-            if (intervalId) {
-              clearInterval(intervalId);
-            }
-            return;
-          }
-        }
-
+        // тихо логируем – не хотим спамить консоль при временных ошибках
+        console.warn('[useCircleMessagesPolling] tick failed', error);
+      } finally {
         if (!cancelled) {
-          console.warn('Message polling failed', error);
+          timeoutId = setTimeout(tick, POLL_INTERVAL_MS);
         }
       }
     };
 
-    intervalId = setInterval(poll, POLL_INTERVAL_MS);
-    poll();
+    // первый запуск
+    void tick();
 
     return () => {
       cancelled = true;
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
+      if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [circleId, setMessages, setQuotaFromApi, updateCircle]);
+  }, [circleId, getState, setMessages]);
 
   return { notMember };
-};
+}
