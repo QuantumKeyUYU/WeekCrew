@@ -85,7 +85,6 @@ export default function CirclePage() {
     useState<string | null>(null);
 
   const [loadingCircle, setLoadingCircle] = useState(false);
-  const [messagesLoading, setMessagesLoading] = useState(false);
   const [leavePending, setLeavePending] = useState(false);
   const [notMember, setNotMember] = useState(false);
 
@@ -232,15 +231,12 @@ export default function CirclePage() {
   useEffect(() => {
     if (!circle || notMember) {
       setMessages([]);
-      setMessagesLoading(false);
       return;
     }
 
     let cancelled = false;
 
     const loadMessages = async () => {
-      setMessagesLoading(true);
-
       try {
         const { messages: incoming, quota, memberCount } =
           await getCircleMessages({ circleId: circle.id });
@@ -260,10 +256,6 @@ export default function CirclePage() {
         if (!cancelled) {
           console.error('Failed to fetch circle messages', error);
         }
-      } finally {
-        if (!cancelled) {
-          setMessagesLoading(false);
-        }
       }
     };
 
@@ -272,7 +264,7 @@ export default function CirclePage() {
     return () => {
       cancelled = true;
     };
-  }, [circle, notMember, setMessages, setMessagesLoading, setQuotaFromApi, updateCircle]);
+  }, [circle, notMember, setMessages, setQuotaFromApi, updateCircle]);
 
   const handleStartMatching = async () => {
     try {
@@ -498,16 +490,12 @@ export default function CirclePage() {
   );
 
   useEffect(() => {
-    const node = composerRef.current;
-    if (!node) return;
-    node.style.height = 'auto';
-    const nextHeight = Math.min(node.scrollHeight, 200);
-    node.style.height = `${nextHeight}px`;
-  }, [composerValue]);
+    adjustComposerHeight();
+  }, [adjustComposerHeight, composerValue]);
 
   // автофокус композера на десктопе
   useEffect(() => {
-    if (messagesLoading || composerValue || !circleId) return;
+    if (composerValue || !circleId) return;
 
     const node = composerRef.current;
     if (!node) return;
@@ -516,7 +504,7 @@ export default function CirclePage() {
       return;
     }
     node.focus();
-  }, [circleId, composerValue, messagesLoading]);
+  }, [circleId, composerValue]);
 
   const timerLabel = (() => {
     if (!circle) return null;
@@ -694,9 +682,7 @@ export default function CirclePage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-2xl bg-slate-900 text-base sm:h-9 sm:w-9">
                 🔒
               </div>
-              <p className="leading-snug">
-                {t('circle_rules_summary')}
-              </p>
+              <p className="leading-snug">{t('circle_rules_summary')}</p>
             </div>
 
             {showQuotaOneLiner && (
@@ -714,7 +700,7 @@ export default function CirclePage() {
               circleId={circleId}
               messages={messages}
               currentDeviceId={currentDeviceId}
-              isLoading={Boolean(circle && messagesLoading)}
+              isLoading={false} // <— больше НИКАКОЙ мигающей загрузки
               preamble={systemPreamble}
               className="p-3 sm:p-6"
             />
