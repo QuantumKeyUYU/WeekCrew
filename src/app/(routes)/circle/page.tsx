@@ -104,11 +104,7 @@ export default function CirclePage() {
   const currentDeviceId =
     storeDeviceId ?? (typeof window !== 'undefined' ? getOrCreateDeviceId() : null);
 
-  //
-  // 1. Настройка и профиль
-  //
-
-  // выбранное настроение/интерес
+  // выбранные настроение/интерес (для заголовка)
   useEffect(() => {
     const stored = loadCircleSelection();
     if (!stored) return;
@@ -179,7 +175,8 @@ export default function CirclePage() {
   }, [circle?.id, setQuotaFromApi]);
 
   const handleAccessRevoked = useCallback(() => {
-    // если сервер говорит, что нас выгнали из круга
+    // сейчас /api/messages больше не даёт notMember/403,
+    // но оставляем на будущее
     void leaveCircleApi().catch((error) => {
       console.warn('Failed to cleanup circle after access revoked', error);
     });
@@ -192,12 +189,9 @@ export default function CirclePage() {
     resetDeviceId();
     clearSession();
     clearCircleSelection();
-  }, [clearCircleSelection, clearSession, setCircle, setMessages, setQuotaFromApi]);
+  }, [clearSession, setCircle, setMessages, setQuotaFromApi]);
 
-  //
-  // 2. Старт круга
-  //
-
+  // старт круга при заходе
   useEffect(() => {
     let cancelled = false;
 
@@ -243,15 +237,11 @@ export default function CirclePage() {
       void leaveCircleApi().catch((err) => {
         console.warn('Failed to delete circle on exit', err);
       });
-      // сообщения не трогаем — пусть остаются в store до смены круга
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setCircle, setMessages, setQuotaFromApi]);
 
-  //
-  // 3. Первичная загрузка сообщений
-  //
-
+  // начальная загрузка сообщений
   useEffect(() => {
     if (!circle || notMember) {
       setMessages([]);
@@ -297,10 +287,7 @@ export default function CirclePage() {
     };
   }, [circle, notMember, setMessages, setMessagesLoading, setQuotaFromApi, updateCircle]);
 
-  //
-  // 4. Long-poll сообщений
-  //
-
+  // long-poll обновления
   const { notMember: pollingNotMember } = useCircleMessagesPolling(circleId);
 
   useEffect(() => {
@@ -308,10 +295,6 @@ export default function CirclePage() {
       handleAccessRevoked();
     }
   }, [pollingNotMember, handleAccessRevoked]);
-
-  //
-  // 5. Действия с кругом
-  //
 
   const handleStartMatching = async () => {
     try {
@@ -364,10 +347,6 @@ export default function CirclePage() {
     clearCircleSelection();
     setNotMember(false);
   };
-
-  //
-  // 6. Композер
-  //
 
   const adjustComposerHeight = useCallback(() => {
     const node = composerRef.current;
@@ -429,7 +408,6 @@ export default function CirclePage() {
         if (details?.error === 'daily_limit_exceeded') {
           setQuotaFromApi(details.quota ?? null);
           setSendError(t('circle_limit_reached'));
-          setIsSending(false);
           return;
         }
 
@@ -439,7 +417,6 @@ export default function CirclePage() {
             if (!prev || !circle || prev.id !== circle.id) return prev;
             return { ...prev, isExpired: true, remainingMs: 0 };
           });
-          setIsSending(false);
           return;
         }
       } else {
@@ -448,7 +425,6 @@ export default function CirclePage() {
 
       removeMessage(optimisticId);
       setSendError(t('composer_send_error'));
-      setIsSending(false);
     } finally {
       setIsSending(false);
     }
@@ -477,56 +453,6 @@ export default function CirclePage() {
     }
     await sendMessageCore();
   }, [openProfileModal, sendMessageCore, user]);
-
-  const composerPlaceholder = isCircleExpired
-    ? t('circle_expired_placeholder')
-    : t('composer_placeholder');
-
-  const composerDisabled =
-    !circle || isSending || notMember || isCircleExpired || isLimitReached;
-
-  const canSubmitMessage = Boolean(composerValue.trim()) && !composerDisabled;
-
-  const handleSendMessage = useCallback(
-    (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      if (!canSubmitMessage) return;
-      void attemptSendMessage();
-    },
-    [attemptSendMessage, canSubmitMessage],
-  );
-
-  const handleComposerKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLTextAreaElement>) => {
-      if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        if (!canSubmitMessage) return;
-        void attemptSendMessage();
-      }
-    },
-    [attemptSendMessage, canSubmitMessage],
-  );
-
-  useEffect(() => {
-    adjustComposerHeight();
-  }, [adjustComposerHeight, composerValue]);
-
-  // автофокус композера (десктоп)
-  useEffect(() => {
-    if (messagesLoading || composerValue || !circleId) return;
-
-    const node = composerRef.current;
-    if (!node) return;
-
-    if (typeof window !== 'undefined' && window.innerWidth < 640) {
-      return;
-    }
-    node.focus();
-  }, [circleId, composerValue, messagesLoading]);
-
-  //
-  // 7. Таймер и заголовки
-  //
 
   const systemMessageLines = t('circle_system_message').split('\n');
 
@@ -564,6 +490,52 @@ export default function CirclePage() {
 
     return () => clearInterval(intervalId);
   }, [circle?.id, circle?.expiresAt, circle?.isExpired, updateCircle]);
+
+  const composerPlaceholder = isCircleExpired
+    ? t('circle_expired_placeholder')
+    : t('composer_placeholder');
+
+  const composerDisabled =
+    !circle || isSending || notMember || isCircleExpired || isLimitReached;
+
+  const canSubmitMessage = Boolean(composerValue.trim()) && !composerDisabled;
+
+  const handleSendMessage = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      if (!canSubmitMessage) return;
+      void attemptSendMessage();
+    },
+    [attemptSendMessage, canSubmitMessage],
+  );
+
+  const handleComposerKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLTextAreaElement>) => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        if (!canSubmitMessage) return;
+        void attemptSendMessage();
+      }
+    },
+    [attemptSendMessage, canSubmitMessage],
+  );
+
+  useEffect(() => {
+    adjustComposerHeight();
+  }, [adjustComposerHeight, composerValue]);
+
+  // автофокус композера
+  useEffect(() => {
+    if (messagesLoading || composerValue || !circleId) return;
+
+    const node = composerRef.current;
+    if (!node) return;
+
+    if (typeof window !== 'undefined' && window.innerWidth < 640) {
+      return;
+    }
+    node.focus();
+  }, [circleId, composerValue, messagesLoading]);
 
   const timerLabel = (() => {
     if (!circle) return null;
@@ -628,52 +600,9 @@ export default function CirclePage() {
     return 'circle_host_final';
   })();
 
-  //
-  // 8. Рендер
-  //
-
-  const messagePreamble = circle ? (
-    <div className="space-y-4">
-      {circle.icebreaker && (
-        <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-4 py-4 text-amber-900 dark:text-amber-50">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-700/80 dark:text-amber-100/80">
-            {t('circle_icebreaker_title')}
-          </p>
-          <p className="mt-1 text-lg font-semibold leading-snug text-slate-900 dark:text-white">
-            {circle.icebreaker}
-          </p>
-          <p className="text-xs text-amber-700/90 dark:text-amber-100/70">
-            {t('circle_icebreaker_hint')} ✨
-          </p>
-        </div>
-      )}
-      <div className="rounded-2xl border border-dashed border-[var(--border-subtle)] bg-[var(--surface-subtle)] p-4 text-sm text-slate-600 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200">
-        {systemMessageLines.map((line) => (
-          <p key={line}>{line}</p>
-        ))}
-      </div>
-      {isCircleExpired && (
-        <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] p-4 text-sm text-slate-600 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200">
-          <p className="font-semibold text-slate-900 dark:text-white">
-            {t('circle_expired_notice_title')}
-          </p>
-          <p className="mt-1">{t('circle_expired_notice_subtitle')}</p>
-          <button
-            type="button"
-            onClick={handleStartMatching}
-            className={`${primaryCtaClass} mt-3 px-4 py-2 text-xs`}
-          >
-            {t('circle_expired_start_new')}
-          </button>
-        </div>
-      )}
-    </div>
-  ) : null;
-
   let pageContent: JSX.Element;
 
   if (!circle && !loadingCircle) {
-    // нет круга — показываем пустое состояние
     pageContent = (
       <div className="space-y-6">
         {notMember && (
@@ -700,9 +629,63 @@ export default function CirclePage() {
       </div>
     );
   } else {
+    // preamble чата: оставляем только айсбрейкер + «добро пожаловать» + спец-состояния
+    const messagePreamble = (
+      <div className="space-y-4">
+        {circle.icebreaker && (
+          <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-4 py-4 text-amber-900 dark:text-amber-50">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-700/80 dark:text-amber-100/80">
+              {t('circle_icebreaker_title')}
+            </p>
+            <p className="mt-1 text-lg font-semibold leading-snug text-slate-900 dark:text-white">
+              {circle.icebreaker}
+            </p>
+            <p className="text-xs text-amber-700/90 dark:text-amber-100/70">
+              {t('circle_icebreaker_hint')} ✨
+            </p>
+          </div>
+        )}
+
+        {/* лаконичный welcome вместо ещё одних правил */}
+        <div className="rounded-2xl border border-dashed border-[var(--border-subtle)] bg-[var(--surface-subtle)] p-4 text-sm text-slate-600 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200">
+          {systemMessageLines.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+        </div>
+
+        {notMember && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50/90 p-4 text-sm text-amber-900 shadow-none dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
+            <p className="font-semibold">{t('circle_not_member_notice')}</p>
+            <button
+              type="button"
+              onClick={handleStartMatching}
+              className="mt-3 inline-flex items-center justify-center rounded-full border border-transparent bg-amber-500 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-sm transition hover:bg-amber-600"
+            >
+              {t('circle_not_member_cta')}
+            </button>
+          </div>
+        )}
+        {isCircleExpired && (
+          <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] p-4 text-sm text-slate-600 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200">
+            <p className="font-semibold text-slate-900 dark:text-white">
+              {t('circle_expired_notice_title')}
+            </p>
+            <p className="mt-1">{t('circle_expired_notice_subtitle')}</p>
+            <button
+              type="button"
+              onClick={handleStartMatching}
+              className={`${primaryCtaClass} mt-3 px-4 py-2 text-xs`}
+            >
+              {t('circle_expired_start_new')}
+            </button>
+          </div>
+        )}
+      </div>
+    );
+
     pageContent = (
       <div className="flex min-h-screen flex-col gap-4 py-4">
-        {/* ШАПКА КРУГА — облегчённая, без лишних повторов правил */}
+        {/* Шапка круга — чуть полегче, без лишних блоков на мобиле */}
         <section className="app-panel p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-2">
@@ -723,6 +706,13 @@ export default function CirclePage() {
               <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-300">
                 <span>
                   {t('circle_member_count_label', { count: membersCount })}
+                </span>
+                <span
+                  className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-slate-200 text-[10px] text-slate-400 dark:border-white/10"
+                  title={t('circle_members_tooltip')}
+                  aria-label={t('circle_members_tooltip')}
+                >
+                  i
                 </span>
               </div>
               <div className="mt-3 flex flex-wrap gap-2 text-xs">
@@ -765,7 +755,7 @@ export default function CirclePage() {
             </div>
           </div>
 
-          {/* две компактные карточки: таймер + краткие правила */}
+          {/* две компактные карточки — таймер + краткая фраза про безопасность */}
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <div className="flex items-center gap-3 rounded-2xl bg-slate-50/70 px-4 py-3 text-sm text-slate-700 shadow-inner shadow-slate-200/70 dark:bg-slate-800/70 dark:text-slate-100 dark:shadow-black/20">
               <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-lg shadow-sm dark:bg-slate-900">
@@ -795,8 +785,25 @@ export default function CirclePage() {
             </div>
           </div>
 
-          {/* квоты + приватность — без повторения самих правил */}
-          <div className="mt-6 grid gap-3 md:grid-cols-2">
+          {/* тяжёлые блоки — только на md+, чтобы мобилка дышала */}
+          <div className="mt-6 hidden gap-3 rounded-3xl bg-slate-50/70 p-4 text-slate-700 shadow-inner shadow-slate-200/70 dark:bg-slate-800/60 dark:text-slate-100 dark:shadow-black/30 md:grid md:grid-cols-2">
+            <div className="space-y-2">
+              <p className="text-[13px] font-semibold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">
+                {t('circle_rules_quick')}
+              </p>
+              <ul className="grid gap-2 text-sm text-slate-600 dark:text-slate-200">
+                {t('rules_modal_points')
+                  .split('|')
+                  .map((rule, index) => (
+                    <li key={rule} className="flex gap-3">
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-xs font-semibold text-slate-500 shadow-sm dark:bg-slate-900">
+                        {index + 1}
+                      </span>
+                      <span>{rule}</span>
+                    </li>
+                  ))}
+              </ul>
+            </div>
             <div className="flex flex-col justify-between gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] p-4 dark:border-white/10 dark:bg-slate-900/50">
               <div className="space-y-1">
                 <p className="text-[13px] font-semibold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">
@@ -824,36 +831,21 @@ export default function CirclePage() {
                   {t('circle_pace_tip_body')}
                 </p>
               </div>
-              {quotaResetLabel && (
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  {quotaResetLabel}
-                </p>
-              )}
-            </div>
-
-            <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] p-4 text-sm text-slate-700 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-100">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-lg text-white">
-                  🔐
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-slate-800 dark:text-white">
-                    {t('circle_privacy_title')}
-                  </p>
-                  <p className="mt-1 leading-relaxed text-slate-600 dark:text-slate-200">
-                    {t('circle_privacy_body')}
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
+
+          {circleHostKey && (
+            <div className="mt-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-4 py-3 text-sm text-slate-700 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200">
+              <p className="font-semibold">{t('circle_host_label')}</p>
+              <p className="leading-relaxed">{t(circleHostKey)}</p>
+            </div>
+          )}
         </section>
 
-        {/* ЧАТ-ПАНЕЛЬ — “Telegram style” */}
+        {/* Чат-панель */}
         <section className="app-panel flex min-h-[360px] flex-1 flex-col gap-3 p-4">
           <div className="min-h-[260px] flex-1 overflow-y-auto rounded-3xl bg-[var(--surface-subtle)]">
             <MessageList
-              key={circleId ?? 'no-circle'}
               circleId={circleId}
               messages={messages}
               currentDeviceId={currentDeviceId}
@@ -893,9 +885,14 @@ export default function CirclePage() {
               </button>
             </div>
 
-            <p className="text-xs text-slate-500 dark:text-slate-300">
-              {t('messages_author_system')} напоминает: общаемся честно и
-              спокойно, без обмена личными данными.
+            <p className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-300">
+              <span className="text-sm" aria-hidden>
+                •
+              </span>
+              <span>
+                {t('messages_author_system')} напоминает: общаемся честно и
+                спокойно, без обмена личными данными.
+              </span>
             </p>
 
             {sendError && (
@@ -908,6 +905,28 @@ export default function CirclePage() {
                 <span>{sendError}</span>
               </p>
             )}
+
+            {typeof dailyRemaining === 'number' &&
+              typeof dailyLimit === 'number' &&
+              (!isLimitReached ? (
+                <div className="text-xs text-slate-500 dark:text-slate-400">
+                  <p>
+                    {t('circle_quota_remaining', { count: dailyRemaining })}
+                  </p>
+                  {quotaResetLabel && (
+                    <p className="mt-1">{quotaResetLabel}</p>
+                  )}
+                </div>
+              ) : (
+                <div className="rounded-2xl bg-amber-50/80 p-3 text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-100">
+                  <p className="font-medium">
+                    {t('circle_quota_exhausted')}
+                  </p>
+                  {quotaResetLabel && (
+                    <p className="mt-1">{quotaResetLabel}</p>
+                  )}
+                </div>
+              ))}
           </form>
         </section>
 
