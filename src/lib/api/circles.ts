@@ -1,4 +1,9 @@
-import type { CircleMessage, CircleSummary, DailyQuotaSnapshot } from '@/types';
+// src/lib/api/circles.ts
+import type {
+  CircleMessage,
+  CircleSummary,
+  DailyQuotaSnapshot,
+} from '@/types';
 import { fetchJson } from '@/lib/api-client';
 
 export interface JoinCirclePayload {
@@ -11,40 +16,32 @@ export interface JoinCircleResponse {
   circle: CircleSummary;
   messages: CircleMessage[];
   isNewCircle: boolean;
+  quota: DailyQuotaSnapshot | null;
 }
 
+// создание / присоединение к кругу
 export const joinCircle = (payload: JoinCirclePayload) =>
   fetchJson<JoinCircleResponse>('/api/circles/join', {
     method: 'POST',
     json: payload,
   });
 
-export interface CurrentCircleResponse {
-  circle: CircleSummary | null;
+// --- сообщения ---
+
+export interface GetCircleMessagesPayload {
+  circleId: string;
 }
 
-export const getCurrentCircle = () =>
-  fetchJson<CurrentCircleResponse>('/api/circles/current');
-
-export interface CircleMessagesResponse {
-  ok?: boolean;
+export interface GetCircleMessagesResponse {
   messages: CircleMessage[];
-  quota?: DailyQuotaSnapshot;
+  quota: DailyQuotaSnapshot | null;
   memberCount?: number;
 }
 
-export interface FetchMessagesParams {
-  circleId: string;
-  since?: string;
-}
-
-export const getCircleMessages = ({ circleId, since }: FetchMessagesParams) => {
-  const params = new URLSearchParams({ circleId });
-  if (since) {
-    params.set('since', since);
-  }
-  return fetchJson<CircleMessagesResponse>(`/api/messages?${params.toString()}`);
-};
+export const getCircleMessages = (payload: GetCircleMessagesPayload) =>
+  fetchJson<GetCircleMessagesResponse>(
+    `/api/messages?circleId=${encodeURIComponent(payload.circleId)}`,
+  );
 
 export interface SendMessagePayload {
   circleId: string;
@@ -54,6 +51,7 @@ export interface SendMessagePayload {
 export interface SendMessageResponse {
   ok: true;
   message: CircleMessage;
+  quota: DailyQuotaSnapshot | null;
 }
 
 export const sendMessage = (payload: SendMessagePayload) =>
@@ -62,6 +60,7 @@ export const sendMessage = (payload: SendMessagePayload) =>
     json: payload,
   });
 
+// выход из круга
 export const leaveCircle = () =>
   fetchJson<{ ok: boolean }>('/api/circles/leave', {
     method: 'POST',
