@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getCircleMessages } from '@/lib/api/circles';
 import { useAppStore } from '@/store/useAppStore';
 
-const POLL_INTERVAL_MS = 4000; // 4 секунды – можно потом подкрутить
+const POLL_INTERVAL_MS = 8000; // стало реже, можно вернуть 4000, если хочется живее
 
 type UseCircleMessagesPollingResult = {
   notMember: boolean;
@@ -14,7 +14,8 @@ export function useCircleMessagesPolling(
   circleId: string | null,
 ): UseCircleMessagesPollingResult {
   const setMessages = useAppStore((state) => state.setMessages);
-  const getState = useAppStore; // чтобы доставать текущие messages через getState()
+  // прямой доступ к Zustand-стору, не тащим getState в зависимости
+  const getStateRef = useRef(useAppStore.getState);
   const [notMember, setNotMember] = useState(false);
 
   useEffect(() => {
@@ -23,14 +24,14 @@ export function useCircleMessagesPolling(
       return;
     }
 
-    let cancelled = false;
+    let stopped = false;
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
     let lastTimestamp: string | null = null;
 
     const tick = async () => {
-      if (cancelled) return;
+      if (stopped) return;
 
-      // Не дёргаем сеть, пока таб скрыт – меньше лагов на десктопе
+      // не спамим сеть, если вкладка не активна
       if (typeof document !== 'undefined' && document.hidden) {
         timeoutId = setTimeout(tick, POLL_INTERVAL_MS);
         return;
@@ -42,24 +43,21 @@ export function useCircleMessagesPolling(
           since: lastTimestamp ?? undefined,
         });
 
-        if (cancelled) return;
+        if (stopped) return;
 
         if (response.notMember) {
+          // важно: останавливаем поллинг, иначе он будет крутиться вхолостую
           setNotMember(true);
+          stopped = true;
           return;
         }
 
         const incoming = response.messages ?? [];
-
         if (incoming.length > 0) {
-          // Берём текущие сообщения из стора
-          const prev = getState.getState().messages;
+          const prev = getStateRef.current().messages;
 
-          // Мапой по id, чтобы не было дублей
-          const byId = new Map<string, (typeof prev)[number]>();
-          for (const msg of prev) {
-            byId.set(msg.id, msg);
-          }
+          // объединяем без дублей
+          const byId = new Map(prev.map((m) => [m.id, m]));
           for (const msg of incoming) {
             byId.set(msg.id, msg);
           }
@@ -70,16 +68,26 @@ export function useCircleMessagesPolling(
               new Date(b.createdAt).getTime(),
           );
 
-          setMessages(merged);
+          // маленький guard, чтобы не триггерить перерисовку без реальных изменений
+          const prevLast = prev[prev.length - 1];
+          const nextLast = merged[merged.length - 1];
+
+          if (
+            merged.length !== prev.length ||
+            prevLast?.id !== nextLast?.id
+          ) {
+            setMessages(merged);
+          }
 
           lastTimestamp =
             incoming[incoming.length - 1]?.createdAt ?? lastTimestamp;
         }
       } catch (error) {
-        // тихо логируем – не хотим спамить консоль при временных ошибках
-        console.warn('[useCircleMessagesPolling] tick failed', error);
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn('[useCircleMessagesPolling] tick failed', error);
+        }
       } finally {
-        if (!cancelled) {
+        if (!stopped) {
           timeoutId = setTimeout(tick, POLL_INTERVAL_MS);
         }
       }
@@ -89,10 +97,10 @@ export function useCircleMessagesPolling(
     void tick();
 
     return () => {
-      cancelled = true;
+      stopped = true;
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [circleId, getState, setMessages]);
+  }, [circleId, setMessages]);
 
   return { notMember };
 }
