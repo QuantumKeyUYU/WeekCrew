@@ -176,7 +176,7 @@ export default function CirclePage() {
     setQuotaFromApi(null);
   }, [circle?.id, setQuotaFromApi]);
 
-  // старт круга при заходе (как было, только без поллинга)
+  // старт круга при заходе
   useEffect(() => {
     let cancelled = false;
 
@@ -228,7 +228,7 @@ export default function CirclePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setCircle, setMessages, setQuotaFromApi]);
 
-  // начальная загрузка сообщений (одиночный запрос)
+  // начальная загрузка сообщений (одноразовый запрос)
   useEffect(() => {
     if (!circle || notMember) {
       setMessages([]);
@@ -498,8 +498,12 @@ export default function CirclePage() {
   );
 
   useEffect(() => {
-    adjustComposerHeight();
-  }, [adjustComposerHeight, composerValue]);
+    const node = composerRef.current;
+    if (!node) return;
+    node.style.height = 'auto';
+    const nextHeight = Math.min(node.scrollHeight, 200);
+    node.style.height = `${nextHeight}px`;
+  }, [composerValue]);
 
   // автофокус композера на десктопе
   useEffect(() => {
@@ -632,7 +636,7 @@ export default function CirclePage() {
   } else {
     pageContent = (
       <div className="flex min-h-screen flex-col gap-3 py-3 sm:gap-4 sm:py-4">
-        {/* Шапка — максимально компактно */}
+        {/* Шапка — компактно */}
         <section className="app-panel p-3 sm:p-6">
           <div className="space-y-3 sm:space-y-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -644,7 +648,6 @@ export default function CirclePage() {
                   {circleTitle}
                 </h1>
 
-                {/* Одна лаконичная строка вместо кучи цифр */}
                 <p className="text-xs text-slate-300 sm:text-sm">
                   {timerLabel
                     ? `${timerLabel} · ${t('circle_member_count_label', {
@@ -687,7 +690,6 @@ export default function CirclePage() {
               </div>
             </div>
 
-            {/* На мобиле только одна короткая фраза про правила */}
             <div className="flex items-center gap-3 rounded-2xl bg-slate-950/40 px-3 py-2 text-[11px] text-slate-200 sm:px-4 sm:py-3 sm:text-xs">
               <div className="flex h-8 w-8 items-center justify-center rounded-2xl bg-slate-900 text-base sm:h-9 sm:w-9">
                 🔒
@@ -697,7 +699,6 @@ export default function CirclePage() {
               </p>
             </div>
 
-            {/* более подробные подсказки — только на md+ */}
             {showQuotaOneLiner && (
               <div className="hidden text-xs text-slate-300 sm:block">
                 {t('circle_quota_one_liner')}
@@ -749,7 +750,6 @@ export default function CirclePage() {
               </button>
             </div>
 
-            {/* короткое напоминание вместо длинного текста */}
             <p className="text-[11px] text-slate-500 dark:text-slate-300 sm:text-xs">
               {t('messages_author_system')} напоминает: здесь спокойно,
               без обмена личными данными.
@@ -766,7 +766,6 @@ export default function CirclePage() {
               </p>
             )}
 
-            {/* квота – только на md+, чтобы не грузить мобилу цифрами */}
             {typeof dailyRemaining === 'number' &&
               typeof dailyLimit === 'number' &&
               (!isLimitReached ? (
