@@ -1,151 +1,78 @@
+// src/app/api/circles/join/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import type { PrismaClient } from '@prisma/client';
-import { CircleMembershipStatus } from '@prisma/client';
+import { prisma } from '@/lib/prisma'; // если путь другой — поправь импорт
 
-import { prisma } from '@/lib/prisma';
-import { getOrCreateDevice } from '@/lib/server/device';
-import { toCircleSummary } from '@/lib/server/serializers';
-import { computeCircleExpiry } from '@/lib/server/circles';
-import { DEVICE_HEADER_NAME } from '@/lib/device';
-import { ICEBREAKERS } from '@/data/icebreakers';
-import { countActiveMembers } from '@/lib/server/circleMembership';
+// 7 суток в мс — срок жизни круга по умолчанию
+const CIRCLE_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
+const DEFAULT_MAX_MEMBERS = 6;
 
-const DEFAULT_MAX_MEMBERS = 5;
-
-const normalizeText = (value: unknown) =>
-  typeof value === 'string' ? value.trim() : '';
-
-async function findJoinableCircle(
-  client: PrismaClient,
-  {
-    mood,
-    interest,
-    now,
-  }: { mood: string; interest: string; now: Date },
-) {
-  // Берём несколько самых старых активных кругов по этой теме
-  const candidates = await client.circle.findMany({
-    where: {
-      status: 'active',
-      expiresAt: { gt: now },
-      mood,
-      interest,
-    },
-    orderBy: { createdAt: 'asc' },
-    take: 5,
-  });
-
-  for (const circle of candidates) {
-    const memberCount = await countActiveMembers(circle.id, client);
-    if (memberCount < circle.maxMembers) {
-      return { circle, memberCount };
-    }
-  }
-
-  return null;
-}
-
-export async function POST(request: NextRequest) {
-  const body = await request.json().catch(() => null);
-  const mood = normalizeText(body?.mood);
-  const interest = normalizeText(body?.interest);
-
-  if (!mood || !interest) {
-    return NextResponse.json(
-      { ok: false, error: 'INVALID_PAYLOAD' },
-      { status: 400 },
-    );
-  }
-
+export async function POST(req: NextRequest) {
   try {
-    const { id: deviceId, isNew } = await getOrCreateDevice(request);
+    const body = await req.json().catch(() => null) as
+      | { mood?: string; interest?: string }
+      | null;
+
+    const mood = body?.mood?.trim();
+    const interest = body?.interest?.trim();
+
+    if (!mood || !interest) {
+      return NextResponse.json(
+        { error: 'mood_and_interest_required' },
+        { status: 400 },
+      );
+    }
+
+    // DeviceId — из заголовка и/или куки. Под это обычно заточен клиент.
+    const headerDeviceId = req.headers.get('x-device-id') ?? undefined;
+    const cookieDeviceId = req.cookies.get('deviceId')?.value ?? undefined;
+    const deviceId = headerDeviceId || cookieDeviceId;
+
+    if (!deviceId) {
+      return NextResponse.json(
+        { error: 'device_id_missing' },
+        { status: 400 },
+      );
+    }
+
     const now = new Date();
+    const expiresAt = new Date(now.getTime() + CIRCLE_LIFETIME_MS);
 
-    const result = await prisma.$transaction(async (tx) => {
-      // 1. Если этот девайс уже состоит в активном круге с тем же mood+interest – вернём его
-      const existingMembership = await tx.circleMembership.findFirst({
-        where: {
-          deviceId,
-          status: CircleMembershipStatus.active,
-          circle: {
-            status: 'active',
-            expiresAt: { gt: now },
-            mood,
-            interest,
-          },
+    // Убедимся, что Device существует (на случай, если /api/device не вызывался)
+    await prisma.device.upsert({
+      where: { id: deviceId },
+      update: {},
+      create: { id: deviceId },
+    });
+
+    // Ищем существующий активный круг по настроению/интересу,
+    // не истёкший и не переполненный
+    const existingCircle = await prisma.circle.findFirst({
+      where: {
+        mood,
+        interest,
+        status: 'active',
+        expiresAt: { gt: now },
+      },
+      include: {
+        memberships: {
+          where: { status: 'active' },
+          select: { id: true },
         },
-        include: { circle: true },
-        orderBy: { joinedAt: 'desc' },
-      });
+      },
+      orderBy: { createdAt: 'asc' },
+    });
 
-      if (existingMembership?.circle) {
-        const memberCount = await countActiveMembers(
-          existingMembership.circle.id,
-          tx,
-        );
+    let circle = existingCircle as
+      | (typeof existingCircle & { memberships: { id: string }[] })
+      | null;
 
-        return {
-          circle: existingMembership.circle,
-          memberCount,
-          isNewCircle: false,
-        };
-      }
+    if (circle && circle.memberships.length >= circle.maxMembers) {
+      circle = null;
+    }
 
-      // 2. Иначе пробуем присоединиться к уже существующему кругу
-      const joinable = await findJoinableCircle(tx, { mood, interest, now });
-
-      if (joinable) {
-        const memberships = await tx.circleMembership.findMany({
-          where: { circleId: joinable.circle.id, deviceId },
-          orderBy: { joinedAt: 'desc' },
-        });
-
-        const [latestMembership, ...olderMemberships] = memberships;
-
-        if (latestMembership) {
-          if (latestMembership.status !== CircleMembershipStatus.active) {
-            await tx.circleMembership.update({
-              where: { id: latestMembership.id },
-              data: { status: CircleMembershipStatus.active, leftAt: null },
-            });
-          }
-
-          if (olderMemberships.length) {
-            await tx.circleMembership.updateMany({
-              where: { id: { in: olderMemberships.map((membership) => membership.id) } },
-              data: { status: CircleMembershipStatus.left, leftAt: new Date() },
-            });
-          }
-        } else {
-          await tx.circleMembership.create({
-            data: {
-              circleId: joinable.circle.id,
-              deviceId,
-              status: CircleMembershipStatus.active,
-            },
-          });
-        }
-
-        const memberCount = await countActiveMembers(
-          joinable.circle.id,
-          tx,
-        );
-
-        return {
-          circle: joinable.circle,
-          memberCount,
-          isNewCircle: false,
-        };
-      }
-
-      // 3. Подходящего круга нет – создаём новый
-      const expiresAt = computeCircleExpiry(now);
-      const icebreaker =
-        ICEBREAKERS[Math.floor(Math.random() * ICEBREAKERS.length)] ??
-        ICEBREAKERS[0] ??
-        'Поделись, что сегодня тебя порадовало? ✨';
-
-      const circle = await tx.circle.create({
+    // Если нормального круга нет — создаём новый
+    if (!circle) {
+      circle = await prisma.circle.create({
         data: {
           mood,
           interest,
@@ -154,46 +81,85 @@ export async function POST(request: NextRequest) {
           startsAt: now,
           endsAt: expiresAt,
           expiresAt,
-          icebreaker,
+        },
+        include: {
+          memberships: {
+            where: { status: 'active' },
+            select: { id: true },
+          },
         },
       });
+    }
 
-      await tx.circleMembership.create({
-        data: {
-          circleId: circle.id,
-          deviceId,
-          status: CircleMembershipStatus.active,
-        },
-      });
-
-      return { circle, memberCount: 1, isNewCircle: true };
-    });
-
-    // Подтягиваем историю сообщений круга
-    const messages = await prisma.message.findMany({
-      where: { circleId: result.circle.id },
-      orderBy: { createdAt: 'asc' },
-      include: {
-        author: true,
+    // На всякий случай пометим старые активные участия этого девайса как left
+    await prisma.circleMembership.updateMany({
+      where: {
+        deviceId,
+        status: 'active',
+        circleId: { not: circle.id },
+      },
+      data: {
+        status: 'left',
+        leftAt: now,
       },
     });
 
-    const response = NextResponse.json({
-      ok: true,
-      circle: toCircleSummary(result.circle, result.memberCount),
-      messages,
-      isNewCircle: result.isNewCircle,
+    // Записываем участие в выбранном круге (если уже вступали — просто оставим как есть)
+    await prisma.circleMembership.upsert({
+      where: {
+        // уникального индекса нет, поэтому используем искусственный композитный
+        // через @@index не получится — так что делаем через id/комбинацию:
+        // найдём первую запись, если есть, иначе создадим.
+        // Хак через composite key: circleId+deviceId
+        // Решим так: попробуем найти, потом create/update ниже.
+        id: await (async () => {
+          const existingMembership = await prisma.circleMembership.findFirst({
+            where: {
+              circleId: circle!.id,
+              deviceId,
+            },
+          });
+
+          return existingMembership?.id ?? `temp-${deviceId}-${circle!.id}`;
+        })(),
+      },
+      update: {
+        status: 'active',
+        leftAt: null,
+      },
+      create: {
+        circleId: circle.id,
+        deviceId,
+        status: 'active',
+      },
     });
 
-    if (isNew) {
-      response.headers.set(DEVICE_HEADER_NAME, deviceId);
-    }
+    // Сообщения круга (берём последние 100, чтобы что-то показать, если круг не новый)
+    const messages = await prisma.message.findMany({
+      where: { circleId: circle.id },
+      orderBy: { createdAt: 'asc' },
+      take: 100,
+    });
 
-    return response;
-  } catch (error) {
-    console.error('join error', error);
+    // Доп. поле remainingMs — фронт может подсосать его сразу
+    const remainingMs = Math.max(circle.expiresAt.getTime() - Date.now(), 0);
+
     return NextResponse.json(
-      { ok: false, error: 'SERVER_ERROR' },
+      {
+        circle: {
+          ...circle,
+          // Prisma не знает про дополнительное поле, но фронту удобно
+          remainingMs,
+        },
+        messages,
+        quota: null as unknown as null, // для совместимости если где-то ждут quota
+      },
+      { status: 200 },
+    );
+  } catch (error) {
+    console.error('[api/circles/join] failed', error);
+    return NextResponse.json(
+      { error: 'internal_error' },
       { status: 500 },
     );
   }
