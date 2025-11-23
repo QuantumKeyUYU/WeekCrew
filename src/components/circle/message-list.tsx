@@ -1,450 +1,228 @@
 'use client';
 
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { ReactNode } from 'react';
 import clsx from 'clsx';
 
-import { AVATAR_PRESETS } from '@/constants/avatars';
-import { useTranslation } from '@/i18n/useTranslation';
-import { blockUser, sendReport } from '@/lib/api/moderation';
-import { useAppStore } from '@/store/useAppStore';
 import type { CircleMessage } from '@/types';
 
-type ScrollBehaviorType = 'auto' | 'smooth';
-
-interface Props {
-  circleId?: string | null;
+interface MessageListProps {
+  circleId: string | null;
   messages: CircleMessage[];
-  currentDeviceId?: string | null;
-  isLoading?: boolean;
+  currentDeviceId: string | null;
+  isLoading: boolean;
   preamble?: ReactNode;
   className?: string;
 }
 
-const DAY_IN_MS = 24 * 60 * 60 * 1000;
+// простая утилита: один label на день
+const formatDateLabel = (iso: string) => {
+  if (!iso) return '';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
 
-const getAvatarEmoji = (key?: string | null) =>
-  AVATAR_PRESETS.find((preset) => preset.key === key)?.emoji ?? '🙂';
+  if (typeof window !== 'undefined' && 'Intl' in window) {
+    const today = new Date();
+    const diffDays = Math.floor(
+      (today.setHours(0, 0, 0, 0) - date.setHours(0, 0, 0, 0)) /
+        (1000 * 60 * 60 * 24),
+    );
 
-const haveMessagesChanged = (
-  prev: CircleMessage[],
-  next: CircleMessage[],
-) => {
-  if (prev.length !== next.length) return true;
-  if (prev.length === 0 && next.length === 0) return false;
+    if (diffDays === 0) return 'Сегодня';
+    if (diffDays === 1) return 'Вчера';
 
-  const prevMap = new Map(prev.map((message) => [message.id, message] as const));
-
-  for (const message of next) {
-    const matching = prevMap.get(message.id);
-    if (!matching) return true;
-
-    if (
-      matching.content !== message.content ||
-      matching.createdAt !== message.createdAt ||
-      matching.isSystem !== message.isSystem ||
-      matching.deviceId !== message.deviceId ||
-      matching.author?.id !== message.author?.id ||
-      matching.author?.nickname !== message.author?.nickname ||
-      matching.author?.avatarKey !== message.author?.avatarKey
-    ) {
-      return true;
-    }
+    const locale = navigator.language || 'ru-RU';
+    return date.toLocaleDateString(locale, {
+      day: 'numeric',
+      month: 'short',
+    });
   }
 
-  return false;
+  return date.toISOString().slice(0, 10);
+};
+
+const isSameDay = (a: string, b: string) => {
+  if (!a || !b) return false;
+  const da = new Date(a);
+  const db = new Date(b);
+  if (Number.isNaN(da.getTime()) || Number.isNaN(db.getTime())) return false;
+  return (
+    da.getFullYear() === db.getFullYear() &&
+    da.getMonth() === db.getMonth() &&
+    da.getDate() === db.getDate()
+  );
 };
 
 export const MessageList = ({
   circleId,
   messages,
   currentDeviceId,
-  isLoading = false,
+  isLoading,
   preamble,
   className,
-}: Props) => {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const lastScrollLength = useRef(0);
-  const lastMessageId = useRef<string | null>(null);
-  const previousCircleId = useRef<string | null>(circleId ?? null);
+}: MessageListProps) => {
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const lastCircleRef = useRef<string | null>(circleId);
 
-  const [isAtBottom, setIsAtBottom] = useState(true);
-  const [hasNewWhileAway, setHasNewWhileAway] = useState(false);
-  const [menuFor, setMenuFor] = useState<string | null>(null);
-  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
-  const [moderationBusy, setModerationBusy] = useState(false);
-
-  const t = useTranslation();
-  const language = useAppStore((state) => state.settings.language ?? 'ru');
-  const locale = language === 'ru' ? 'ru-RU' : 'en-US';
-  const removeMessagesByUser = useAppStore((state) => state.removeMessagesByUser);
-  const user = useAppStore((state) => state.user);
-  const blockedUserIds = useAppStore((state) => state.blockedUserIds);
-  const blockUserLocally = useAppStore((state) => state.blockUserLocally);
-
-  const dayFormatter = new Intl.DateTimeFormat(locale, {
-    day: 'numeric',
-    month: 'long',
-  });
-
-  const timeFormatter = new Intl.DateTimeFormat(locale, {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-
-  const fullTimestampFormatter = new Intl.DateTimeFormat(locale, {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-
-  const getDayChipLabel = (date: Date) => {
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const diffDays = Math.round(
-      (startOfDay.getTime() - today.getTime()) / DAY_IN_MS,
-    );
-
-    if (diffDays === 0) return t('messages_day_today');
-    if (diffDays === -1) return t('messages_day_yesterday');
-    return dayFormatter.format(date);
-  };
-
-  // Локальное состояние сообщений
-  const [liveMessages, setLiveMessages] = useState<CircleMessage[]>(messages);
-
-  // Обновляем список при смене круга
+  // автоскролл в самый низ при загрузке сообщений
   useEffect(() => {
-    const hasCircleChanged = previousCircleId.current !== circleId;
-    if (!hasCircleChanged) return;
-
-    previousCircleId.current = circleId ?? null;
-    setLiveMessages(messages);
-  }, [circleId, messages]);
-
-  // Синхронизируем локальные сообщения с данными из стора, чтобы обновления
-  // с других устройств появлялись сразу без дополнительного поллинга
-  useEffect(() => {
-    setLiveMessages((prev) =>
-      haveMessagesChanged(prev, messages) ? messages : prev,
-    );
-  }, [messages]);
-
-  const visibleMessages = useMemo(
-    () =>
-      liveMessages.filter((message) => {
-        const authorId = message.author?.id;
-        if (!authorId) return true;
-        return !blockedUserIds.includes(authorId);
-      }),
-    [blockedUserIds, liveMessages],
-  );
-
-  const scrollToBottom = useCallback((behavior: ScrollBehaviorType = 'auto') => {
-    const node = containerRef.current;
+    const node = scrollRef.current;
     if (!node) return;
-    node.scrollTo({ top: node.scrollHeight, behavior });
-  }, []);
 
-  useLayoutEffect(() => {
-    const prevLength = lastScrollLength.current;
-    const prevLastId = lastMessageId.current;
-    const nextLength = visibleMessages.length;
-    const node = containerRef.current;
-
-    if (!node) {
-      lastScrollLength.current = nextLength;
-      lastMessageId.current =
-        visibleMessages[nextLength - 1]?.id ?? null;
+    // если новый круг — всегда в самый низ
+    if (lastCircleRef.current !== circleId) {
+      lastCircleRef.current = circleId;
+      node.scrollTop = node.scrollHeight;
       return;
     }
 
-    const newestMessage = visibleMessages[nextLength - 1];
-    const isInitialLoad = prevLength === 0 && nextLength > 0;
-    const hasNewMessage = newestMessage && newestMessage.id !== prevLastId;
+    // просто новые сообщения — тоже скроллим (поведение Telegram/WhatsApp)
+    node.scrollTop = node.scrollHeight;
+  }, [circleId, messages.length]);
 
-    if (isInitialLoad) {
-      scrollToBottom('auto');
-      setIsAtBottom(true);
-      setHasNewWhileAway(false);
-    } else if (hasNewMessage && newestMessage) {
-      const isFromCurrentDevice =
-        newestMessage.deviceId && currentDeviceId
-          ? newestMessage.deviceId === currentDeviceId
-          : false;
+  const enhancedMessages = useMemo(() => {
+    if (!messages.length) return [];
 
-      if (isFromCurrentDevice) {
-        scrollToBottom('smooth');
-        setHasNewWhileAway(false);
-      } else if (isAtBottom) {
-        scrollToBottom('smooth');
-        setHasNewWhileAway(false);
-      } else {
-        setHasNewWhileAway(true);
-      }
-    }
-
-    lastScrollLength.current = nextLength;
-    lastMessageId.current = newestMessage?.id ?? null;
-    setMenuFor(null);
-  }, [currentDeviceId, isAtBottom, scrollToBottom, visibleMessages]);
-
-  const handleScroll = useCallback(() => {
-    const node = containerRef.current;
-    if (!node) return;
-
-    const threshold = 96;
-    const distanceFromBottom =
-      node.scrollHeight - (node.scrollTop + node.clientHeight);
-    const atBottom = distanceFromBottom <= threshold;
-
-    setIsAtBottom(atBottom);
-    if (atBottom) {
-      setHasNewWhileAway(false);
-    }
-  }, []);
-
-  const handleScrollToBottom = useCallback(() => {
-    const node = containerRef.current;
-    if (!node) return;
-
-    node.scrollTo({ top: node.scrollHeight, behavior: 'smooth' });
-    lastScrollLength.current = visibleMessages.length;
-    setIsAtBottom(true);
-    setHasNewWhileAway(false);
-  }, [visibleMessages.length]);
-
-  const handleReport = async (message: CircleMessage) => {
-    if (moderationBusy) return;
-    const targetId = message.author?.id;
-    if (!targetId || message.isSystem || user?.id === targetId) return;
-
-    setModerationBusy(true);
-    setActionFeedback(null);
-
-    try {
-      await sendReport({
-        targetUserId: targetId,
-        circleId: message.circleId,
-        messageId: message.id,
-      });
-      setActionFeedback(
-        'Жалоба отправлена. Спасибо, что помогаете сохранять уют',
+    return messages
+      .slice()
+      .sort(
+        (a, b) =>
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
       );
-    } catch (error) {
-      console.error(error);
-      setActionFeedback('Не удалось отправить жалобу');
-    } finally {
-      setModerationBusy(false);
-      setMenuFor(null);
-    }
-  };
+  }, [messages]);
 
-  const handleBlock = async (message: CircleMessage) => {
-    if (moderationBusy) return;
-    const targetId = message.author?.id;
-    if (!targetId || message.isSystem || user?.id === targetId) return;
-
-    setModerationBusy(true);
-    setActionFeedback(null);
-
-    try {
-      await blockUser({ targetUserId: targetId });
-      blockUserLocally(targetId);
-      removeMessagesByUser(targetId);
-      setActionFeedback(
-        'Пользователь скрыт, его сообщения больше не будут показываться',
-      );
-    } catch (error) {
-      console.error(error);
-      setActionFeedback('Не удалось выполнить действие');
-    } finally {
-      setModerationBusy(false);
-      setMenuFor(null);
-    }
-  };
+  const renderSkeleton = () => (
+    <div className="space-y-3">
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="flex gap-2">
+          <div className="h-8 w-8 rounded-full bg-slate-200/60 dark:bg-slate-700/70" />
+          <div className="flex-1 space-y-2">
+            <div className="h-3 w-1/2 rounded-full bg-slate-200/70 dark:bg-slate-700/80" />
+            <div className="h-3 w-3/4 rounded-full bg-slate-200/70 dark:bg-slate-700/80" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <div
-      ref={containerRef}
-      onScroll={handleScroll}
+      ref={scrollRef}
       className={clsx(
-        'relative flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto bg-transparent pr-1 sm:pr-2',
+        'flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain',
+        'scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-600/40 dark:scrollbar-thumb-slate-500/60',
         className,
       )}
-      aria-live="polite"
-      aria-busy={isLoading}
     >
-      {preamble}
+      <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 pb-4">
+        {/* верхняя подсказка / системный блок */}
+        {preamble && (
+          <div className="px-1 text-xs text-slate-500 dark:text-slate-300">
+            {preamble}
+          </div>
+        )}
 
-      {isLoading && visibleMessages.length === 0 && (
-        <p className="py-3 text-center text-xs text-[var(--text-secondary)]" role="status">
-          {t('messages_loading_state')}
-        </p>
-      )}
+        {isLoading && !enhancedMessages.length && (
+          <div className="px-1">{renderSkeleton()}</div>
+        )}
 
-      {!isLoading && visibleMessages.length === 0 && (
-        <p className="py-3 text-center text-sm text-[var(--text-secondary)]">{t('messages_empty_state')}</p>
-      )}
+        {!isLoading && !enhancedMessages.length && !preamble && (
+          <div className="px-1 pt-8 text-center text-xs text-slate-500 dark:text-slate-300">
+            Пока сообщений нет — напишите первое ✨
+          </div>
+        )}
 
-      {visibleMessages.map((message, index) => {
-        const isOwn = message.deviceId === currentDeviceId;
-        const isSystem = Boolean(message.isSystem);
+        {/* сами сообщения */}
+        <div className="flex flex-col gap-2 px-1 pb-2">
+          {enhancedMessages.map((message, index) => {
+            const previous = enhancedMessages[index - 1];
+            const showDateDivider =
+              !previous ||
+              !isSameDay(previous.createdAt, message.createdAt);
 
-        const authorName = isSystem
-          ? t('messages_author_system')
-          : message.author?.nickname
-          ? message.author.nickname
-          : isOwn
-          ? t('messages_you_label')
-          : 'Участник';
+            const isSelf =
+              !!currentDeviceId && message.deviceId === currentDeviceId;
+            const isSystem = message.isSystem;
 
-        const createdAt = new Date(message.createdAt);
-        const timeLabel = timeFormatter.format(createdAt);
-        const fullTimestamp = fullTimestampFormatter.format(createdAt);
-        const previous = visibleMessages[index - 1];
+            const createdAt = new Date(message.createdAt);
+            const timeLabel =
+              !Number.isNaN(createdAt.getTime()) &&
+              createdAt.toLocaleTimeString(undefined, {
+                hour: '2-digit',
+                minute: '2-digit',
+              });
 
-        const currentDayKey = createdAt.toDateString();
-        const previousDayKey = previous
-          ? new Date(previous.createdAt).toDateString()
-          : null;
-        const showDayDivider = currentDayKey !== previousDayKey;
+            return (
+              <div key={message.id}>
+                {showDateDivider && (
+                  <div className="my-3 flex justify-center">
+                    <span className="rounded-full bg-slate-900/5 px-3 py-1 text-[11px] font-medium text-slate-500 dark:bg-slate-900/70 dark:text-slate-300">
+                      {formatDateLabel(message.createdAt)}
+                    </span>
+                  </div>
+                )}
 
-        const canModerate = Boolean(
-          message.author?.id && !isOwn && !isSystem,
-        );
-        const avatarEmoji = getAvatarEmoji(message.author?.avatarKey);
-
-        return (
-          <div key={message.id} className="flex flex-col gap-3">
-            {showDayDivider && (
-              <div className="flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500">
-                <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
-                <div className="rounded-full border border-slate-200/80 bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600 shadow-sm dark:border-white/10 dark:bg-slate-800/70 dark:text-slate-100">
-                  {getDayChipLabel(createdAt)}
-                </div>
-                <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
-              </div>
-            )}
-
-            <div className={clsx('flex', isOwn ? 'justify-end' : 'justify-start')}>
-              {isSystem ? (
-                <p className="max-w-[90%] rounded-full bg-[var(--surface-subtle)] px-3 py-1.5 text-center text-[11px] font-medium text-[var(--text-secondary)]">
-                  {message.content}
-                </p>
-              ) : (
-                <article
-                  className={clsx(
-                    'relative max-w-[86%] rounded-2xl px-4 py-3 text-[15px] shadow-sm',
-                    isOwn
-                      ? 'bg-brand/15 text-slate-900 dark:bg-brand/25 dark:text-white'
-                      : 'bg-white text-slate-900 shadow-[0_10px_30px_rgba(15,23,42,0.05)] dark:bg-slate-800 dark:text-white',
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-2xl bg-white/70 text-lg dark:bg-white/10">
-                        {avatarEmoji}
-                      </span>
-                      <div className="leading-tight">
-                        <p className="text-sm font-semibold text-current">{authorName}</p>
-                        <time dateTime={message.createdAt} title={fullTimestamp} className="text-xs text-slate-500 dark:text-slate-300">
-                          {timeLabel}
-                        </time>
-                      </div>
+                {isSystem ? (
+                  <div className="mb-1 flex justify-center px-2">
+                    <div className="max-w-[80%] rounded-2xl bg-slate-900/5 px-3 py-1.5 text-center text-[11px] text-slate-500 dark:bg-slate-900/60 dark:text-slate-300">
+                      {message.content}
                     </div>
-                    {canModerate && (
-                      <div className="relative">
-                        <button
-                          type="button"
-                          onClick={() => setMenuFor((prev) => (prev === message.id ? null : message.id))}
-                          className="rounded-full px-2 py-1 text-xs font-semibold text-slate-500 transition hover:bg-white/60 dark:hover:bg-slate-700"
-                          aria-label="Действия"
+                  </div>
+                ) : (
+                  <div
+                    className={clsx(
+                      'mb-1 flex w-full gap-2 px-1',
+                      isSelf ? 'justify-end' : 'justify-start',
+                    )}
+                  >
+                    {!isSelf && (
+                      <div className="mt-5 h-7 w-7 flex-shrink-0 overflow-hidden rounded-full bg-slate-900/10 text-center text-sm leading-[28px] text-slate-500 dark:bg-slate-800 dark:text-slate-200">
+                        {message.author?.nickname?.[0]?.toUpperCase() ?? '🙂'}
+                      </div>
+                    )}
+
+                    <div
+                      className={clsx(
+                        'max-w-[78%] rounded-3xl px-3 py-2 text-sm leading-relaxed shadow-sm',
+                        isSelf
+                          ? 'rounded-br-sm bg-gradient-to-br from-indigo-500 to-violet-500 text-white dark:from-indigo-400 dark:to-violet-400'
+                          : 'rounded-bl-sm bg-slate-900/5 text-slate-900 dark:bg-slate-800 dark:text-slate-50',
+                      )}
+                    >
+                      {!isSelf && message.author?.nickname && (
+                        <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-300">
+                          {message.author.nickname}
+                        </p>
+                      )}
+                      <p className="whitespace-pre-wrap break-words">
+                        {message.content}
+                      </p>
+                      {timeLabel && (
+                        <p
+                          className={clsx(
+                            'mt-1 text-[10px]',
+                            isSelf
+                              ? 'text-white/70'
+                              : 'text-slate-400 dark:text-slate-400',
+                          )}
                         >
-                          ⋯
-                        </button>
-                        {menuFor === message.id && (
-                          <div className="absolute right-0 top-8 z-10 w-44 rounded-xl border border-slate-200/80 bg-white p-2 text-left text-sm shadow-lg dark:border-white/10 dark:bg-slate-900">
-                            <button
-                              type="button"
-                              onClick={() => handleReport(message)}
-                              className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-slate-700 transition hover:bg-slate-100 disabled:opacity-60 dark:text-slate-100 dark:hover:bg-slate-800/70"
-                              disabled={moderationBusy}
-                            >
-                              <span>Пожаловаться</span>
-                              <span aria-hidden>⚠️</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleBlock(message)}
-                              className="mt-1 flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-rose-700 transition hover:bg-rose-50 disabled:opacity-60 dark:text-rose-200 dark:hover:bg-rose-500/10"
-                              disabled={moderationBusy}
-                            >
-                              <span>Скрыть пользователя</span>
-                              <span aria-hidden>🚫</span>
-                            </button>
-                          </div>
-                        )}
+                          {timeLabel}
+                        </p>
+                      )}
+                    </div>
+
+                    {isSelf && (
+                      <div className="mt-5 h-7 w-7 flex-shrink-0 overflow-hidden rounded-full bg-indigo-500/80 text-center text-xs font-semibold leading-[28px] text-white dark:bg-indigo-400">
+                        Я
                       </div>
                     )}
                   </div>
-
-                  <p className="mt-2 whitespace-pre-wrap leading-snug text-base/[1.45] text-current">
-                    {message.content}
-                  </p>
-                </article>
-              )}
-            </div>
-          </div>
-        );
-      })}
-
-      {(!isAtBottom || hasNewWhileAway) && (
-        <button
-          type="button"
-          onClick={handleScrollToBottom}
-          className="sticky bottom-2 mr-1 mt-2 inline-flex self-end items-center gap-1 rounded-full bg-slate-900/80 px-3 py-1.5 text-xs font-semibold text-white shadow-lg shadow-black/30 backdrop-blur transition hover:bg-slate-900 sm:mr-2"
-          aria-label={
-            hasNewWhileAway
-              ? t('messages_scroll_new')
-              : t('messages_scroll_bottom')
-          }
-        >
-          <span>
-            {hasNewWhileAway
-              ? t('messages_scroll_new_short')
-              : t('messages_scroll_bottom_short')}
-          </span>
-          <span aria-hidden>↓</span>
-        </button>
-      )}
-
-      {isLoading && visibleMessages.length > 0 && (
-        <div className="flex justify-center pb-2 text-xs text-slate-400 dark:text-slate-500">
-          {t('messages_loading_state')}
+                )}
+              </div>
+            );
+          })}
         </div>
-      )}
-
-      {actionFeedback && (
-        <div className="sticky bottom-2 flex justify-start text-xs text-slate-500 dark:text-slate-300">
-          <span className="rounded-full bg-white/80 px-3 py-1 shadow-sm dark:bg-slate-800/70">
-            {actionFeedback}
-          </span>
-        </div>
-      )}
+      </div>
     </div>
   );
 };
