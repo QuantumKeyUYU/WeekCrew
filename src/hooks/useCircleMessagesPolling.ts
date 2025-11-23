@@ -5,9 +5,9 @@ type UseCircleMessagesPollingResult = {
 };
 
 /**
- * ВРЕМЕННЫЙ HOT-FIX:
- * Полностью отключаем поллинг, чтобы остановить флуд запросов
- * и мерцание UI. Потом можно будет вернуть аккуратный long-poll.
+ * ВРЕМЕННО: поллинг выключен.
+ * Никаких дополнительных запросов к /messages, пока не решим
+ * как именно хотим делать real-time.
  */
 export function useCircleMessagesPolling(
   _circleId: string | null,
