@@ -37,7 +37,6 @@ import { getProfile } from '@/lib/api/profile';
 import { getCircleWeekPhase } from '@/lib/circle-week-phase';
 import { getOrCreateDeviceId, resetDeviceId } from '@/lib/device';
 
-import { useCircleMessagesPolling } from '@/hooks/useCircleMessagesPolling';
 import { primaryCtaClass } from '@/styles/tokens';
 import { useAppStore } from '@/store/useAppStore';
 
@@ -93,6 +92,7 @@ export default function CirclePage() {
   const [remainingMs, setRemainingMs] = useState<number | null>(
     circle?.remainingMs ?? null,
   );
+
   const isCircleExpired = Boolean(
     circle?.isExpired || (remainingMs !== null && remainingMs <= 0),
   );
@@ -176,135 +176,6 @@ export default function CirclePage() {
     setQuotaFromApi(null);
   }, [circle?.id, setQuotaFromApi]);
 
-  const handleAccessRevoked = useCallback(() => {
-    void leaveCircleApi().catch((error) => {
-      console.warn('Failed to cleanup circle after access revoked', error);
-    });
-
-    setNotMember(true);
-    setCircle(null);
-    setMessages([]);
-    setQuotaFromApi(null);
-
-    resetDeviceId();
-    clearSession();
-    clearCircleSelection();
-  }, [clearSession, setCircle, setMessages, setQuotaFromApi]);
-
-  // старт круга при заходе
-  useEffect(() => {
-    let cancelled = false;
-
-    const startFreshCircle = async () => {
-      setLoadingCircle(true);
-      setMessages([]);
-
-      try {
-        const storedSelection = loadCircleSelection();
-        const fallbackMood = MOOD_OPTIONS[0]?.key ?? 'default';
-        const fallbackInterest =
-          LANGUAGE_INTERESTS[0]?.id ??
-          Object.keys(INTERESTS_MAP)[0] ??
-          'default';
-
-        const response = await joinCircle({
-          mood: storedSelection?.mood ?? fallbackMood,
-          interest: storedSelection?.interestId ?? fallbackInterest,
-        });
-
-        if (cancelled) return;
-
-        setCircle(response.circle);
-        setMessages(response.messages);
-        setQuotaFromApi(null);
-        setNotMember(false);
-        lastCircleIdRef.current = response.circle.id;
-      } catch (error) {
-        if (!cancelled) {
-          console.error('Failed to start a fresh circle', error);
-          setCircle(null);
-          setMessages([]);
-        }
-      } finally {
-        if (!cancelled) {
-          setLoadingCircle(false);
-        }
-      }
-    };
-
-    void startFreshCircle();
-
-    return () => {
-      cancelled = true;
-      void leaveCircleApi().catch((err) => {
-        console.warn('Failed to delete circle on exit', err);
-      });
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setCircle, setMessages, setQuotaFromApi]);
-
-  // начальная загрузка сообщений
-  useEffect(() => {
-    if (!circle || notMember) {
-      setMessages([]);
-      setMessagesLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-
-    const loadMessages = async () => {
-      setMessagesLoading(true);
-
-      try {
-        const { messages: incoming, quota, memberCount } =
-          await getCircleMessages({ circleId: circle.id });
-
-        if (cancelled) return;
-
-        setMessages(incoming);
-        setQuotaFromApi(quota ?? null);
-
-        if (typeof memberCount === 'number') {
-          updateCircle((prev) => {
-            if (!prev || prev.id !== circle.id) return prev;
-            return { ...prev, memberCount };
-          });
-        }
-      } catch (error) {
-        if (!cancelled) {
-          console.error('Failed to fetch circle messages', error);
-        }
-      } finally {
-        if (!cancelled) {
-          setMessagesLoading(false);
-        }
-      }
-    };
-
-    void loadMessages();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    circle,
-    notMember,
-    setMessages,
-    setMessagesLoading,
-    setQuotaFromApi,
-    updateCircle,
-  ]);
-
-  // long-poll обновления
-  const { notMember: pollingNotMember } = useCircleMessagesPolling(circleId);
-
-  useEffect(() => {
-    if (pollingNotMember) {
-      handleAccessRevoked();
-    }
-  }, [pollingNotMember, handleAccessRevoked]);
-
   const handleStartMatching = async () => {
     try {
       await leaveCircleApi();
@@ -360,7 +231,6 @@ export default function CirclePage() {
   const adjustComposerHeight = useCallback(() => {
     const node = composerRef.current;
     if (!node) return;
-
     node.style.height = 'auto';
     const nextHeight = Math.min(node.scrollHeight, 200);
     node.style.height = `${nextHeight}px`;
@@ -533,7 +403,7 @@ export default function CirclePage() {
     adjustComposerHeight();
   }, [adjustComposerHeight, composerValue]);
 
-  // автофокус композера (только десктоп)
+  // автофокус композера на десктопе
   useEffect(() => {
     if (messagesLoading || composerValue || !circleId) return;
 
@@ -609,6 +479,30 @@ export default function CirclePage() {
     return 'circle_host_final';
   })();
 
+  const systemPreamble = (
+    <div className="space-y-4">
+      {circle?.icebreaker && (
+        <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-4 py-4 text-amber-900 dark:text-amber-50">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-700/80 dark:text-amber-100/80">
+            {t('circle_icebreaker_title')}
+          </p>
+          <p className="mt-1 text-base font-semibold leading-snug text-slate-900 dark:text-white sm:text-lg">
+            {circle.icebreaker}
+          </p>
+          <p className="mt-1 text-xs text-amber-700/90 dark:text-amber-100/70">
+            {t('circle_icebreaker_hint')} ✨
+          </p>
+        </div>
+      )}
+
+      <div className="rounded-2xl border border-dashed border-[var(--border-subtle)] bg-[var(--surface-subtle)] p-4 text-xs leading-relaxed text-slate-600 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200 sm:text-sm">
+        {systemMessageLines.map((line) => (
+          <p key={line}>{line}</p>
+        ))}
+      </div>
+    </div>
+  );
+
   let pageContent: JSX.Element;
 
   if (!circle && !loadingCircle) {
@@ -638,63 +532,9 @@ export default function CirclePage() {
       </div>
     );
   } else {
-    // прелюдия чата
-    const messagePreamble = (
-      <div className="space-y-4">
-        {circle.icebreaker && (
-          <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-4 py-4 text-amber-900 dark:text-amber-50">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-700/80 dark:text-amber-100/80">
-              {t('circle_icebreaker_title')}
-            </p>
-            <p className="mt-1 text-base font-semibold leading-snug text-slate-900 dark:text-white sm:text-lg">
-              {circle.icebreaker}
-            </p>
-            <p className="mt-1 text-xs text-amber-700/90 dark:text-amber-100/70">
-              {t('circle_icebreaker_hint')} ✨
-            </p>
-          </div>
-        )}
-
-        <div className="rounded-2xl border border-dashed border-[var(--border-subtle)] bg-[var(--surface-subtle)] p-4 text-xs leading-relaxed text-slate-600 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200 sm:text-sm">
-          {systemMessageLines.map((line) => (
-            <p key={line}>{line}</p>
-          ))}
-        </div>
-
-        {notMember && (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50/90 p-4 text-xs text-amber-900 shadow-none dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100 sm:text-sm">
-            <p className="font-semibold">{t('circle_not_member_notice')}</p>
-            <button
-              type="button"
-              onClick={handleStartMatching}
-              className="mt-3 inline-flex items-center justify-center rounded-full border border-transparent bg-amber-500 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-sm transition hover:bg-amber-600"
-            >
-              {t('circle_not_member_cta')}
-            </button>
-          </div>
-        )}
-
-        {isCircleExpired && (
-          <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] p-4 text-xs leading-relaxed text-slate-600 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200 sm:text-sm">
-            <p className="font-semibold text-slate-900 dark:text-white">
-              {t('circle_expired_notice_title')}
-            </p>
-            <p className="mt-1">{t('circle_expired_notice_subtitle')}</p>
-            <button
-              type="button"
-              onClick={handleStartMatching}
-              className={`${primaryCtaClass} mt-3 px-4 py-2 text-xs`}
-            >
-              {t('circle_expired_start_new')}
-            </button>
-          </div>
-        )}
-      </div>
-    );
-
     pageContent = (
       <div className="flex min-h-screen flex-col gap-3 py-3 sm:gap-4 sm:py-4">
-        {/* Шапка круга — максимально лёгкая на мобиле */}
+        {/* Шапка */}
         <section className="app-panel p-3 sm:p-6">
           <div className="space-y-3 sm:space-y-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -708,26 +548,16 @@ export default function CirclePage() {
                 <p className="text-xs text-slate-300 dark:text-slate-300 sm:text-sm">
                   {t('circle_header_subtitle')}
                 </p>
-
                 {timerLabel && (
                   <p className="text-xs font-medium text-slate-200 sm:text-sm">
                     {timerLabel}
                   </p>
                 )}
-
                 <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-300 sm:text-xs">
                   <span>
                     {t('circle_member_count_label', { count: membersCount })}
                   </span>
-                  <span
-                    className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-500/50 text-[9px] text-slate-300 dark:border-white/20"
-                    title={t('circle_members_tooltip')}
-                    aria-label={t('circle_members_tooltip')}
-                  >
-                    i
-                  </span>
                 </div>
-
                 <div className="mt-2 flex flex-wrap gap-2 text-[11px] sm:mt-3 sm:text-xs">
                   <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-slate-50">
                     {timerChipText}
@@ -736,8 +566,17 @@ export default function CirclePage() {
                     {t('circle_members_chip', { count: membersCount })}
                   </span>
                 </div>
+                {showQuotaOneLiner && (
+                  <p className="text-[11px] text-slate-300 sm:text-xs">
+                    {t('circle_quota_one_liner')}
+                  </p>
+                )}
+                {circleHostKey && (
+                  <p className="text-[11px] text-slate-300 sm:text-xs">
+                    {t(circleHostKey)}
+                  </p>
+                )}
               </div>
-
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -759,7 +598,6 @@ export default function CirclePage() {
               </div>
             </div>
 
-            {/* маленький блок про безопасное общение — только одна строка на мобиле */}
             <div className="flex items-center gap-3 rounded-2xl bg-slate-950/40 px-3 py-2 text-[11px] text-slate-200 sm:px-4 sm:py-3 sm:text-xs">
               <div className="flex h-8 w-8 items-center justify-center rounded-2xl bg-slate-900 text-base sm:h-9 sm:w-9">
                 🔒
@@ -768,72 +606,10 @@ export default function CirclePage() {
                 {t('circle_rules_summary')}
               </p>
             </div>
-
-            {/* развёрнутые блоки — только md+ */}
-            <div className="hidden gap-3 rounded-3xl bg-slate-950/40 p-4 text-slate-100 md:grid md:grid-cols-2">
-              <div className="space-y-2">
-                <p className="text-[12px] font-semibold uppercase tracking-[0.24em] text-slate-400">
-                  {t('circle_rules_quick')}
-                </p>
-                <ul className="grid gap-2 text-sm text-slate-100/90">
-                  {t('rules_modal_points')
-                    .split('|')
-                    .map((rule, index) => (
-                      <li key={rule} className="flex gap-3">
-                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-slate-200">
-                          {index + 1}
-                        </span>
-                        <span>{rule}</span>
-                      </li>
-                    ))}
-                </ul>
-              </div>
-              <div className="flex flex-col justify-between gap-3 rounded-2xl border border-white/10 bg-slate-950/40 p-4">
-                <div className="space-y-1">
-                  <p className="text-[12px] font-semibold uppercase tracking-[0.24em] text-slate-400">
-                    {t('circle_quota_label')}
-                  </p>
-                  {typeof dailyRemaining === 'number' &&
-                  typeof dailyLimit === 'number' ? (
-                    <>
-                      <p className="text-sm font-semibold text-slate-50">
-                        {t('circle_quota_remaining', { count: dailyRemaining })}
-                      </p>
-                      <p className="text-xs text-slate-300">
-                        {t('circle_quota_total', { count: dailyLimit })}
-                      </p>
-                    </>
-                  ) : (
-                    <p className="text-sm text-slate-300">
-                      {t('circle_quota_unknown')}
-                    </p>
-                  )}
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-xs text-slate-200">
-                  <p className="font-semibold">{t('circle_pace_tip_title')}</p>
-                  <p className="mt-1 leading-relaxed">
-                    {t('circle_pace_tip_body')}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {circleHostKey && (
-              <div className="hidden rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-sm text-slate-200 sm:block">
-                <p className="font-semibold">{t('circle_host_label')}</p>
-                <p className="leading-relaxed">{t(circleHostKey)}</p>
-              </div>
-            )}
-
-            {showQuotaOneLiner && (
-              <p className="text-[11px] text-slate-300 sm:text-xs">
-                {t('circle_quota_one_liner')}
-              </p>
-            )}
           </div>
         </section>
 
-        {/* Чат-панель */}
+        {/* Чат */}
         <section className="app-panel flex min-h-[320px] flex-1 flex-col gap-3 p-3 sm:min-h-[360px] sm:p-4">
           <div className="min-h-[220px] flex-1 overflow-y-auto rounded-3xl bg-[var(--surface-subtle)] sm:min-h-[260px]">
             <MessageList
@@ -841,7 +617,7 @@ export default function CirclePage() {
               messages={messages}
               currentDeviceId={currentDeviceId}
               isLoading={Boolean(circle && messagesLoading)}
-              preamble={messagePreamble}
+              preamble={systemPreamble}
               className="p-3 sm:p-6"
             />
           </div>
