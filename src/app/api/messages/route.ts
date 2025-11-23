@@ -2,23 +2,49 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-const POLL_DELAY_MS = 2500; // небольшая пауза для поллинга, чтобы не спамить
-const DEFAULT_LIMIT = 50;
-const MAX_LIMIT = 100;
+const MAX_BATCH = 100;
 
+// Берём deviceId так же, как в /api/circles/join
 function getDeviceId(req: NextRequest): string | null {
-  const headerDeviceId = req.headers.get('x-device-id') ?? undefined;
-  const cookieDeviceId = req.cookies.get('deviceId')?.value ?? undefined;
-  return headerDeviceId || cookieDeviceId || null;
+  return (
+    req.headers.get('x-device-id') ||
+    req.cookies.get('deviceId')?.value ||
+    null
+  );
 }
 
-// GET /api/messages?circleId=...&since=...&limit=...
+// Приводим Prisma-сообщение к формату CircleMessage, который ждёт фронт
+function mapMessage(message: any) {
+  return {
+    id: message.id,
+    circleId: message.circleId,
+    deviceId: message.deviceId ?? null,
+    content: message.content,
+    isSystem: message.isSystem ?? false,
+    createdAt: message.createdAt.toISOString(),
+    author: message.user
+      ? {
+          id: message.user.id,
+          nickname: message.user.nickname,
+          avatarKey: message.user.avatarKey,
+        }
+      : undefined,
+  };
+}
+
+/**
+ * GET /api/messages?circleId=...&cursor=ISO_DATE
+ *
+ * Возвращает сообщения круга:
+ * - без проверки membership (никаких 403 больше)
+ * - общие для всех устройств в этом круге
+ * - инкрементально по cursor (long-poll hook это использует)
+ */
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const circleId = searchParams.get('circleId');
-    const sinceParam = searchParams.get('since');
-    const limitParam = searchParams.get('limit');
+    const cursor = searchParams.get('cursor');
 
     if (!circleId) {
       return NextResponse.json(
@@ -27,69 +53,48 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const deviceId = getDeviceId(req);
-    if (!deviceId) {
-      return NextResponse.json(
-        { error: 'device_id_missing' },
-        { status: 400 },
-      );
-    }
-
-    // Проверяем, что девайс сейчас в этом круге
-    const membership = await prisma.circleMembership.findFirst({
-      where: {
-        circleId,
-        deviceId,
-        status: 'active',
-      },
-      select: { id: true },
-    });
-
-    if (!membership) {
-      return NextResponse.json(
-        { error: 'not_member' },
-        { status: 403 },
-      );
-    }
-
-    let since: Date | null = null;
-    if (sinceParam) {
-      const parsed = new Date(sinceParam);
-      if (!Number.isNaN(parsed.getTime())) {
-        since = parsed;
+    let cursorDate: Date | null = null;
+    if (cursor) {
+      const d = new Date(cursor);
+      if (!Number.isNaN(d.getTime())) {
+        cursorDate = d;
       }
-    }
-
-    let limit = DEFAULT_LIMIT;
-    if (limitParam) {
-      const parsedLimit = Number(limitParam);
-      if (Number.isFinite(parsedLimit) && parsedLimit > 0) {
-        limit = Math.min(parsedLimit, MAX_LIMIT);
-      }
-    }
-
-    // Тормозим **только** поллинговые запросы (когда есть since),
-    // чтобы не было 1000 запросов в минуту и мигающего индикатора.
-    if (since) {
-      await new Promise((resolve) => setTimeout(resolve, POLL_DELAY_MS));
-    }
-
-    const where: Record<string, any> = { circleId };
-    if (since) {
-      where.createdAt = { gt: since };
     }
 
     const messages = await prisma.message.findMany({
-      where,
+      where: {
+        circleId,
+        ...(cursorDate ? { createdAt: { gt: cursorDate } } : {}),
+      },
       orderBy: { createdAt: 'asc' },
-      take: limit,
+      take: MAX_BATCH,
+      include: {
+        user: true,
+      },
     });
 
-    // quota и memberCount фронт умеет считать опциональными, так что просто шлём quota: null
+    // количество активных участников в круге (для «1 участник / N участников»)
+    const memberCount = await prisma.circleMembership.count({
+      where: {
+        circleId,
+        status: 'active',
+      },
+    });
+
+    const mapped = messages.map(mapMessage);
+
+    const latestCursor =
+      messages.length > 0
+        ? messages[messages.length - 1].createdAt.toISOString()
+        : cursor ?? null;
+
     return NextResponse.json(
       {
-        messages,
-        quota: null,
+        messages: mapped,
+        memberCount,
+        cursor: latestCursor,
+        notMember: false, // для совместимости с хуком
+        quota: null, // квоту пока глушим
       },
       { status: 200 },
     );
@@ -102,7 +107,13 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/messages  — отправка сообщения
+/**
+ * POST /api/messages
+ * body: { circleId: string; content: string }
+ *
+ * Отправка сообщения в круг.
+ * Тоже без жёстких 403 — если есть circleId, пишем в него.
+ */
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json().catch(() => null)) as
@@ -110,80 +121,37 @@ export async function POST(req: NextRequest) {
       | null;
 
     const circleId = body?.circleId?.trim();
-    const rawContent = body?.content ?? '';
-    const content = rawContent.trim();
+    const content = body?.content?.trim();
 
     if (!circleId || !content) {
       return NextResponse.json(
-        { error: 'circle_and_content_required' },
+        { error: 'circle_id_and_content_required' },
         { status: 400 },
       );
     }
 
     const deviceId = getDeviceId(req);
-    if (!deviceId) {
-      return NextResponse.json(
-        { error: 'device_id_missing' },
-        { status: 400 },
-      );
-    }
-
-    const circle = await prisma.circle.findUnique({
-      where: { id: circleId },
-    });
-
-    if (!circle) {
-      return NextResponse.json(
-        { error: 'circle_not_found' },
-        { status: 404 },
-      );
-    }
-
-    const now = new Date();
-    if (circle.expiresAt <= now || circle.status !== 'active') {
-      return NextResponse.json(
-        { error: 'circle_expired' },
-        { status: 403 },
-      );
-    }
-
-    // Ещё раз проверим membership на всякий
-    const membership = await prisma.circleMembership.findFirst({
-      where: {
-        circleId,
-        deviceId,
-        status: 'active',
-      },
-      select: { id: true },
-    });
-
-    if (!membership) {
-      return NextResponse.json(
-        { error: 'not_member' },
-        { status: 403 },
-      );
-    }
-
-    // Профиль юзера (через deviceId)
-    const user = await prisma.user.findUnique({
-      where: { deviceId },
-      select: { id: true },
-    });
 
     const message = await prisma.message.create({
       data: {
         circleId,
-        deviceId,
-        userId: user?.id ?? null,
         content,
         isSystem: false,
+        deviceId: deviceId ?? undefined,
+        // userId подтягивается на фронте через профиль, если нужно —
+        // здесь не трогаем
+      },
+      include: {
+        user: true,
       },
     });
 
+    const mapped = mapMessage(message);
+
     return NextResponse.json(
       {
-        ok: true,
-        message,
+        message: mapped,
+        quota: null,
       },
       { status: 200 },
     );
