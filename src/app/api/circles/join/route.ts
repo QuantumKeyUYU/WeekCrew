@@ -2,8 +2,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-const CIRCLE_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
+const CIRCLE_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000; // 7 дней
 const DEFAULT_MAX_MEMBERS = 6;
+
+function getDeviceId(req: NextRequest): string | null {
+  const headerDeviceId = req.headers.get('x-device-id') ?? undefined;
+  const cookieDeviceId = req.cookies.get('deviceId')?.value ?? undefined;
+  return headerDeviceId || cookieDeviceId || null;
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,9 +27,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const headerDeviceId = req.headers.get('x-device-id') ?? undefined;
-    const cookieDeviceId = req.cookies.get('deviceId')?.value ?? undefined;
-    const deviceId = headerDeviceId || cookieDeviceId;
+    const deviceId = getDeviceId(req);
 
     if (!deviceId) {
       return NextResponse.json(
@@ -35,42 +39,27 @@ export async function POST(req: NextRequest) {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + CIRCLE_LIFETIME_MS);
 
+    // Гарантируем наличие Device
     await prisma.device.upsert({
       where: { id: deviceId },
       update: {},
       create: { id: deviceId },
     });
 
-    // ищем живой круг по настроению/интересу
-    const existingCircle = await prisma.circle.findFirst({
-      where: {
+    // ✅ ВСЕГДА создаём новый круг — никаких шарингов по настроению/интересу
+    const circle = await prisma.circle.create({
+      data: {
         mood,
         interest,
         status: 'active',
-        expiresAt: { gt: now },
+        maxMembers: DEFAULT_MAX_MEMBERS,
+        startsAt: now,
+        endsAt: expiresAt,
+        expiresAt,
       },
-      orderBy: { createdAt: 'asc' },
     });
 
-    let circle = existingCircle;
-    let isNewCircle = false;
-
-    if (!circle) {
-      isNewCircle = true;
-      circle = await prisma.circle.create({
-        data: {
-          mood,
-          interest,
-          status: 'active',
-          maxMembers: DEFAULT_MAX_MEMBERS,
-          startsAt: now,
-          endsAt: expiresAt,
-          expiresAt,
-        },
-      });
-    }
-
-    // помечаем другие участия девайса как left
+    // Помечаем старые активные участия этого девайса как left
     await prisma.circleMembership.updateMany({
       where: {
         deviceId,
@@ -83,7 +72,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // текущее участие в этом круге
+    // Создаём (или обновляем) участие в НОВОМ круге
     const existingMembership = await prisma.circleMembership.findFirst({
       where: {
         circleId: circle.id,
@@ -94,7 +83,10 @@ export async function POST(req: NextRequest) {
     if (existingMembership) {
       await prisma.circleMembership.update({
         where: { id: existingMembership.id },
-        data: { status: 'active', leftAt: null },
+        data: {
+          status: 'active',
+          leftAt: null,
+        },
       });
     } else {
       await prisma.circleMembership.create({
@@ -106,46 +98,23 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // считаем активных участников
-    const activeMembers = await prisma.circleMembership.count({
-      where: {
-        circleId: circle.id,
-        status: 'active',
-      },
-    });
-
-    const remainingMs = Math.max(circle.expiresAt.getTime() - Date.now(), 0);
-    const isExpired =
-      circle.status !== 'active' || circle.expiresAt.getTime() <= Date.now();
-
+    // Новый круг – сообщений пока нет, но на будущее оставляем
     const messages = await prisma.message.findMany({
       where: { circleId: circle.id },
       orderBy: { createdAt: 'asc' },
       take: 100,
     });
 
+    const remainingMs = Math.max(circle.expiresAt.getTime() - Date.now(), 0);
+
     return NextResponse.json(
       {
-        ok: true,
-        isNewCircle,
         circle: {
-          id: circle.id,
-          mood: circle.mood,
-          interest: circle.interest,
-          status: circle.status,
-          maxMembers: circle.maxMembers,
-          startsAt: circle.startsAt,
-          endsAt: circle.endsAt,
-          expiresAt: circle.expiresAt,
-          icebreaker: circle.icebreaker,
-          createdAt: circle.createdAt,
-          updatedAt: circle.updatedAt,
-          memberCount: activeMembers,
+          ...circle,
           remainingMs,
-          isExpired,
         },
         messages,
-        quota: null,
+        quota: null as const,
       },
       { status: 200 },
     );
