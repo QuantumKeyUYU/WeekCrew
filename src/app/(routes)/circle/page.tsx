@@ -177,8 +177,6 @@ export default function CirclePage() {
   }, [circle?.id, setQuotaFromApi]);
 
   const handleAccessRevoked = useCallback(() => {
-    // сейчас /api/messages больше не даёт notMember/403,
-    // но оставляем на будущее
     void leaveCircleApi().catch((error) => {
       console.warn('Failed to cleanup circle after access revoked', error);
     });
@@ -535,7 +533,7 @@ export default function CirclePage() {
     adjustComposerHeight();
   }, [adjustComposerHeight, composerValue]);
 
-  // автофокус композера (на десктопе)
+  // автофокус композера (только десктоп)
   useEffect(() => {
     if (messagesLoading || composerValue || !circleId) return;
 
@@ -617,7 +615,7 @@ export default function CirclePage() {
     pageContent = (
       <div className="space-y-6">
         {notMember && (
-          <div className="rounded-[2rem] border border-amber-200 bg-amber-50/90 p-5 text-center text-amber-900 shadow-sm dark:border-amber-400/40 dark:bg-amber-500/10 dark:text-amber-100">
+          <div className="rounded-3xl border border-amber-200 bg-amber-50/90 p-5 text-center text-amber-900 shadow-sm dark:border-amber-400/40 dark:bg-amber-500/10 dark:text-amber-100">
             <p className="text-sm font-semibold sm:text-base">
               {t('circle_not_member_notice')}
             </p>
@@ -640,7 +638,7 @@ export default function CirclePage() {
       </div>
     );
   } else {
-    // preamble чата: айсбрейкер + тёплый welcome + спец-состояния
+    // прелюдия чата
     const messagePreamble = (
       <div className="space-y-4">
         {circle.icebreaker && (
@@ -696,167 +694,143 @@ export default function CirclePage() {
 
     pageContent = (
       <div className="flex min-h-screen flex-col gap-3 py-3 sm:gap-4 sm:py-4">
-        {/* Шапка круга: компактнее на мобилке */}
-        <section className="app-panel p-4 sm:p-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-2">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-400 sm:text-xs">
-                {t('circle_header_topic_label')}
-              </p>
-              <h1 className="text-xl font-semibold text-slate-900 dark:text-white sm:text-2xl">
-                {circleTitle}
-              </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-300 sm:text-sm">
-                {t('circle_header_subtitle')}
-              </p>
+        {/* Шапка круга — максимально лёгкая на мобиле */}
+        <section className="app-panel p-3 sm:p-6">
+          <div className="space-y-3 sm:space-y-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+              <div className="space-y-2">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-400 sm:text-xs">
+                  {t('circle_header_topic_label')}
+                </p>
+                <h1 className="text-xl font-semibold text-slate-50 sm:text-2xl">
+                  {circleTitle}
+                </h1>
+                <p className="text-xs text-slate-300 dark:text-slate-300 sm:text-sm">
+                  {t('circle_header_subtitle')}
+                </p>
 
-              {timerLabel && (
-                <p className="text-xs font-medium text-slate-600 dark:text-slate-200 sm:text-sm">
-                  {timerLabel}
-                </p>
-              )}
-
-              <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 dark:text-slate-300 sm:text-xs">
-                <span>
-                  {t('circle_member_count_label', { count: membersCount })}
-                </span>
-                <span
-                  className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-200 text-[9px] text-slate-400 dark:border-white/10"
-                  title={t('circle_members_tooltip')}
-                  aria-label={t('circle_members_tooltip')}
-                >
-                  i
-                </span>
-              </div>
-
-              <div className="mt-2 flex flex-wrap gap-2 text-[11px] sm:mt-3 sm:text-xs">
-                <span className="rounded-full border border-[var(--border-subtle)] px-3 py-1 text-slate-600 dark:border-white/10 dark:text-white/80">
-                  {timerChipText}
-                </span>
-                <span className="rounded-full border border-[var(--border-subtle)] px-3 py-1 text-slate-600 dark:border-white/10 dark:text-white/80">
-                  {t('circle_members_chip', { count: membersCount })}
-                </span>
-              </div>
-
-              {showQuotaOneLiner && (
-                <p className="mt-1 text-[11px] text-slate-500 dark:text-white/60 sm:text-xs">
-                  {t('circle_quota_one_liner')}
-                </p>
-              )}
-              {circleHostKey && (
-                <p className="mt-1 text-[11px] text-slate-600 dark:text-slate-100 sm:text-xs">
-                  {t(circleHostKey)}
-                </p>
-              )}
-            </div>
-
-            {/* Кнопки управления кругом */}
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => router.push('/explore')}
-                className="rounded-full border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 transition hover:-translate-y-0.5 hover:border-brand/40 hover:text-brand-foreground dark:border-white/10 dark:text-white sm:px-4 sm:text-sm"
-              >
-                {t('circle_change_topic_button')}
-              </button>
-              <button
-                type="button"
-                onClick={handleLeaveCircle}
-                disabled={leavePending}
-                className="rounded-full border border-rose-200 px-3 py-2 text-xs font-medium text-rose-600 transition hover:-translate-y-0.5 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-500/50 dark:text-rose-200 dark:hover:bg-rose-500/10 sm:px-4 sm:text-sm"
-              >
-                {leavePending
-                  ? t('circle_leave_pending')
-                  : t('circle_leave_button')}
-              </button>
-            </div>
-          </div>
-
-          {/* компактные карточки: только с планшета, чтобы мобилка дышала */}
-          <div className="mt-4 hidden gap-3 sm:grid sm:grid-cols-2">
-            <div className="flex items-center gap-3 rounded-2xl bg-slate-50/70 px-4 py-3 text-sm text-slate-700 shadow-inner shadow-slate-200/70 dark:bg-slate-800/70 dark:text-slate-100 dark:shadow-black/20">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-lg shadow-sm dark:bg-slate-900">
-                ⏳
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500">
-                  {t('circle_timer_label')}
-                </p>
-                <p className="text-sm font-semibold text-slate-800 dark:text-white">
-                  {timerChipText}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 rounded-2xl bg-slate-50/70 px-4 py-3 text-sm text-slate-700 shadow-inner shadow-slate-200/70 dark:bg-slate-800/70 dark:text-slate-100 dark:shadow-black/20">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-lg shadow-sm dark:bg-slate-900">
-                🔒
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500">
-                  {t('circle_rules_label')}
-                </p>
-                <p className="text-sm font-semibold text-slate-800 dark:text-white">
-                  {t('circle_rules_summary')}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* развёрнутые правила и квота — только md+ */}
-          <div className="mt-6 hidden gap-3 rounded-3xl bg-slate-50/70 p-4 text-slate-700 shadow-inner shadow-slate-200/70 dark:bg-slate-800/60 dark:text-slate-100 dark:shadow-black/30 md:grid md:grid-cols-2">
-            <div className="space-y-2">
-              <p className="text-[13px] font-semibold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">
-                {t('circle_rules_quick')}
-              </p>
-              <ul className="grid gap-2 text-sm text-slate-600 dark:text-slate-200">
-                {t('rules_modal_points')
-                  .split('|')
-                  .map((rule, index) => (
-                    <li key={rule} className="flex gap-3">
-                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-xs font-semibold text-slate-500 shadow-sm dark:bg-slate-900">
-                        {index + 1}
-                      </span>
-                      <span>{rule}</span>
-                    </li>
-                  ))}
-              </ul>
-            </div>
-            <div className="flex flex-col justify-between gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] p-4 dark:border-white/10 dark:bg-slate-900/50">
-              <div className="space-y-1">
-                <p className="text-[13px] font-semibold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">
-                  {t('circle_quota_label')}
-                </p>
-                {typeof dailyRemaining === 'number' &&
-                typeof dailyLimit === 'number' ? (
-                  <>
-                    <p className="text-sm font-semibold text-slate-800 dark:text-white">
-                      {t('circle_quota_remaining', { count: dailyRemaining })}
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-300">
-                      {t('circle_quota_total', { count: dailyLimit })}
-                    </p>
-                  </>
-                ) : (
-                  <p className="text-sm text-slate-500 dark:text-slate-300">
-                    {t('circle_quota_unknown')}
+                {timerLabel && (
+                  <p className="text-xs font-medium text-slate-200 sm:text-sm">
+                    {timerLabel}
                   </p>
                 )}
-              </div>
-              <div className="rounded-2xl border border-[var(--border-subtle)] bg-white/80 px-4 py-3 text-xs text-slate-600 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200">
-                <p className="font-semibold">{t('circle_pace_tip_title')}</p>
-                <p className="mt-1 leading-relaxed">
-                  {t('circle_pace_tip_body')}
-                </p>
-              </div>
-            </div>
-          </div>
 
-          {circleHostKey && (
-            <div className="mt-4 hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-4 py-3 text-sm text-slate-700 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200 sm:block">
-              <p className="font-semibold">{t('circle_host_label')}</p>
-              <p className="leading-relaxed">{t(circleHostKey)}</p>
+                <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-300 sm:text-xs">
+                  <span>
+                    {t('circle_member_count_label', { count: membersCount })}
+                  </span>
+                  <span
+                    className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-500/50 text-[9px] text-slate-300 dark:border-white/20"
+                    title={t('circle_members_tooltip')}
+                    aria-label={t('circle_members_tooltip')}
+                  >
+                    i
+                  </span>
+                </div>
+
+                <div className="mt-2 flex flex-wrap gap-2 text-[11px] sm:mt-3 sm:text-xs">
+                  <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-slate-50">
+                    {timerChipText}
+                  </span>
+                  <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-slate-50">
+                    {t('circle_members_chip', { count: membersCount })}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => router.push('/explore')}
+                  className="rounded-full border border-slate-400/50 px-3 py-2 text-xs font-medium text-slate-50 transition hover:-translate-y-0.5 hover:border-brand/60 sm:px-4 sm:text-sm"
+                >
+                  {t('circle_change_topic_button')}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleLeaveCircle}
+                  disabled={leavePending}
+                  className="rounded-full border border-rose-400/70 px-3 py-2 text-xs font-medium text-rose-100 transition hover:-translate-y-0.5 hover:bg-rose-500/10 disabled:cursor-not-allowed disabled:opacity-60 sm:px-4 sm:text-sm"
+                >
+                  {leavePending
+                    ? t('circle_leave_pending')
+                    : t('circle_leave_button')}
+                </button>
+              </div>
             </div>
-          )}
+
+            {/* маленький блок про безопасное общение — только одна строка на мобиле */}
+            <div className="flex items-center gap-3 rounded-2xl bg-slate-950/40 px-3 py-2 text-[11px] text-slate-200 sm:px-4 sm:py-3 sm:text-xs">
+              <div className="flex h-8 w-8 items-center justify-center rounded-2xl bg-slate-900 text-base sm:h-9 sm:w-9">
+                🔒
+              </div>
+              <p className="leading-snug">
+                {t('circle_rules_summary')}
+              </p>
+            </div>
+
+            {/* развёрнутые блоки — только md+ */}
+            <div className="hidden gap-3 rounded-3xl bg-slate-950/40 p-4 text-slate-100 md:grid md:grid-cols-2">
+              <div className="space-y-2">
+                <p className="text-[12px] font-semibold uppercase tracking-[0.24em] text-slate-400">
+                  {t('circle_rules_quick')}
+                </p>
+                <ul className="grid gap-2 text-sm text-slate-100/90">
+                  {t('rules_modal_points')
+                    .split('|')
+                    .map((rule, index) => (
+                      <li key={rule} className="flex gap-3">
+                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-slate-200">
+                          {index + 1}
+                        </span>
+                        <span>{rule}</span>
+                      </li>
+                    ))}
+                </ul>
+              </div>
+              <div className="flex flex-col justify-between gap-3 rounded-2xl border border-white/10 bg-slate-950/40 p-4">
+                <div className="space-y-1">
+                  <p className="text-[12px] font-semibold uppercase tracking-[0.24em] text-slate-400">
+                    {t('circle_quota_label')}
+                  </p>
+                  {typeof dailyRemaining === 'number' &&
+                  typeof dailyLimit === 'number' ? (
+                    <>
+                      <p className="text-sm font-semibold text-slate-50">
+                        {t('circle_quota_remaining', { count: dailyRemaining })}
+                      </p>
+                      <p className="text-xs text-slate-300">
+                        {t('circle_quota_total', { count: dailyLimit })}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-sm text-slate-300">
+                      {t('circle_quota_unknown')}
+                    </p>
+                  )}
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-xs text-slate-200">
+                  <p className="font-semibold">{t('circle_pace_tip_title')}</p>
+                  <p className="mt-1 leading-relaxed">
+                    {t('circle_pace_tip_body')}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {circleHostKey && (
+              <div className="hidden rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-sm text-slate-200 sm:block">
+                <p className="font-semibold">{t('circle_host_label')}</p>
+                <p className="leading-relaxed">{t(circleHostKey)}</p>
+              </div>
+            )}
+
+            {showQuotaOneLiner && (
+              <p className="text-[11px] text-slate-300 sm:text-xs">
+                {t('circle_quota_one_liner')}
+              </p>
+            )}
+          </div>
         </section>
 
         {/* Чат-панель */}
@@ -874,7 +848,7 @@ export default function CirclePage() {
 
           <form
             onSubmit={handleSendMessage}
-            className="mt-1 space-y-3 rounded-3xl bg-[var(--surface-subtle)] p-3 shadow-[var(--shadow-soft)] backdrop-blur-sm sm:mt-2 sm:p-4"
+            className="mt-1 space-y-3 rounded-3xl bg-[var(--surface-subtle)] p-3 sm:mt-2 sm:p-4 sm:shadow-[var(--shadow-soft)] sm:backdrop-blur-sm"
           >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
               <textarea
@@ -885,7 +859,7 @@ export default function CirclePage() {
                 onKeyDown={handleComposerKeyDown}
                 placeholder={composerPlaceholder}
                 aria-label={composerPlaceholder}
-                className="min-h-[56px] flex-1 resize-none rounded-2xl border border-[var(--border-subtle)] bg-white/95 px-3 py-2 text-sm text-slate-900 outline-none ring-2 ring-transparent transition focus:border-brand focus:ring-brand/25 dark:border-white/10 dark:bg-slate-900/70 dark:text-white sm:min-h-[72px] sm:px-4 sm:py-3"
+                className="min-h-[52px] flex-1 resize-none rounded-2xl border border-[var(--border-subtle)] bg-white/95 px-3 py-2 text-sm text-slate-900 outline-none ring-2 ring-transparent transition focus:border-brand focus:ring-brand/25 dark:border-white/10 dark:bg-slate-900/70 dark:text-white sm:min-h-[72px] sm:px-4 sm:py-3"
                 disabled={composerDisabled}
               />
               <button
@@ -907,8 +881,8 @@ export default function CirclePage() {
                 •
               </span>
               <span>
-                {t('messages_author_system')} напоминает: общаемся честно и
-                спокойно, без обмена личными данными.
+                {t('messages_author_system')} напоминает: здесь спокойно и
+                бережно, без обмена личными данными.
               </span>
             </p>
 
