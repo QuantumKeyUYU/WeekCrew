@@ -176,6 +176,104 @@ export default function CirclePage() {
     setQuotaFromApi(null);
   }, [circle?.id, setQuotaFromApi]);
 
+  // старт круга при заходе (как было, только без поллинга)
+  useEffect(() => {
+    let cancelled = false;
+
+    const startFreshCircle = async () => {
+      setLoadingCircle(true);
+      setMessages([]);
+
+      try {
+        const storedSelection = loadCircleSelection();
+        const fallbackMood = MOOD_OPTIONS[0]?.key ?? 'default';
+        const fallbackInterest =
+          LANGUAGE_INTERESTS[0]?.id ??
+          Object.keys(INTERESTS_MAP)[0] ??
+          'default';
+
+        const response = await joinCircle({
+          mood: storedSelection?.mood ?? fallbackMood,
+          interest: storedSelection?.interestId ?? fallbackInterest,
+        });
+
+        if (cancelled) return;
+
+        setCircle(response.circle);
+        setMessages(response.messages);
+        setQuotaFromApi(null);
+        setNotMember(false);
+        lastCircleIdRef.current = response.circle.id;
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Failed to start a fresh circle', error);
+          setCircle(null);
+          setMessages([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingCircle(false);
+        }
+      }
+    };
+
+    void startFreshCircle();
+
+    return () => {
+      cancelled = true;
+      void leaveCircleApi().catch((err) => {
+        console.warn('Failed to delete circle on exit', err);
+      });
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setCircle, setMessages, setQuotaFromApi]);
+
+  // начальная загрузка сообщений (одиночный запрос)
+  useEffect(() => {
+    if (!circle || notMember) {
+      setMessages([]);
+      setMessagesLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadMessages = async () => {
+      setMessagesLoading(true);
+
+      try {
+        const { messages: incoming, quota, memberCount } =
+          await getCircleMessages({ circleId: circle.id });
+
+        if (cancelled) return;
+
+        setMessages(incoming);
+        setQuotaFromApi(quota ?? null);
+
+        if (typeof memberCount === 'number') {
+          updateCircle((prev) => {
+            if (!prev || prev.id !== circle.id) return prev;
+            return { ...prev, memberCount };
+          });
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Failed to fetch circle messages', error);
+        }
+      } finally {
+        if (!cancelled) {
+          setMessagesLoading(false);
+        }
+      }
+    };
+
+    void loadMessages();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [circle, notMember, setMessages, setMessagesLoading, setQuotaFromApi, updateCircle]);
+
   const handleStartMatching = async () => {
     try {
       await leaveCircleApi();
@@ -534,7 +632,7 @@ export default function CirclePage() {
   } else {
     pageContent = (
       <div className="flex min-h-screen flex-col gap-3 py-3 sm:gap-4 sm:py-4">
-        {/* Шапка */}
+        {/* Шапка — максимально компактно */}
         <section className="app-panel p-3 sm:p-6">
           <div className="space-y-3 sm:space-y-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -545,43 +643,34 @@ export default function CirclePage() {
                 <h1 className="text-xl font-semibold text-slate-50 sm:text-2xl">
                   {circleTitle}
                 </h1>
-                <p className="text-xs text-slate-300 dark:text-slate-300 sm:text-sm">
-                  {t('circle_header_subtitle')}
+
+                {/* Одна лаконичная строка вместо кучи цифр */}
+                <p className="text-xs text-slate-300 sm:text-sm">
+                  {timerLabel
+                    ? `${timerLabel} · ${t('circle_member_count_label', {
+                        count: membersCount,
+                      })}`
+                    : t('circle_member_count_label', { count: membersCount })}
                 </p>
-                {timerLabel && (
-                  <p className="text-xs font-medium text-slate-200 sm:text-sm">
-                    {timerLabel}
+
+                {circleHostKey && (
+                  <p className="hidden text-[11px] text-slate-300 sm:block sm:text-xs">
+                    {t(circleHostKey)}
                   </p>
                 )}
-                <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-300 sm:text-xs">
-                  <span>
-                    {t('circle_member_count_label', { count: membersCount })}
-                  </span>
-                </div>
+
                 <div className="mt-2 flex flex-wrap gap-2 text-[11px] sm:mt-3 sm:text-xs">
                   <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-slate-50">
                     {timerChipText}
                   </span>
-                  <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-slate-50">
-                    {t('circle_members_chip', { count: membersCount })}
-                  </span>
                 </div>
-                {showQuotaOneLiner && (
-                  <p className="text-[11px] text-slate-300 sm:text-xs">
-                    {t('circle_quota_one_liner')}
-                  </p>
-                )}
-                {circleHostKey && (
-                  <p className="text-[11px] text-slate-300 sm:text-xs">
-                    {t(circleHostKey)}
-                  </p>
-                )}
               </div>
+
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={() => router.push('/explore')}
-                  className="rounded-full border border-slate-400/50 px-3 py-2 text-xs font-medium text-slate-50 transition hover:-translate-y-0.5 hover:border-brand/60 sm:px-4 sm:text-sm"
+                  className="hidden rounded-full border border-slate-400/50 px-3 py-2 text-xs font-medium text-slate-50 transition hover:-translate-y-0.5 hover:border-brand/60 sm:inline-flex sm:px-4 sm:text-sm"
                 >
                   {t('circle_change_topic_button')}
                 </button>
@@ -598,6 +687,7 @@ export default function CirclePage() {
               </div>
             </div>
 
+            {/* На мобиле только одна короткая фраза про правила */}
             <div className="flex items-center gap-3 rounded-2xl bg-slate-950/40 px-3 py-2 text-[11px] text-slate-200 sm:px-4 sm:py-3 sm:text-xs">
               <div className="flex h-8 w-8 items-center justify-center rounded-2xl bg-slate-900 text-base sm:h-9 sm:w-9">
                 🔒
@@ -606,6 +696,13 @@ export default function CirclePage() {
                 {t('circle_rules_summary')}
               </p>
             </div>
+
+            {/* более подробные подсказки — только на md+ */}
+            {showQuotaOneLiner && (
+              <div className="hidden text-xs text-slate-300 sm:block">
+                {t('circle_quota_one_liner')}
+              </div>
+            )}
           </div>
         </section>
 
@@ -652,14 +749,10 @@ export default function CirclePage() {
               </button>
             </div>
 
-            <p className="flex items-start gap-2 text-[11px] text-slate-500 dark:text-slate-300 sm:text-xs">
-              <span className="text-sm" aria-hidden>
-                •
-              </span>
-              <span>
-                {t('messages_author_system')} напоминает: здесь спокойно и
-                бережно, без обмена личными данными.
-              </span>
+            {/* короткое напоминание вместо длинного текста */}
+            <p className="text-[11px] text-slate-500 dark:text-slate-300 sm:text-xs">
+              {t('messages_author_system')} напоминает: здесь спокойно,
+              без обмена личными данными.
             </p>
 
             {sendError && (
@@ -673,10 +766,11 @@ export default function CirclePage() {
               </p>
             )}
 
+            {/* квота – только на md+, чтобы не грузить мобилу цифрами */}
             {typeof dailyRemaining === 'number' &&
               typeof dailyLimit === 'number' &&
               (!isLimitReached ? (
-                <div className="text-[11px] text-slate-500 dark:text-slate-400 sm:text-xs">
+                <div className="hidden text-xs text-slate-500 dark:text-slate-400 sm:block">
                   <p>
                     {t('circle_quota_remaining', { count: dailyRemaining })}
                   </p>
@@ -685,7 +779,7 @@ export default function CirclePage() {
                   )}
                 </div>
               ) : (
-                <div className="rounded-2xl bg-amber-50/80 p-3 text-[11px] text-amber-900 dark:bg-amber-500/10 dark:text-amber-100 sm:text-xs">
+                <div className="hidden rounded-2xl bg-amber-50/80 p-3 text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-100 sm:block">
                   <p className="font-medium">
                     {t('circle_quota_exhausted')}
                   </p>
