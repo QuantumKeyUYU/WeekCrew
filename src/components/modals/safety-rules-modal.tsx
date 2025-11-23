@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
-import clsx from 'clsx';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { AnimatePresence, motion } from 'framer-motion';
+
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface SafetyRulesModalProps {
@@ -11,86 +12,152 @@ interface SafetyRulesModalProps {
   onClose: () => void;
 }
 
-export const SafetyRulesModal = ({ open, onAccept, onClose }: SafetyRulesModalProps) => {
+export const SafetyRulesModal = ({
+  open,
+  onAccept,
+  onClose,
+}: SafetyRulesModalProps) => {
   const t = useTranslation();
-  const [mounted, setMounted] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  const router = useRouter();
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const title = t('rules_modal_title') ?? 'Безопасное общение';
+  const subtitle =
+    t('rules_modal_subtitle') ??
+    'Пара коротких правил перед началом — чтобы всем было комфортно.';
+  const pointsRaw = t('rules_modal_points') ?? '';
+  const points =
+    pointsRaw.trim().length > 0
+      ? pointsRaw.split('|').map((item) => item.trim()).filter(Boolean)
+      : [
+          'Общаемся без оскорблений и травли.',
+          'Не делимся точными контактами и адресами.',
+          'Если становится неприятно — можно прекратить разговор.',
+          'При угрозе жизни — обращаемся в службы помощи.',
+        ];
 
+  const primaryCta =
+    t('rules_modal_primary_cta') ?? 'Понимаю, продолжить';
+  const secondaryCta =
+    t('rules_modal_secondary_cta') ?? 'Показать все правила';
+  const footerText =
+    t('rules_modal_footer') ?? 'Общаемся честно и спокойно.';
+
+  // Лочим скролл страницы, пока открыта модалка
   useEffect(() => {
-    if (!open) {
-      setExpanded(false);
-      return;
-    }
-    const originalOverflow = document.body.style.overflow;
+    if (!open) return;
+    const previous = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
-      document.body.style.overflow = originalOverflow;
+      document.body.style.overflow = previous;
     };
   }, [open]);
 
-  const points = t('rules_modal_points').split('|');
+  const handleBackdropClick = () => {
+    onClose();
+  };
 
-  if (!mounted || !open) {
-    return null;
-  }
+  const handleCardClick: React.MouseEventHandler<HTMLDivElement> = (event) => {
+    event.stopPropagation();
+  };
 
-  return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 py-6 text-slate-900 backdrop-blur">
-      <div className="relative w-full max-w-md rounded-3xl border border-white/10 bg-white/95 p-6 shadow-2xl dark:bg-slate-950/95">
-        <button
-          type="button"
-          className="absolute right-4 top-4 text-slate-500 transition hover:text-slate-900"
-          aria-label={t('rules_modal_close_label')}
-          onClick={onClose}
+  const handleShowAllRules = () => {
+    onClose();
+    router.push('/safety');
+  };
+
+  if (!open) return null;
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="safety-rules-title"
+          className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/70 backdrop-blur-md"
+          onClick={handleBackdropClick}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
         >
-          ×
-        </button>
-        <div className="space-y-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">WeekCrew</p>
-            <h2 className="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{t('rules_modal_title')}</h2>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">{t('rules_modal_description')}</p>
-          </div>
-          <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-200">
-            {points.map((point) => (
-              <li key={point} className="flex gap-2">
-                <span aria-hidden>•</span>
-                <span>{point}</span>
-              </li>
-            ))}
-          </ul>
-          <button
-            type="button"
-            onClick={() => setExpanded((prev) => !prev)}
-            className="text-sm font-medium text-brand-foreground transition hover:underline"
+          <motion.div
+            onClick={handleCardClick}
+            className="relative mx-3 w-full max-w-lg overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900/95 shadow-2xl shadow-slate-950/80"
+            initial={{ y: 24, opacity: 0, scale: 0.98 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 24, opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
           >
-            {expanded ? t('rules_modal_hide_full') : t('rules_modal_show_full')}
-          </button>
-          <div
-            className={clsx(
-              'overflow-hidden text-sm text-slate-500 transition-all dark:text-slate-200',
-              expanded ? 'max-h-48' : 'max-h-0',
-            )}
-          >
-            {expanded && <p className="leading-relaxed">{t('rules_modal_full')}</p>}
-          </div>
-          <div className="flex flex-col gap-2">
+            {/* Градиентный фон-шайба */}
+            <div className="pointer-events-none absolute inset-0 opacity-70">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_0%_0%,rgba(96,165,250,0.25),transparent_48%),radial-gradient(circle_at_100%_0%,rgba(52,211,153,0.2),transparent_52%),linear-gradient(135deg,rgba(15,23,42,0.98),rgba(15,23,42,0.96))]" />
+            </div>
+
+            {/* Крестик */}
             <button
               type="button"
-              onClick={onAccept}
-              className="inline-flex items-center justify-center rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(127,90,240,0.35)] transition hover:-translate-y-0.5"
+              onClick={onClose}
+              aria-label="Закрыть"
+              className="absolute right-4 top-4 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-950/40 text-slate-300 shadow-sm transition hover:bg-slate-900"
             >
-              {t('rules_modal_cta')}
+              ×
             </button>
-            <p className="text-center text-xs text-slate-400">{t('rules_modal_footer')}</p>
-          </div>
-        </div>
-      </div>
-    </div>,
-    document.body,
+
+            <div className="relative z-10 px-6 pb-6 pt-6 sm:px-7 sm:pb-7 sm:pt-7">
+              {/* Бейдж WeekCrew */}
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/40 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_0_3px_rgba(52,211,153,0.4)]" />
+                <span>WeekCrew · safety</span>
+              </div>
+
+              <h2
+                id="safety-rules-title"
+                className="text-xl font-semibold tracking-tight text-slate-50 sm:text-2xl"
+              >
+                {title}
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-slate-200/80">
+                {subtitle}
+              </p>
+
+              <ul className="mt-4 space-y-3 text-sm text-slate-100/90">
+                {points.map((point, index) => (
+                  <li key={`${point}-${index}`} className="flex gap-3">
+                    <span className="mt-0.5 inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-slate-950/60 text-[11px] font-semibold text-slate-100 shadow-sm">
+                      {index + 1}
+                    </span>
+                    <span className="leading-relaxed">{point}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <button
+                  type="button"
+                  onClick={onAccept}
+                  className="inline-flex flex-1 items-center justify-center rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_40px_rgba(79,70,229,0.7)] transition-transform duration-150 hover:-translate-y-[1px]"
+                >
+                  {primaryCta}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleShowAllRules}
+                  className="inline-flex items-center justify-center rounded-full border border-white/20 bg-slate-950/40 px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.16em] text-slate-200 transition hover:bg-slate-900/80"
+                >
+                  {secondaryCta}
+                </button>
+              </div>
+
+              <p className="mt-4 text-center text-xs text-slate-300/80">
+                {footerText}
+              </p>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
+
+export default SafetyRulesModal;
