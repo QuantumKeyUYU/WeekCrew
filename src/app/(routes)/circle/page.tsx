@@ -83,7 +83,9 @@ export default function CirclePage() {
 
   const [profileChecked, setProfileChecked] = useState(false);
   const [selectionMood, setSelectionMood] = useState<string | null>(null);
-  const [selectionInterest, setSelectionInterest] = useState<string | null>(null);
+  const [selectionInterest, setSelectionInterest] = useState<string | null>(
+    null,
+  );
 
   const [loadingCircle, setLoadingCircle] = useState(false);
   const [messagesLoading, setMessagesLoading] = useState(false);
@@ -103,9 +105,10 @@ export default function CirclePage() {
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
 
   const currentDeviceId =
-    storeDeviceId ?? (typeof window !== 'undefined' ? getOrCreateDeviceId() : null);
+    storeDeviceId ??
+    (typeof window !== 'undefined' ? getOrCreateDeviceId() : null);
 
-  // выбранное настроение/интерес
+  // выбранное настроение/интерес из selection
   useEffect(() => {
     const stored = loadCircleSelection();
     if (!stored) return;
@@ -130,9 +133,7 @@ export default function CirclePage() {
   }, [t]);
 
   useEffect(() => {
-    if (circle?.id) {
-      setNotMember(false);
-    }
+    if (circle?.id) setNotMember(false);
   }, [circle?.id]);
 
   // профиль
@@ -157,9 +158,7 @@ export default function CirclePage() {
         }
       })
       .finally(() => {
-        if (!cancelled) {
-          setProfileChecked(true);
-        }
+        if (!cancelled) setProfileChecked(true);
       });
 
     return () => {
@@ -190,7 +189,7 @@ export default function CirclePage() {
     clearCircleSelection();
   }, [clearCircleSelection, clearSession, setCircle, setMessages, setQuotaFromApi]);
 
-  // старт круга при заходе
+  // старт нового круга при заходе
   useEffect(() => {
     let cancelled = false;
 
@@ -202,7 +201,9 @@ export default function CirclePage() {
         const storedSelection = loadCircleSelection();
         const fallbackMood = MOOD_OPTIONS[0]?.key ?? 'default';
         const fallbackInterest =
-          LANGUAGE_INTERESTS[0]?.id ?? Object.keys(INTERESTS_MAP)[0] ?? 'default';
+          LANGUAGE_INTERESTS[0]?.id ??
+          Object.keys(INTERESTS_MAP)[0] ??
+          'default';
 
         const response = await joinCircle({
           mood: storedSelection?.mood ?? fallbackMood,
@@ -212,7 +213,7 @@ export default function CirclePage() {
         if (cancelled) return;
 
         setCircle(response.circle);
-        setMessages(response.messages);
+        setMessages(response.messages ?? []);
         setQuotaFromApi(null);
         setNotMember(false);
         lastCircleIdRef.current = response.circle.id;
@@ -223,9 +224,7 @@ export default function CirclePage() {
           setMessages([]);
         }
       } finally {
-        if (!cancelled) {
-          setLoadingCircle(false);
-        }
+        if (!cancelled) setLoadingCircle(false);
       }
     };
 
@@ -240,7 +239,7 @@ export default function CirclePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setCircle, setMessages, setQuotaFromApi]);
 
-  // загрузка сообщений
+  // начальная загрузка сообщений
   useEffect(() => {
     if (!circle || notMember) {
       setMessages([]);
@@ -259,7 +258,7 @@ export default function CirclePage() {
 
         if (cancelled) return;
 
-        setMessages(incoming);
+        setMessages(incoming ?? []);
         setQuotaFromApi(quota ?? null);
 
         if (typeof memberCount === 'number') {
@@ -273,9 +272,7 @@ export default function CirclePage() {
           console.error('Failed to fetch circle messages', error);
         }
       } finally {
-        if (!cancelled) {
-          setMessagesLoading(false);
-        }
+        if (!cancelled) setMessagesLoading(false);
       }
     };
 
@@ -286,13 +283,11 @@ export default function CirclePage() {
     };
   }, [circle, notMember, setMessages, setMessagesLoading, setQuotaFromApi, updateCircle]);
 
-  // long-poll
+  // long-poll (новый хук — аккуратный, без спама запросами)
   const { notMember: pollingNotMember } = useCircleMessagesPolling(circleId);
 
   useEffect(() => {
-    if (pollingNotMember) {
-      handleAccessRevoked();
-    }
+    if (pollingNotMember) handleAccessRevoked();
   }, [pollingNotMember, handleAccessRevoked]);
 
   const handleStartMatching = async () => {
@@ -371,7 +366,7 @@ export default function CirclePage() {
     const optimisticMessage: CircleMessage = {
       id: optimisticId,
       circleId: circle.id,
-      deviceId: currentDeviceId,
+      deviceId: currentDeviceId ?? undefined,
       author: currentUserProfile
         ? {
             id: currentUserProfile.id,
@@ -524,16 +519,15 @@ export default function CirclePage() {
     adjustComposerHeight();
   }, [adjustComposerHeight, composerValue]);
 
-  // автофокус композера
+  // автофокус композера на десктопе
   useEffect(() => {
     if (messagesLoading || composerValue || !circleId) return;
 
     const node = composerRef.current;
     if (!node) return;
 
-    if (typeof window !== 'undefined' && window.innerWidth < 640) {
-      return;
-    }
+    if (typeof window !== 'undefined' && window.innerWidth < 640) return;
+
     node.focus();
   }, [circleId, composerValue, messagesLoading]);
 
@@ -874,9 +868,9 @@ export default function CirclePage() {
           )}
         </section>
 
-        {/* 🔥 САМА ЧАТ-ПАНЕЛЬ — максимально “Telegram-style” */}
+        {/* чат-панель максимально “Telegram-style” */}
         <section className="app-panel flex min-h-[360px] flex-1 flex-col gap-3 p-4">
-          {/* область сообщений — свой скролл, без лишних рамок */}
+          {/* область сообщений — свой скролл, чистый фон */}
           <div className="min-h-[260px] flex-1 overflow-y-auto rounded-3xl bg-[var(--surface-subtle)]">
             <MessageList
               circleId={circleId}
