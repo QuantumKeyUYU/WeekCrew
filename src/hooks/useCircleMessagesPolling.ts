@@ -5,9 +5,8 @@ type UseCircleMessagesPollingResult = {
 };
 
 /**
- * ВРЕМЕННО: поллинг выключен.
- * Никаких дополнительных запросов к /messages, пока не решим
- * как именно хотим делать real-time.
+ * Поллинг временно отключён.
+ * Никаких дополнительных запросов к /messages.
  */
 export function useCircleMessagesPolling(
   _circleId: string | null,
