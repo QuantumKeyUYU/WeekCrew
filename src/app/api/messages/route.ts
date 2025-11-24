@@ -29,6 +29,8 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const circleId = searchParams.get('circleId');
     const since = readSinceParam(searchParams.get('since'));
+    const limitParam = Number(searchParams.get('limit') ?? 100);
+    const limit = Number.isFinite(limitParam) && limitParam > 0 ? limitParam : 100;
 
     if (!circleId) {
       return NextResponse.json(
@@ -52,6 +54,7 @@ export async function GET(req: NextRequest) {
       where,
       orderBy: { createdAt: 'asc' },
       include: { user: true },
+      take: limit,
     });
 
     const memberCount = await countActiveMembers(circleId);

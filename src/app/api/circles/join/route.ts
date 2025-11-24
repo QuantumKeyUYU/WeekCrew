@@ -124,6 +124,7 @@ export async function POST(req: NextRequest) {
     await ensureMembership(circle.id, deviceId);
 
     const memberCount = await countActiveMembers(circle.id);
+    console.info(`[JOIN] Device ${deviceId} joined circle ${circle.id}`);
     const messages = await prisma.message.findMany({
       where: { circleId: circle.id },
       orderBy: { createdAt: 'asc' },

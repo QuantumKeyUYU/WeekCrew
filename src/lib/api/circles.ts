@@ -34,6 +34,7 @@ export const joinCircle = (payload: JoinCirclePayload) =>
 export interface GetCircleMessagesPayload {
   circleId: string;
   since?: string;
+  limit?: number;
 }
 
 export interface GetCircleMessagesResponse {
@@ -48,7 +49,7 @@ export const getCircleMessages = (payload: GetCircleMessagesPayload) =>
   fetchJson<GetCircleMessagesResponse>(
     `/api/messages?circleId=${encodeURIComponent(payload.circleId)}${
       payload.since ? `&since=${encodeURIComponent(payload.since)}` : ''
-    }`,
+    }${payload.limit ? `&limit=${payload.limit}` : ''}`,
   );
 
 export interface SendMessagePayload {
@@ -71,6 +72,9 @@ export const sendMessage = (payload: SendMessagePayload) =>
 // --- выход из круга ---
 
 export const leaveCircle = () =>
-  fetchJson<{ ok: boolean }>('/api/circles/leave', {
-    method: 'POST',
-  });
+  fetchJson<{ ok: boolean; memberCount?: number; prevCircleId?: string | null }>(
+    '/api/circles/leave',
+    {
+      method: 'POST',
+    },
+  );

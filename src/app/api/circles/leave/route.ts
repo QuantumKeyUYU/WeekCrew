@@ -27,6 +27,7 @@ export async function POST(request: NextRequest) {
     });
 
     const memberCount = await countActiveMembers(membership.circleId);
+    console.info(`[LEAVE] Device ${deviceId} left circle ${membership.circleId}`);
 
     if (memberCount === 0) {
       await prisma.circle.update({

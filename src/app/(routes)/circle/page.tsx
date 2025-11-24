@@ -10,6 +10,7 @@ import {
 } from 'react';
 import type { JSX } from 'react';
 import { useRouter } from 'next/navigation';
+import useSWR from '@/hooks/useSWR';
 
 import { CircleEmptyState } from '@/components/circle/empty-state';
 import { MessageList } from '@/components/circle/message-list';
@@ -43,6 +44,8 @@ import { useAppStore } from '@/store/useAppStore';
 import type { CircleMessage, DailyQuotaSnapshot } from '@/types';
 
 const DAY_MS = 1000 * 60 * 60 * 24;
+const MESSAGE_REFRESH_MS = 5000;
+const MESSAGE_FETCH_LIMIT = 200;
 
 export default function CirclePage() {
   const router = useRouter();
@@ -234,6 +237,16 @@ export default function CirclePage() {
 
   const lastFetchedCircleIdRef = useRef<string | null>(null);
 
+  const {
+    data: messagesData,
+    error: messagesError,
+    isLoading: isLoadingMessages,
+  } = useSWR(
+    circleId && !notMember ? circleId : null,
+    (id) => getCircleMessages({ circleId: id, limit: MESSAGE_FETCH_LIMIT }),
+    { refreshInterval: MESSAGE_REFRESH_MS },
+  );
+
   // сброс сообщений при смене круга
   useEffect(() => {
     if (!circleId) {
@@ -248,45 +261,33 @@ export default function CirclePage() {
     }
   }, [circleId, setMessages]);
 
-  // начальная загрузка сообщений (одноразовый запрос)
   useEffect(() => {
-    if (!circleId || notMember) {
+    if (!circleId || !messagesData) return;
+
+    if (messagesData.notMember) {
+      setNotMember(true);
       setMessages([]);
       return;
     }
 
-    let cancelled = false;
+    setMessages(messagesData.messages);
+    setQuotaFromApi(messagesData.quota ?? null);
 
-    const loadMessages = async () => {
-      try {
-        const { messages: incoming, quota, memberCount } =
-          await getCircleMessages({ circleId });
+    if (typeof messagesData.memberCount === 'number') {
+      const nextMemberCount = messagesData.memberCount;
+      updateCircle((prev) => {
+        if (!prev || prev.id !== circleId) return prev;
+        if (prev.memberCount === nextMemberCount) return prev;
+        return { ...prev, memberCount: nextMemberCount };
+      });
+    }
+  }, [circleId, messagesData, setMessages, setNotMember, setQuotaFromApi, updateCircle]);
 
-        if (cancelled) return;
-
-        setMessages(incoming);
-        setQuotaFromApi(quota ?? null);
-
-        if (typeof memberCount === 'number') {
-          updateCircle((prev) => {
-            if (!prev || prev.id !== circleId) return prev;
-            if (prev.memberCount === memberCount) return prev;
-            return { ...prev, memberCount };
-          });
-        }
-      } catch (error) {
-        if (!cancelled) {
-          console.error('Failed to fetch circle messages', error);
-        }
-      }
-    };
-
-    void loadMessages();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [circleId, notMember, setMessages, setQuotaFromApi, updateCircle]);
+  useEffect(() => {
+    if (messagesError) {
+      console.error('Failed to fetch circle messages', messagesError);
+    }
+  }, [messagesError]);
 
   const handleStartMatching = async () => {
     try {
@@ -722,7 +723,7 @@ export default function CirclePage() {
               circleId={circleId}
               messages={messages}
               currentDeviceId={currentDeviceId}
-              isLoading={false} // <— больше НИКАКОЙ мигающей загрузки
+              isLoading={isLoadingMessages && !messages.length}
               preamble={systemPreamble}
               className="p-3 sm:p-6"
             />
