@@ -1,15 +1,80 @@
 // src/app/api/circles/join/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { DEVICE_HEADER_NAME } from '@/lib/device';
+import { getOrCreateDevice } from '@/lib/server/device';
+import { computeCircleExpiry } from '@/lib/server/circles';
+import { toCircleMessage, toCircleSummary } from '@/lib/server/serializers';
+import { countActiveMembers } from '@/lib/server/circleMembership';
 
-const CIRCLE_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000; // 7 дней
 const DEFAULT_MAX_MEMBERS = 6;
 
-function getDeviceId(req: NextRequest): string | null {
-  const headerDeviceId = req.headers.get('x-device-id') ?? undefined;
-  const cookieDeviceId = req.cookies.get('deviceId')?.value ?? undefined;
-  return headerDeviceId || cookieDeviceId || null;
-}
+const buildValidationError = (message: string) =>
+  NextResponse.json({ ok: false as const, error: message }, { status: 400 });
+
+const findExistingMembership = async (
+  deviceId: string,
+  mood: string,
+  interest: string,
+  now: Date,
+) =>
+  prisma.circleMembership.findFirst({
+    where: {
+      deviceId,
+      status: 'active',
+      leftAt: null,
+      circle: {
+        mood,
+        interest,
+        status: 'active',
+        expiresAt: { gt: now },
+      },
+    },
+    include: { circle: true },
+    orderBy: { joinedAt: 'desc' },
+  });
+
+const findJoinableCircle = async (mood: string, interest: string, now: Date) => {
+  const candidates = await prisma.circle.findMany({
+    where: {
+      mood,
+      interest,
+      status: 'active',
+      expiresAt: { gt: now },
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  for (const candidate of candidates) {
+    const activeCount = await countActiveMembers(candidate.id);
+    if (activeCount < candidate.maxMembers) {
+      return candidate;
+    }
+  }
+
+  return null;
+};
+
+const ensureMembership = async (circleId: string, deviceId: string) => {
+  const existingMembership = await prisma.circleMembership.findFirst({
+    where: { circleId, deviceId },
+  });
+
+  if (existingMembership) {
+    return prisma.circleMembership.update({
+      where: { id: existingMembership.id },
+      data: { status: 'active', leftAt: null },
+    });
+  }
+
+  return prisma.circleMembership.create({
+    data: {
+      circleId,
+      deviceId,
+      status: 'active',
+    },
+  });
+};
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,107 +86,79 @@ export async function POST(req: NextRequest) {
     const interest = body?.interest?.trim();
 
     if (!mood || !interest) {
-      return NextResponse.json(
-        { error: 'mood_and_interest_required' },
-        { status: 400 },
-      );
+      return buildValidationError('mood_and_interest_required');
     }
 
-    const deviceId = getDeviceId(req);
-
-    if (!deviceId) {
-      return NextResponse.json(
-        { error: 'device_id_missing' },
-        { status: 400 },
-      );
-    }
-
+    const { id: deviceId, isNew } = await getOrCreateDevice(req);
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + CIRCLE_LIFETIME_MS);
 
-    // Гарантируем наличие Device
-    await prisma.device.upsert({
-      where: { id: deviceId },
-      update: {},
-      create: { id: deviceId },
-    });
+    const existingMembership = await findExistingMembership(
+      deviceId,
+      mood,
+      interest,
+      now,
+    );
 
-    // ✅ ВСЕГДА создаём новый круг — никаких шарингов по настроению/интересу
-    const circle = await prisma.circle.create({
-      data: {
-        mood,
-        interest,
-        status: 'active',
-        maxMembers: DEFAULT_MAX_MEMBERS,
-        startsAt: now,
-        endsAt: expiresAt,
-        expiresAt,
-      },
-    });
+    let circle = existingMembership?.circle ?? null;
+    let isNewCircle = false;
 
-    // Помечаем старые активные участия этого девайса как left
-    await prisma.circleMembership.updateMany({
-      where: {
-        deviceId,
-        status: 'active',
-        circleId: { not: circle.id },
-      },
-      data: {
-        status: 'left',
-        leftAt: now,
-      },
-    });
-
-    // Создаём (или обновляем) участие в НОВОМ круге
-    const existingMembership = await prisma.circleMembership.findFirst({
-      where: {
-        circleId: circle.id,
-        deviceId,
-      },
-    });
-
-    if (existingMembership) {
-      await prisma.circleMembership.update({
-        where: { id: existingMembership.id },
-        data: {
-          status: 'active',
-          leftAt: null,
-        },
-      });
-    } else {
-      await prisma.circleMembership.create({
-        data: {
-          circleId: circle.id,
-          deviceId,
-          status: 'active',
-        },
-      });
+    if (!circle) {
+      const candidate = await findJoinableCircle(mood, interest, now);
+      if (candidate) {
+        circle = candidate;
+      }
     }
 
-    // Новый круг – сообщений пока нет, но на будущее оставляем
+    if (!circle) {
+      const expiresAt = computeCircleExpiry(now);
+      circle = await prisma.circle.create({
+        data: {
+          mood,
+          interest,
+          status: 'active',
+          maxMembers: DEFAULT_MAX_MEMBERS,
+          startsAt: now,
+          endsAt: expiresAt,
+          expiresAt,
+        },
+      });
+      isNewCircle = true;
+    }
+
+    await prisma.circleMembership.updateMany({
+      where: { deviceId, status: 'active', leftAt: null, circleId: { not: circle.id } },
+      data: { status: 'left', leftAt: now },
+    });
+
+    await ensureMembership(circle.id, deviceId);
+
+    const memberCount = await countActiveMembers(circle.id);
     const messages = await prisma.message.findMany({
       where: { circleId: circle.id },
       orderBy: { createdAt: 'asc' },
-      take: 100,
+      include: { user: true },
     });
 
-    const remainingMs = Math.max(circle.expiresAt.getTime() - Date.now(), 0);
-
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
-        circle: {
-          ...circle,
-          remainingMs,
-        },
-        messages,
-        quota: null as const,
+        ok: true as const,
+        circle: toCircleSummary(circle, memberCount),
+        messages: messages.map(toCircleMessage),
+        isNewCircle,
+        quota: null,
       },
       { status: 200 },
     );
+
+    if (isNew) {
+      response.headers.set(DEVICE_HEADER_NAME, deviceId);
+    }
+
+    return response;
   } catch (error) {
     console.error('[api/circles/join] failed', error);
     return NextResponse.json(
-      { error: 'internal_error' },
+      { ok: false as const, error: 'internal_error' },
       { status: 500 },
     );
   }

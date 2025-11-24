@@ -3,12 +3,14 @@ import { prisma } from '@/lib/prisma';
 
 const DEFAULT_STATUS = 'active';
 
+const activeMembershipWhere = { status: DEFAULT_STATUS, leftAt: null } as const;
+
 const findActiveMembershipsForDevice = (
   deviceId: string,
   client: PrismaClient,
 ) =>
   client.circleMembership.findMany({
-    where: { deviceId, status: DEFAULT_STATUS },
+    where: { deviceId, ...activeMembershipWhere },
     include: { circle: true },
     orderBy: { joinedAt: 'desc' },
   });
@@ -54,7 +56,9 @@ export const markMembershipLeft = (
   });
 
 export const countActiveMembers = (circleId: string, client: PrismaClient = prisma) =>
-  client.circleMembership.count({ where: { circleId, status: DEFAULT_STATUS } });
+  client.circleMembership.count({
+    where: { circleId, ...activeMembershipWhere },
+  });
 
 export const findActiveCircleMembership = (
   circleId: string,
@@ -62,7 +66,12 @@ export const findActiveCircleMembership = (
   client: PrismaClient = prisma,
 ) =>
   client.circleMembership.findFirst({
-    where: { circleId, deviceId, status: DEFAULT_STATUS, circle: { status: 'active' } },
+    where: {
+      circleId,
+      deviceId,
+      ...activeMembershipWhere,
+      circle: { status: 'active' },
+    },
   });
 
 export const isDeviceCircleMember = async (
