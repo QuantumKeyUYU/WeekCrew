@@ -79,8 +79,8 @@ const findCircleWithSpace = async (mood: string, interest: string) => {
 
 // Создание нового круга
 const createCircle = async (mood: string, interest: string) => {
-  const startAt = new Date();
-  const expiresAt = computeCircleExpiry(startAt);
+  const startsAt = new Date();
+  const expiresAt = computeCircleExpiry(startsAt);
 
   const circle = await prisma.circle.create({
     data: {
@@ -88,8 +88,8 @@ const createCircle = async (mood: string, interest: string) => {
       interest,
       status: 'active',
       maxMembers: MAX_MEMBERS_PER_CIRCLE,
-      startAt,
-      endAt: expiresAt,
+      startsAt,
+      endsAt: expiresAt,
       expiresAt,
     },
   });
