@@ -55,26 +55,12 @@ const findJoinableCircle = async (mood: string, interest: string, now: Date) => 
   return null;
 };
 
-const ensureMembership = async (circleId: string, deviceId: string) => {
-  const existing = await prisma.circleMembership.findFirst({
-    where: { circleId, deviceId },
+const ensureMembership = async (circleId: string, deviceId: string) =>
+  prisma.circleMembership.upsert({
+    where: { circleId_deviceId: { circleId, deviceId } },
+    update: { status: 'active', leftAt: null },
+    create: { circleId, deviceId, status: 'active' },
   });
-
-  if (existing) {
-    return prisma.circleMembership.update({
-      where: { id: existing.id },
-      data: { status: 'active', leftAt: null },
-    });
-  }
-
-  return prisma.circleMembership.create({
-    data: {
-      circleId,
-      deviceId,
-      status: 'active',
-    },
-  });
-};
 
 export async function POST(req: NextRequest) {
   try {
@@ -138,6 +124,7 @@ export async function POST(req: NextRequest) {
     await ensureMembership(circle.id, deviceId);
 
     const memberCount = await countActiveMembers(circle.id);
+    console.info(`[JOIN] Device ${deviceId} joined circle ${circle.id}`);
     const messages = await prisma.message.findMany({
       where: { circleId: circle.id },
       orderBy: { createdAt: 'asc' },
@@ -151,6 +138,7 @@ export async function POST(req: NextRequest) {
         messages: messages.map(toCircleMessage),
         isNewCircle,
         quota: null,
+        memberCount,
       },
       { status: 200 },
     );
