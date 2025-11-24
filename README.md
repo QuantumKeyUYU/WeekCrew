@@ -150,7 +150,7 @@ public/
 
 1. Импортируйте репозиторий.
 2. Добавьте `DATABASE_URL`.
-3. Миграции применяются автоматически через `npm install` (см. `postinstall`).
+3. Миграции применяются автоматически через `npm install` (см. `postinstall`, baseline + `migrate deploy`).
 
 4. Каждый `git push` создаёт новый деплой.
 
