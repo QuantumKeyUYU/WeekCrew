@@ -1,4 +1,5 @@
 // src/app/api/circles/join/route.ts
+import { Prisma } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { DEVICE_HEADER_NAME } from '@/lib/device';
@@ -55,12 +56,30 @@ const findJoinableCircle = async (mood: string, interest: string, now: Date) => 
   return null;
 };
 
-const ensureMembership = async (circleId: string, deviceId: string) =>
-  prisma.circleMembership.upsert({
-    where: { circleId_deviceId: { circleId, deviceId } },
-    update: { status: 'active', leftAt: null },
-    create: { circleId, deviceId, status: 'active' },
-  });
+const ensureMembership = async (circleId: string, deviceId: string) => {
+  try {
+    return await prisma.circleMembership.upsert({
+      where: { circleId_deviceId: { circleId, deviceId } },
+      update: { status: 'active', leftAt: null },
+      create: { circleId, deviceId, status: 'active' },
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      console.warn(
+        `[ensureMembership] Conflict for ${circleId}/${deviceId}, retrying as update`,
+      );
+      return prisma.circleMembership.update({
+        where: { circleId_deviceId: { circleId, deviceId } },
+        data: { status: 'active', leftAt: null },
+      });
+    }
+
+    throw error;
+  }
+};
 
 export async function POST(req: NextRequest) {
   try {
