@@ -1,3 +1,4 @@
+// src/lib/server/circleMembership.ts
 import type { CircleMembership, PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
@@ -22,6 +23,7 @@ const markMembershipsAsLeft = (
   if (!memberships.length) {
     return Promise.resolve();
   }
+
   return client.circleMembership.updateMany({
     where: { id: { in: memberships.map((membership) => membership.id) } },
     data: { status: 'left', leftAt: new Date() },
@@ -39,6 +41,7 @@ export const findLatestActiveMembershipForDevice = async (
   }
 
   const [latest, ...duplicates] = memberships;
+
   if (duplicates.length) {
     await markMembershipsAsLeft(duplicates, client);
   }
@@ -55,10 +58,19 @@ export const markMembershipLeft = (
     data: { status: 'left', leftAt: new Date() },
   });
 
-export const countActiveMembers = (circleId: string, client: PrismaClient = prisma) =>
-  client.circleMembership.count({
+export const countActiveMembers = async (
+  circleId: string,
+  client: PrismaClient = prisma,
+) => {
+  // считаем уникальные девайсы, а не тупо количество строк
+  const rows = await client.circleMembership.groupBy({
+    by: ['deviceId'],
     where: { circleId, ...activeMembershipWhere },
+    _count: { deviceId: true },
   });
+
+  return rows.length;
+};
 
 export const findActiveCircleMembership = (
   circleId: string,
