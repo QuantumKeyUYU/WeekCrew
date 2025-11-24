@@ -150,11 +150,7 @@ public/
 
 1. Импортируйте репозиторий.
 2. Добавьте `DATABASE_URL`.
-3. Миграции:
-
-```bash
-npx prisma migrate deploy
-```
+3. Миграции применяются автоматически при запуске `npm start` (используется `prisma migrate deploy`).
 
 4. Каждый `git push` создаёт новый деплой.
 
