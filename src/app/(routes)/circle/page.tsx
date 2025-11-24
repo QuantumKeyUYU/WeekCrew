@@ -105,6 +105,11 @@ export default function CirclePage() {
     storeDeviceId ??
     (typeof window !== 'undefined' ? getOrCreateDeviceId() : null);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    getOrCreateDeviceId();
+  }, []);
+
   // выбранные настроение/интерес (для заголовка)
   useEffect(() => {
     const stored = loadCircleSelection();
@@ -227,9 +232,25 @@ export default function CirclePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setCircle, setMessages, setQuotaFromApi]);
 
+  const lastFetchedCircleIdRef = useRef<string | null>(null);
+
+  // сброс сообщений при смене круга
+  useEffect(() => {
+    if (!circleId) {
+      setMessages([]);
+      lastFetchedCircleIdRef.current = null;
+      return;
+    }
+
+    if (lastFetchedCircleIdRef.current !== circleId) {
+      setMessages([]);
+      lastFetchedCircleIdRef.current = circleId;
+    }
+  }, [circleId, setMessages]);
+
   // начальная загрузка сообщений (одноразовый запрос)
   useEffect(() => {
-    if (!circle || notMember) {
+    if (!circleId || notMember) {
       setMessages([]);
       return;
     }
@@ -239,7 +260,7 @@ export default function CirclePage() {
     const loadMessages = async () => {
       try {
         const { messages: incoming, quota, memberCount } =
-          await getCircleMessages({ circleId: circle.id });
+          await getCircleMessages({ circleId });
 
         if (cancelled) return;
 
@@ -248,7 +269,8 @@ export default function CirclePage() {
 
         if (typeof memberCount === 'number') {
           updateCircle((prev) => {
-            if (!prev || prev.id !== circle.id) return prev;
+            if (!prev || prev.id !== circleId) return prev;
+            if (prev.memberCount === memberCount) return prev;
             return { ...prev, memberCount };
           });
         }
@@ -264,7 +286,7 @@ export default function CirclePage() {
     return () => {
       cancelled = true;
     };
-  }, [circle, notMember, setMessages, setQuotaFromApi, updateCircle]);
+  }, [circleId, notMember, setMessages, setQuotaFromApi, updateCircle]);
 
   const handleStartMatching = async () => {
     try {
