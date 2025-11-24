@@ -1,4 +1,5 @@
 export const DEVICE_ID_KEY = 'weekcrew:device-id';
+export const USER_ID_KEY = 'weekcrew-user';
 export const DEVICE_HEADER_NAME = 'X-Device-Id';
 
 const generateDeviceId = () => {
@@ -34,34 +35,61 @@ const getDeviceStorage = (): Storage => {
   }
 
   try {
-    return window.sessionStorage;
+    return window.localStorage;
   } catch (error) {
-    console.warn('Session storage unavailable, falling back to localStorage', error);
+    console.warn('Local storage unavailable, falling back to sessionStorage', error);
   }
 
   try {
-    return window.localStorage;
+    return window.sessionStorage;
   } catch (error) {
-    console.warn('Local storage unavailable, falling back to in-memory storage', error);
+    console.warn('Session storage unavailable, falling back to in-memory storage', error);
   }
 
   return memoryStorage;
 };
 
+const persistId = (storage: Storage, id: string) => {
+  try {
+    storage.setItem(DEVICE_ID_KEY, id);
+  } catch (error) {
+    console.warn('Unable to persist device id', error);
+  }
+
+  try {
+    storage.setItem(USER_ID_KEY, id);
+  } catch (error) {
+    console.warn('Unable to persist user id', error);
+  }
+
+  if (typeof window !== 'undefined') {
+    try {
+      window.localStorage.setItem(USER_ID_KEY, id);
+    } catch (error) {
+      console.warn('Unable to persist user id in localStorage', error);
+    }
+  }
+};
+
 export const getOrCreateDeviceId = (): string => {
   const storage = getDeviceStorage();
-  const existing = storage.getItem(DEVICE_ID_KEY);
+  const existing =
+    storage.getItem(DEVICE_ID_KEY) ?? storage.getItem(USER_ID_KEY);
+
   if (existing) {
+    persistId(storage, existing);
     return existing;
   }
+
   const id = generateDeviceId();
-  storage.setItem(DEVICE_ID_KEY, id);
+  persistId(storage, id);
   return id;
 };
 
 export const resetDeviceId = () => {
   const storage = getDeviceStorage();
   storage.removeItem(DEVICE_ID_KEY);
+  storage.removeItem(USER_ID_KEY);
 
   if (typeof window === 'undefined') {
     return;
@@ -69,6 +97,7 @@ export const resetDeviceId = () => {
 
   try {
     window.localStorage.removeItem(DEVICE_ID_KEY);
+    window.localStorage.removeItem(USER_ID_KEY);
   } catch (error) {
     console.warn('Failed to clear device id from localStorage', error);
   }
