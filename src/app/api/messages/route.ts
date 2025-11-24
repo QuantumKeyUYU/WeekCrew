@@ -43,18 +43,13 @@ export async function GET(req: NextRequest) {
       where: { circleId, deviceId, status: 'active', leftAt: null },
     });
 
-    if (!membership) {
-      return NextResponse.json(
-        { ok: false as const, error: 'not_member' },
-        { status: 403 },
-      );
+    const where: any = { circleId };
+    if (since) {
+      where.createdAt = { gt: since };
     }
 
     const messages = await prisma.message.findMany({
-      where: {
-        circleId,
-        ...(since ? { createdAt: { gt: since } } : {}),
-      },
+      where,
       orderBy: { createdAt: 'asc' },
       include: { user: true },
     });
@@ -67,6 +62,7 @@ export async function GET(req: NextRequest) {
         messages: messages.map(toCircleMessage),
         quota: null,
         memberCount,
+        notMember: !membership,
       },
       { status: 200 },
     );
@@ -110,23 +106,32 @@ export async function POST(req: NextRequest) {
 
     const { id: deviceId, isNew } = await getOrCreateDevice(req);
 
-    const membership = await prisma.circleMembership.findFirst({
-      where: { circleId, deviceId, status: 'active', leftAt: null },
-      include: { circle: true },
-    });
+    const circle = await prisma.circle.findUnique({ where: { id: circleId } });
 
-    if (!membership) {
-      return NextResponse.json(
-        { ok: false as const, error: 'not_member' },
-        { status: 403 },
-      );
-    }
-
-    if (!membership.circle || !isCircleActive(membership.circle)) {
+    if (!circle || !isCircleActive(circle)) {
       return NextResponse.json(
         { ok: false as const, error: 'circle_expired' },
         { status: 403 },
       );
+    }
+
+    // гарантируем membership для этого девайса в этом круге
+    const existingMembership = await prisma.circleMembership.findFirst({
+      where: { circleId, deviceId },
+    });
+
+    if (!existingMembership) {
+      await prisma.circleMembership.create({
+        data: { circleId, deviceId, status: 'active' },
+      });
+    } else if (
+      existingMembership.status !== 'active' ||
+      existingMembership.leftAt
+    ) {
+      await prisma.circleMembership.update({
+        where: { id: existingMembership.id },
+        data: { status: 'active', leftAt: null },
+      });
     }
 
     const message = await prisma.message.create({
