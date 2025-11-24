@@ -7,7 +7,7 @@ import { computeCircleExpiry } from '@/lib/server/circles';
 import { toCircleMessage, toCircleSummary } from '@/lib/server/serializers';
 import { countActiveMembers } from '@/lib/server/circleMembership';
 
-const DEFAULT_MAX_MEMBERS = 6;
+const DEFAULT_MAX_MEMBERS = 6 as const;
 
 const buildValidationError = (message: string) =>
   NextResponse.json({ ok: false as const, error: message }, { status: 400 });
@@ -56,13 +56,13 @@ const findJoinableCircle = async (mood: string, interest: string, now: Date) => 
 };
 
 const ensureMembership = async (circleId: string, deviceId: string) => {
-  const existingMembership = await prisma.circleMembership.findFirst({
+  const existing = await prisma.circleMembership.findFirst({
     where: { circleId, deviceId },
   });
 
-  if (existingMembership) {
+  if (existing) {
     return prisma.circleMembership.update({
-      where: { id: existingMembership.id },
+      where: { id: existing.id },
       data: { status: 'active', leftAt: null },
     });
   }
@@ -126,7 +126,12 @@ export async function POST(req: NextRequest) {
     }
 
     await prisma.circleMembership.updateMany({
-      where: { deviceId, status: 'active', leftAt: null, circleId: { not: circle.id } },
+      where: {
+        deviceId,
+        status: 'active',
+        leftAt: null,
+        circleId: { not: circle.id },
+      },
       data: { status: 'left', leftAt: now },
     });
 
