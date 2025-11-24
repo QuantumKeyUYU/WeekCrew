@@ -20,6 +20,7 @@ export interface JoinCircleResponse {
   messages: CircleMessage[];
   isNewCircle: boolean;
   quota: DailyQuotaSnapshot | null;
+  memberCount: number;
 }
 
 export const joinCircle = (payload: JoinCirclePayload) =>
@@ -39,8 +40,8 @@ export interface GetCircleMessagesResponse {
   ok: true;
   messages: CircleMessage[];
   quota: DailyQuotaSnapshot | null;
-  memberCount?: number;
-  notMember?: boolean;
+  memberCount: number;
+  notMember: boolean;
 }
 
 export const getCircleMessages = (payload: GetCircleMessagesPayload) =>
