@@ -1,168 +1,72 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isLiveBackendEnabled, prisma } from '@/lib/prisma';
-import { getOrCreateDevice } from '@/lib/server/device';
-import { computeCircleExpiry, isCircleActive } from '@/lib/server/circles';
-import {
-  countActiveMembers,
-  findLatestActiveMembershipForDevice,
-  markMembershipLeft,
-} from '@/lib/server/circleMembership';
-import { DEVICE_HEADER_NAME } from '@/lib/device';
-import {
-  toCircleMessage,
-  toCircleSummary,
-} from '@/lib/server/serializers';
-import { Prisma } from '@prisma/client';
+import { prisma } from '@/lib/prisma'; // Убедись, что путь верный!
 
-const MAX_MEMBERS_PER_CIRCLE = 8;
+// --- ВРЕМЕННО ВСТАВЛЯЕМ ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ПРЯМО СЮДА ---
+// Чтобы исключить ошибку импорта. Если у тебя они сложные, оставь как есть,
+// но убедись, что они не падают.
 
-// Разбор тела запроса и валидация mood/interest
-const parseJsonBody = (body: unknown) => {
-  if (!body || typeof body !== 'object') return null;
-  const { mood, interest } = body as { mood?: unknown; interest?: unknown };
-
-  const normalizedMood =
-    typeof mood === 'string' ? mood.trim() : '';
-  const normalizedInterest =
-    typeof interest === 'string' ? interest.trim() : '';
-
-  if (!normalizedMood || !normalizedInterest) {
-    return null;
-  }
-
-  return { mood: normalizedMood, interest: normalizedInterest };
-};
-
-// Безопасный upsert с обработкой P2002
-const ensureActiveMembership = async (circleId: string, deviceId: string) => {
-  try {
-    return await prisma.circleMembership.upsert({
-      where: { circleId_deviceId: { circleId, deviceId } },
-      update: { status: 'active', leftAt: null },
-      create: { circleId, deviceId, status: 'active' },
-    });
-  } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === 'P2002'
-    ) {
-      console.warn(
-        `[ensureActiveMembership] Conflict for ${circleId}/${deviceId}, retrying as update.`,
-      );
-      return await prisma.circleMembership.update({
-        where: { circleId_deviceId: { circleId, deviceId } },
-        data: { status: 'active', leftAt: null },
-      });
-    }
-    throw error;
-  }
-};
-
-// Поиск круга с местом
-const findCircleWithSpace = async (mood: string, interest: string) => {
-  const now = new Date();
-  const candidates = await prisma.circle.findMany({
-    where: { mood, interest, status: 'active', expiresAt: { gt: now } },
-    orderBy: { createdAt: 'asc' },
-    take: 10,
-  });
-
-  for (const candidate of candidates) {
-    const memberCount = await countActiveMembers(candidate.id);
-    if (memberCount < candidate.maxMembers) {
-      return { circle: candidate, memberCount } as const;
-    }
-  }
-
-  return null;
-};
-
-// Создание нового круга
-const createCircle = async (mood: string, interest: string) => {
-  const startsAt = new Date();
-  const expiresAt = computeCircleExpiry(startsAt);
-
-  const circle = await prisma.circle.create({
-    data: {
-      mood,
-      interest,
-      status: 'active',
-      maxMembers: MAX_MEMBERS_PER_CIRCLE,
-      startsAt,
-      endsAt: expiresAt,
-      expiresAt,
-    },
-  });
-
-  return { circle, memberCount: 0, isNewCircle: true as const };
-};
-
-// Основная функция
 export async function POST(req: NextRequest) {
+  console.log('--- START JOIN REQUEST ---'); // Метка в логах
+  
   try {
-    const body = await req.json().catch(() => null);
-    const parsed = parseJsonBody(body);
+    // 1. Читаем Body
+    console.log('1. Reading body...');
+    const body = await req.json();
+    console.log('   Body received:', body);
+    
+    // 2. Ищем Device
+    console.log('2. Calling getOrCreateDevice...');
+    // ВАЖНО: Если getOrCreateDevice падает, мы увидим это в логах
+    // Закомментируй свой импорт и проверь пока с хардкодом, чтобы исключить эту ошибку:
+    // const { id: deviceId } = await getOrCreateDevice(req); 
+    
+    // ВРЕМЕННЫЙ ХАРДКОД ДЛЯ ТЕСТА (замени на свой реальный ID устройства из базы если знаешь, или оставь строку)
+    const deviceId = "test-device-id-123"; 
+    console.log('   DeviceId:', deviceId);
 
-    if (!parsed) {
-      return NextResponse.json(
-        { ok: false, error: 'mood_and_interest_required' },
-        { status: 400 },
-      );
-    }
-
-    const { mood, interest } = parsed;
-    const { id: deviceId, isNew } = await getOrCreateDevice(req);
-
-    // Проверка активного участия
-    const existingMembership = await findLatestActiveMembershipForDevice(
-      deviceId,
-      mood,
-      interest,
-    );
-
-    let circle = existingMembership?.circle ?? null;
-    let memberCount = 0;
-    let isNewCircle = false;
-
+    // 3. Ищем Circle
+    console.log('3. Calling findOrCreateCircle...');
+    // const circle = await findOrCreateCircle(body.mood, body.interest);
+    
+    // ВРЕМЕННЫЙ ХАРДКОД ДЛЯ ТЕСТА (создадим круг на лету прямо тут)
+    let circle = await prisma.circle.findFirst();
     if (!circle) {
-      const found = await findCircleWithSpace(mood, interest);
-      if (found) {
-        circle = found.circle;
-        memberCount = found.memberCount;
-      } else {
-        const created = await createCircle(mood, interest);
-        circle = created.circle;
-        isNewCircle = true;
-      }
+       circle = await prisma.circle.create({ data: { name: 'Test Circle', mood: 'test', interest: 'test' }});
+    }
+    console.log('   CircleId:', circle.id);
+
+    // 4. Логика Membership (то, что мы правили)
+    console.log('4. Running ensureMembership...');
+    
+    const existingMember = await prisma.circleMembership.findUnique({
+      where: { circleId_deviceId: { circleId: circle.id, deviceId } },
+    });
+
+    if (existingMember) {
+       console.log('   Member exists, updating...');
+       await prisma.circleMembership.update({
+         where: { id: existingMember.id },
+         data: { status: 'active', leftAt: null },
+       });
+    } else {
+       console.log('   Member missing, creating...');
+       await prisma.circleMembership.create({
+         data: { circleId: circle.id, deviceId, status: 'active' },
+       });
     }
 
-    // Обновление или создание участия
-    await ensureActiveMembership(circle.id, deviceId);
-    memberCount = await countActiveMembers(circle.id);
+    console.log('5. Success! Returning response.');
+    return NextResponse.json({ ok: true });
 
-    // Формирование ответа
-    const response = NextResponse.json(
-      {
-        ok: true as const,
-        circle: toCircleSummary(circle, memberCount),
-        messages: [],
-        isNewCircle,
-        quota: null,
-        memberCount,
-      },
-      { status: 200 },
-    );
-
-    if (isNew) {
-      response.headers.set(DEVICE_HEADER_NAME, deviceId);
-    }
-
-    return response;
-  } catch (error) {
-    console.error('[api/circles/join] failed', error);
-    return NextResponse.json(
-      { ok: false as const, error: 'internal_error' },
-      { status: 500 },
-    );
+  } catch (error: any) {
+    // Выводим ПОЛНЫЙ стек ошибки в консоль сервера
+    console.error('!!! FATAL ERROR !!!');
+    console.error(error);
+    
+    return NextResponse.json({ 
+      ok: false, 
+      error: String(error), 
+      stack: error.stack 
+    }, { status: 500 });
   }
 }
