@@ -3,10 +3,17 @@ import { randomUUID } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { DEVICE_HEADER_NAME } from '@/lib/device';
 
+const DEVICE_ID_PATTERN = /^[A-Za-z0-9_-]{12,}$/;
+
+const readRawDeviceId = (request: NextRequest) =>
+  request.headers.get(DEVICE_HEADER_NAME)?.trim() ||
+  request.cookies.get('deviceId')?.value?.trim() ||
+  null;
+
 export const resolveDeviceId = (request: NextRequest) => {
-  const headerValue = request.headers.get(DEVICE_HEADER_NAME)?.trim();
-  if (headerValue && headerValue.length >= 8) {
-    return { id: headerValue, isNew: false };
+  const raw = readRawDeviceId(request);
+  if (raw && DEVICE_ID_PATTERN.test(raw)) {
+    return { id: raw, isNew: false };
   }
   return { id: randomUUID(), isNew: true };
 };

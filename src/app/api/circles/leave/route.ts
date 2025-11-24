@@ -17,11 +17,19 @@ export async function POST(request: NextRequest) {
       return response;
     }
 
-    await prisma.circleMembership.deleteMany({
-      where: { circleId: membership.circleId, deviceId },
+    await prisma.circleMembership.updateMany({
+      where: { circleId: membership.circleId, deviceId, leftAt: null },
+      data: { status: 'left', leftAt: new Date() },
     });
 
     const memberCount = await countActiveMembers(membership.circleId);
+
+    if (memberCount === 0) {
+      await prisma.circle.update({
+        where: { id: membership.circleId },
+        data: { status: 'finished' },
+      });
+    }
 
     const response = NextResponse.json({
       ok: true,
