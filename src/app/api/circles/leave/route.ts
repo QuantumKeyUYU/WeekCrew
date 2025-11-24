@@ -1,8 +1,12 @@
+// src/app/api/circles/leave/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getOrCreateDevice } from '@/lib/server/device';
 import { DEVICE_HEADER_NAME } from '@/lib/device';
-import { countActiveMembers, findLatestActiveMembershipForDevice } from '@/lib/server/circleMembership';
+import {
+  countActiveMembers,
+  findLatestActiveMembershipForDevice,
+} from '@/lib/server/circleMembership';
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,12 +41,17 @@ export async function POST(request: NextRequest) {
       prevCircleId: membership.circleId,
       memberCount,
     });
+
     if (isNew) {
       response.headers.set(DEVICE_HEADER_NAME, deviceId);
     }
+
     return response;
   } catch (error) {
-    console.error('leave error', error);
-    return NextResponse.json({ ok: false, error: 'SERVER_ERROR' }, { status: 500 });
+    console.error('[api/circles/leave] error', error);
+    return NextResponse.json(
+      { ok: false as const, error: 'SERVER_ERROR' },
+      { status: 500 },
+    );
   }
 }
